@@ -15,19 +15,19 @@ namespace GGUI {
                     
                     namespace cursorControlFunctions {
                         void operate_CURSOR_UP(ecma::sequence::base* /*ignored*/) {
-                            currentStates->ecmaComponents.activePresentationPosition.y--;
+                            currentStates->ecmaComponents.activePresentationPosition.y()--;
                         }
 
                         void operate_CURSOR_DOWN(ecma::sequence::base* /*ignored*/) {
-                            currentStates->ecmaComponents.activePresentationPosition.y++;
+                            currentStates->ecmaComponents.activePresentationPosition.y()++;
                         }
 
                         void operate_CURSOR_LEFT(ecma::sequence::base* /*ignored*/) {
-                            currentStates->ecmaComponents.activePresentationPosition.x--;
+                            currentStates->ecmaComponents.activePresentationPosition.x()--;
                         }
 
                         void operate_CURSOR_RIGHT(ecma::sequence::base* /*ignored*/) {
-                            currentStates->ecmaComponents.activePresentationPosition.x++;
+                            currentStates->ecmaComponents.activePresentationPosition.x()++;
                         }
                     }
 

@@ -372,15 +372,15 @@ namespace GGUI {
                     void operate_CARRIAGE_RETURN(sequence::base*) {
                         if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
                             if (currentStates->ecmaComponents.toCharacterMovementDirection(currentStates->ecmaComponents.activeCharacterMovementDirection) == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
-                                currentStates->ecmaComponents.activePresentationPosition.x = currentStates->ecmaComponents.homeLinePosition.x;
+                                currentStates->ecmaComponents.activePresentationPosition.x() = currentStates->ecmaComponents.homeLinePosition.x();
                             } else {
-                                currentStates->ecmaComponents.activePresentationPosition.x = currentStates->ecmaComponents.lineLimitPosition.x;
+                                currentStates->ecmaComponents.activePresentationPosition.x() = currentStates->ecmaComponents.lineLimitPosition.x();
                             }
                         } else if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_DATA)) {
                             if (currentStates->ecmaComponents.toCharacterMovementDirection(currentStates->ecmaComponents.activeCharacterMovementDirection) == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
-                                currentStates->ecmaComponents.activeDataPosition.x = currentStates->ecmaComponents.homeLinePosition.x;
+                                currentStates->ecmaComponents.activeDataPosition.x() = currentStates->ecmaComponents.homeLinePosition.x();
                             } else {
-                                currentStates->ecmaComponents.activeDataPosition.x = currentStates->ecmaComponents.lineLimitPosition.x;
+                                currentStates->ecmaComponents.activeDataPosition.x() = currentStates->ecmaComponents.lineLimitPosition.x();
                             }
                         }
                     }
@@ -390,7 +390,7 @@ namespace GGUI {
                         // character position of the line at the page home position of the next form or page.
                         // Move to the next page by advancing past the current active area
                         if (currentStates->ecmaComponents.activeArea.getUpper().row != 0) {
-                            currentStates->ecmaComponents.activeDataPosition.y = currentStates->ecmaComponents.activeArea.getUpper().row + 1;
+                            currentStates->ecmaComponents.activeDataPosition.y() = currentStates->ecmaComponents.activeArea.getUpper().row + 1;
                         }
                         
                         // Set the presentation position to the home line position of the new page
@@ -404,7 +404,7 @@ namespace GGUI {
 
                         assert(params.size() == 1);
 
-                        currentStates->ecmaComponents.activeDataPosition.x = params.front().getValueAsInteger();
+                        currentStates->ecmaComponents.activeDataPosition.x() = params.front().getValueAsInteger();
                     }
 
                     void operate_CHARACTER_POSITION_BACKWARD(sequence::base* input) {
@@ -439,9 +439,9 @@ namespace GGUI {
                         // Find next tabulation 
                         for (auto currentTabulation : currentStates->ecmaComponents.tabulationStops) {
                             if (
-                                currentTabulation.position.y == currentStates->ecmaComponents.activePresentationPosition.y && 
-                                currentTabulation.position.x >= currentStates->ecmaComponents.activePresentationPosition.x &&
-                                currentTabulation.position.x < nextTabulation.position.x  // This is meant to find the closest next tabulation stop
+                                currentTabulation.position.y() == currentStates->ecmaComponents.activePresentationPosition.y() && 
+                                currentTabulation.position.x() >= currentStates->ecmaComponents.activePresentationPosition.x() &&
+                                currentTabulation.position.x() < nextTabulation.position.x()  // This is meant to find the closest next tabulation stop
                             ) {
                                 nextTabulation = currentTabulation;
                             }
@@ -480,9 +480,9 @@ namespace GGUI {
 
                     void operate_LINE_FEED(sequence::base*) {
                         if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
-                            currentStates->ecmaComponents.activePresentationPosition.y++;
+                            currentStates->ecmaComponents.activePresentationPosition.y()++;
                         } else if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_DATA)) {
-                            currentStates->ecmaComponents.activeDataPosition.y++;
+                            currentStates->ecmaComponents.activeDataPosition.y()++;
                         }
                     }
 
@@ -493,15 +493,15 @@ namespace GGUI {
                         
                         if (has_presentation) {
                             if (movement_direction == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
-                                currentStates->ecmaComponents.activePresentationPosition.y = currentStates->ecmaComponents.homeLinePosition.y;
+                                currentStates->ecmaComponents.activePresentationPosition.y() = currentStates->ecmaComponents.homeLinePosition.y();
                             } else {
-                                currentStates->ecmaComponents.activePresentationPosition.y = currentStates->ecmaComponents.lineLimitPosition.y;
+                                currentStates->ecmaComponents.activePresentationPosition.y() = currentStates->ecmaComponents.lineLimitPosition.y();
                             }
                         } else if (has_data) {
                             if (movement_direction == ecma::components::characterMovementDirection::DIRECTION_OF_CHARACTER_PROGRESSION) {
-                                currentStates->ecmaComponents.activeDataPosition.y = currentStates->ecmaComponents.homeLinePosition.y;
+                                currentStates->ecmaComponents.activeDataPosition.y() = currentStates->ecmaComponents.homeLinePosition.y();
                             } else {
-                                currentStates->ecmaComponents.activeDataPosition.y = currentStates->ecmaComponents.lineLimitPosition.y;
+                                currentStates->ecmaComponents.activeDataPosition.y() = currentStates->ecmaComponents.lineLimitPosition.y();
                             }
                         }
                     }
@@ -572,7 +572,7 @@ namespace GGUI {
 
                         auto PageIndex = params.front().getValueAsInteger();
 
-                        currentStates->ecmaComponents.activeDataPosition.y = currentStates->ecmaComponents.dataPages[currentStates->ecmaComponents.activePageIndex - PageIndex].start.y;
+                        currentStates->ecmaComponents.activeDataPosition.y() = currentStates->ecmaComponents.dataPages[currentStates->ecmaComponents.activePageIndex - PageIndex].start.y();
                     }
 
                     void operate_PAGE_POSITION_FORWARD(sequence::base* input) {
@@ -584,14 +584,14 @@ namespace GGUI {
 
                         auto PageIndex = params.front().getValueAsInteger();
 
-                        currentStates->ecmaComponents.activeDataPosition.y = currentStates->ecmaComponents.dataPages[currentStates->ecmaComponents.activePageIndex + PageIndex].start.y;
+                        currentStates->ecmaComponents.activeDataPosition.y() = currentStates->ecmaComponents.dataPages[currentStates->ecmaComponents.activePageIndex + PageIndex].start.y();
                     }
 
                     void operate_REVERSE_LINE_FEED(sequence::base*) {
                         if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
-                            currentStates->ecmaComponents.activePresentationPosition.y--;
+                            currentStates->ecmaComponents.activePresentationPosition.y()--;
                         } else if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_DATA)) {
-                            currentStates->ecmaComponents.activeDataPosition.y--;
+                            currentStates->ecmaComponents.activeDataPosition.y()--;
                         }
                     }
 
@@ -640,7 +640,7 @@ namespace GGUI {
                                         currentStates->ecmaComponents.tabulationStops.begin(), 
                                         currentStates->ecmaComponents.tabulationStops.end(), 
                                         [](tabulationStop stop) { 
-                                            return stop.type == tabulationStop::types::CHARACTER && stop.position.y == currentStates->ecmaComponents.activePresentationPosition.y; 
+                                            return stop.type == tabulationStop::types::CHARACTER && stop.position.y() == currentStates->ecmaComponents.activePresentationPosition.y(); 
                                         }
                                     ),
                                     currentStates->ecmaComponents.tabulationStops.end()
@@ -653,7 +653,7 @@ namespace GGUI {
                                         currentStates->ecmaComponents.tabulationStops.begin(), 
                                         currentStates->ecmaComponents.tabulationStops.end(), 
                                         [](tabulationStop stop) { 
-                                            return stop.type == tabulationStop::types::LINE && stop.position.y == currentStates->ecmaComponents.activePresentationPosition.y; 
+                                            return stop.type == tabulationStop::types::LINE && stop.position.y() == currentStates->ecmaComponents.activePresentationPosition.y(); 
                                         }
                                     ),
                                     currentStates->ecmaComponents.tabulationStops.end()
@@ -693,7 +693,7 @@ namespace GGUI {
                                 currentStates->ecmaComponents.tabulationStops.begin(), 
                                 currentStates->ecmaComponents.tabulationStops.end(), 
                                 [&index](tabulationStop stop) { 
-                                    return stop.type == tabulationStop::types::CHARACTER && stop.position == IVector2{ index, currentStates->ecmaComponents.activePresentationPosition.y };
+                                    return stop.type == tabulationStop::types::CHARACTER && stop.position == IVector2{ index, currentStates->ecmaComponents.activePresentationPosition.y() };
                                 }
                             ),
                             currentStates->ecmaComponents.tabulationStops.end()
@@ -711,7 +711,7 @@ namespace GGUI {
 
                         auto lineProgression = currentStates->ecmaComponents.getPresentationDirectionAsVector().first;
 
-                        currentStates->ecmaComponents.activeDataPosition.y = lineProgression.y * line;
+                        currentStates->ecmaComponents.activeDataPosition.y() = lineProgression.y() * line;
                     }
 
                     void operate_LINE_POSITION_BACKWARD(sequence::base* input) {
@@ -725,7 +725,7 @@ namespace GGUI {
 
                         auto lineProgression = currentStates->ecmaComponents.getPresentationDirectionAsVector().first;
 
-                        currentStates->ecmaComponents.activeDataPosition.y += -lineProgression.y * line;
+                        currentStates->ecmaComponents.activeDataPosition.y() += -lineProgression.y() * line;
                     }
 
                     void operate_LINE_POSITION_FORWARD(sequence::base* input) {
@@ -739,15 +739,15 @@ namespace GGUI {
 
                         auto lineProgression = currentStates->ecmaComponents.getPresentationDirectionAsVector().first;
 
-                        currentStates->ecmaComponents.activeDataPosition.y += lineProgression.y * line;
+                        currentStates->ecmaComponents.activeDataPosition.y() += lineProgression.y() * line;
                     }
 
                     void operate_LINE_TABULATION(sequence::base* /*ignore*/) {
                         // First find the tabulation top at the current presentation position line
                         for (auto currentTabStop : currentStates->ecmaComponents.tabulationStops) {
                             if (
-                                currentTabStop.position.y == currentStates->ecmaComponents.activePresentationPosition.y &&
-                                currentTabStop.position.x > currentStates->ecmaComponents.activePresentationPosition.x &&
+                                currentTabStop.position.y() == currentStates->ecmaComponents.activePresentationPosition.y() &&
+                                currentTabStop.position.x() > currentStates->ecmaComponents.activePresentationPosition.x() &&
                                 currentTabStop.type == tabulationStop::types::LINE
                             ) {
                                 currentStates->ecmaComponents.activePresentationPosition = currentTabStop.position;
@@ -768,8 +768,8 @@ namespace GGUI {
                 namespace presentationControlFunctions {
                     void operate_BREAK_PERMITTED_HERE(sequence::base* /*ignore*/) {
                         currentStates->ecmaComponents.lineBreaks.push_back(currentStates->ecmaComponents.activePresentationPosition);
-                        currentStates->ecmaComponents.activePresentationPosition.y++;
-                        currentStates->ecmaComponents.activePresentationPosition.x = 0;
+                        currentStates->ecmaComponents.activePresentationPosition.y()++;
+                        currentStates->ecmaComponents.activePresentationPosition.x() = 0;
                     }
 
                     void operate_DIMENSION_TEXT_AREA(sequence::base* input) {
@@ -980,12 +980,12 @@ namespace GGUI {
                         if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
                             currentStates->ecmaComponents.homeLinePosition = {
                                 characterPosition,
-                                currentStates->ecmaComponents.activePresentationPosition.y
+                                currentStates->ecmaComponents.activePresentationPosition.y()
                             };
                         } else {    // data mode
                             currentStates->ecmaComponents.homeLinePosition = {
                                 characterPosition,
-                                currentStates->ecmaComponents.activeDataPosition.y
+                                currentStates->ecmaComponents.activeDataPosition.y()
                             };
                         }
                     }
@@ -1002,12 +1002,12 @@ namespace GGUI {
                         if (currentStates->ecmaComponents.activeModes.has(mode::presets::DCSM_PRESENTATION)) {
                             currentStates->ecmaComponents.lineLimitPosition = {
                                 characterPosition,
-                                currentStates->ecmaComponents.activePresentationPosition.y
+                                currentStates->ecmaComponents.activePresentationPosition.y()
                             };
                         } else {    // data mode
                             currentStates->ecmaComponents.lineLimitPosition = {
                                 characterPosition,
-                                currentStates->ecmaComponents.activeDataPosition.y
+                                currentStates->ecmaComponents.activeDataPosition.y()
                             };
                         }
                     }
@@ -1060,7 +1060,7 @@ namespace GGUI {
                         const auto& activeModes = currentStates->ecmaComponents.activeModes;
 
                         auto cursorPositionAtBuffer = currentStates->ecmaComponents.getPresentationPositionAsBufferAddress();
-                        auto screenWidth = currentStates->ecmaComponents.activeScreenDimensions.x;
+                        auto screenWidth = currentStates->ecmaComponents.activeScreenDimensions.x();
 
                         if (activeModes.has(mode::presets::VEM_FOLLOWING)) {
                             std::fill(
@@ -1090,11 +1090,11 @@ namespace GGUI {
 
                         auto cursorPositionAtBuffer = currentStates->ecmaComponents.getPresentationPositionAsBufferAddress();
                         auto lineLimitAtBuffer = currentStates->ecmaComponents.activePresentationBuffer.begin() + (
-                            currentStates->screen.getActiveIndex() - currentStates->ecmaComponents.activePresentationPosition.x   // Is is to ge the actual buffer cell position, and then remove the character so that we can insert our own line limit instead
-                        ) + currentStates->ecmaComponents.lineLimitPosition.x;
+                            currentStates->screen.getActiveIndex() - currentStates->ecmaComponents.activePresentationPosition.x()   // Is is to ge the actual buffer cell position, and then remove the character so that we can insert our own line limit instead
+                        ) + currentStates->ecmaComponents.lineLimitPosition.x();
                         auto lineHomeAtBuffer = currentStates->ecmaComponents.activePresentationBuffer.begin() + (
-                            currentStates->screen.getActiveIndex() - currentStates->ecmaComponents.activePresentationPosition.x   // Is is to ge the actual buffer cell position, and then remove the character so that we can insert our own line home instead
-                        ) + currentStates->ecmaComponents.homeLinePosition.x;
+                            currentStates->screen.getActiveIndex() - currentStates->ecmaComponents.activePresentationPosition.x()   // Is is to ge the actual buffer cell position, and then remove the character so that we can insert our own line home instead
+                        ) + currentStates->ecmaComponents.homeLinePosition.x();
 
                         // Since we actually cannot insert anything, because this is a screen buffer.
                         // Instead we are going to move the data by the amount
@@ -1138,14 +1138,14 @@ namespace GGUI {
 
                         const auto& activeModes = currentStates->ecmaComponents.activeModes;
 
-                        auto screenWidth = currentStates->ecmaComponents.activeScreenDimensions.x;
+                        auto screenWidth = currentStates->ecmaComponents.activeScreenDimensions.x();
 
                         auto activeLineBegin = currentStates->ecmaComponents.activePresentationBuffer.begin() + (
-                            currentStates->screen.getActiveIndex() - currentStates->ecmaComponents.activePresentationPosition.x
+                            currentStates->screen.getActiveIndex() - currentStates->ecmaComponents.activePresentationPosition.x()
                         );
 
                         auto lineLimitAtBuffer = currentStates->ecmaComponents.activePresentationBuffer.begin() + (
-                            currentStates->ecmaComponents.lineLimitPosition.y + 1
+                            currentStates->ecmaComponents.lineLimitPosition.y() + 1
                         ) * screenWidth;
 
                         auto insertedCellCount = amountToInsert * screenWidth;
@@ -1190,8 +1190,8 @@ namespace GGUI {
 
                         auto line = params.front().getValueAsInteger();
 
-                        currentStates->ecmaComponents.activePresentationPosition.y += line;
-                        currentStates->ecmaComponents.activePresentationPosition.x = 0;  TODO("line home position?")
+                        currentStates->ecmaComponents.activePresentationPosition.y() += line;
+                        currentStates->ecmaComponents.activePresentationPosition.x() = 0;  TODO("line home position?")
                     }
 
                     void operate_CURSOR_PRECEDING_LINE(sequence::base* input) {
@@ -1203,8 +1203,8 @@ namespace GGUI {
 
                         auto line = params.front().getValueAsInteger();
 
-                        currentStates->ecmaComponents.activePresentationPosition.y -= line;
-                        currentStates->ecmaComponents.activePresentationPosition.x = 0;  TODO("line home position?")
+                        currentStates->ecmaComponents.activePresentationPosition.y() -= line;
+                        currentStates->ecmaComponents.activePresentationPosition.x() = 0;  TODO("line home position?")
                     }
 
                     void operate_CURSOR_LEFT(sequence::base* input) {
@@ -1216,7 +1216,7 @@ namespace GGUI {
 
                         auto character = params.front().getValueAsInteger();
 
-                        currentStates->ecmaComponents.activePresentationPosition.x -= character;
+                        currentStates->ecmaComponents.activePresentationPosition.x() -= character;
                     }
 
                     void operate_CURSOR_DOWN(sequence::base* input) {
@@ -1228,7 +1228,7 @@ namespace GGUI {
 
                         auto line = params.front().getValueAsInteger();
 
-                        currentStates->ecmaComponents.activePresentationPosition.y += line;
+                        currentStates->ecmaComponents.activePresentationPosition.y() += line;
                     }
 
                     void operate_CURSOR_RIGHT(sequence::base* input) {
@@ -1240,7 +1240,7 @@ namespace GGUI {
 
                         auto character = params.front().getValueAsInteger();
 
-                        currentStates->ecmaComponents.activePresentationPosition.x += character;
+                        currentStates->ecmaComponents.activePresentationPosition.x() += character;
                     }
 
                     void operate_CURSOR_POSITION(sequence::base* input) {
@@ -1253,8 +1253,8 @@ namespace GGUI {
                         auto line = params.front().getValueAsInteger();
                         auto character = params.back().getValueAsInteger();
 
-                        currentStates->ecmaComponents.activePresentationPosition.y = line;
-                        currentStates->ecmaComponents.activePresentationPosition.x = character;
+                        currentStates->ecmaComponents.activePresentationPosition.y() = line;
+                        currentStates->ecmaComponents.activePresentationPosition.x() = character;
                     }
 
                     void operate_CURSOR_UP(sequence::base* input) {
@@ -1266,7 +1266,7 @@ namespace GGUI {
 
                         auto line = params.front().getValueAsInteger();
 
-                        currentStates->ecmaComponents.activePresentationPosition.y -= line;
+                        currentStates->ecmaComponents.activePresentationPosition.y() -= line;
                     }
                 }
 
@@ -1304,7 +1304,7 @@ namespace GGUI {
 
                         auto line = params.front().getValueAsInteger();
 
-                        currentStates->ecmaComponents.activePresentationPosition.y += line;   TODO("Missing horizontal scroll")
+                        currentStates->ecmaComponents.activePresentationPosition.y() += line;   TODO("Missing horizontal scroll")
                     }
 
                     void operate_SCROLL_UP(sequence::base* input) {
@@ -1316,7 +1316,7 @@ namespace GGUI {
 
                         auto line = params.front().getValueAsInteger();
 
-                        currentStates->ecmaComponents.activePresentationPosition.y -= line;   TODO("Missing horizontal scroll")
+                        currentStates->ecmaComponents.activePresentationPosition.y() -= line;   TODO("Missing horizontal scroll")
                     }
                 }
 

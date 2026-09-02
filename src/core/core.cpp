@@ -255,7 +255,7 @@ namespace GGUI{
             focusedOn = new_candidate;
 
             // Update mouse location to match with keyboard given states.
-            currentMouse.position = focusedOn->getAbsolutePosition();
+            currentMouse.position = focusedOn->getAbsolutePosition().surjection<IVector2::dimensions>();
 
             // Set the focus state on the new element to true
             focusedOn->setFocus(true);
@@ -286,7 +286,7 @@ namespace GGUI{
             hoveredOn = new_candidate;
 
             // Update mouse location to match with keyboard given states.
-            currentMouse.position = hoveredOn->getAbsolutePosition();
+            currentMouse.position = hoveredOn->getAbsolutePosition().surjection<IVector2::dimensions>();
 
             // Set the hover state on the new element to true
             hoveredOn->setHoverState(true);
@@ -376,7 +376,7 @@ namespace GGUI{
 
             // The childs own relative buffer intersection of clipping while partially outside or completely inside the parent element
             rectangle src = {
-                {dest.position.x - childInfo.position.x, dest.position.y - childInfo.position.y},
+                {dest.position.x() - childInfo.position.x(), dest.position.y() - childInfo.position.y()},
                 dest.size
             };
 
@@ -396,13 +396,13 @@ namespace GGUI{
         void nestElement(element* parent, element* child, std::vector<terminal::cell>& Parent_Buffer, const std::vector<terminal::cell>& Child_Buffer){
             auto [dest, src] = getFittingArea(parent, child);
 
-            for (int y = 0; y < dest.size.y; y++) {
-                int parentRowStart = (dest.position.y + y) * parent->getWidth() + dest.position.x;
-                int childRowStart  = (src.position.y  + y) * child->getWidth()  + src.position.x;
+            for (int y = 0; y < dest.size.y(); y++) {
+                int parentRowStart = (dest.position.y() + y) * parent->getWidth() + dest.position.x();
+                int childRowStart  = (src.position.y()  + y) * child->getWidth()  + src.position.x();
 
                 std::copy(
                     Child_Buffer.begin() + childRowStart,
-                    Child_Buffer.begin() + childRowStart + dest.size.x,
+                    Child_Buffer.begin() + childRowStart + dest.size.x(),
                     Parent_Buffer.begin() + parentRowStart
                 );
             }

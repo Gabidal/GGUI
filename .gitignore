@@ -5,7 +5,7 @@
 *.out
 *.backup
 *.txt
-*.zip
+*.z()ip
 *.srctrldb
 *.srctrlbm
 *.gcda

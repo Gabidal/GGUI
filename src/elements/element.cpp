@@ -177,12 +177,11 @@ namespace GGUI {
             flags ^= (stain::types::NOT_RENDERED);
         }
 
-        bool Connect_Borders_With_Parent = hasBorder();
-        unsigned int Childs_With_Borders = 0;
-
         //This will add the child windows to the Result buffer
         if (flags.has(stain::types::DEEP)){
             flags ^= (stain::types::DEEP);
+
+            childsWithBorders = 0;
 
             // clean reflection pool
             graphicalReflectionPool.clear();
@@ -195,7 +194,7 @@ namespace GGUI {
                     continue;
 
                 if (c->hasBorder())
-                    Childs_With_Borders++;
+                    childsWithBorders++;
 
                 const std::vector<terminal::cell>& tmp = c->render();
 
@@ -212,7 +211,7 @@ namespace GGUI {
             compileActiveGraphics();    // compiles identifying graphics pools
         }
 
-        if (Childs_With_Borders > 0 && Connect_Borders_With_Parent)
+        if (childsWithBorders > 0 && hasBorder())
             flags |= (stain::types::EDGE);
 
         //This will add the borders if necessary and the title of the window.
@@ -224,7 +223,7 @@ namespace GGUI {
         }
 
         // This will calculate the connecting borders.
-        if (Childs_With_Borders > 0){
+        if (childsWithBorders > 0){
             for (auto A : this->style->Childs){
                 for (auto B : this->style->Childs){
                     if (A == B)
@@ -366,6 +365,21 @@ namespace GGUI {
         }
     }
 
+    void element::check(STATE s){
+        if (s == STATE::INIT && onInit){
+            // Since the rendering hasn't yet started and the function here may be reliant on some relative information, we need to evaluate the the dynamic values.
+            style->evaluateDynamicAttributevalues(this);
+
+            onInit(this);
+        }
+        else if (s == STATE::DESTROYED && onDestroy)
+            onDestroy(this);
+        else if (s == STATE::HIDDEN && onHide)
+            onHide(this);
+        else if (s == STATE::SHOWN && onShow)
+            onShow(this);
+    }
+
     /**
     * @brief Retrieves the styling information of the element.
     * @details This function returns the current styling object associated with the element.
@@ -476,13 +490,13 @@ namespace GGUI {
         int Border_Offset =  hasBorder() != Child->hasBorder() && hasBorder() ? 1 : 0;
 
         if (
-            Child->style->Position.get().x + Child->getWidth() > (getWidth() - Border_Offset) || 
-            Child->style->Position.get().y + Child->getHeight() > (getHeight() - Border_Offset)
+            Child->style->Position.get().x() + Child->getWidth() > (getWidth() - Border_Offset) || 
+            Child->style->Position.get().y() + Child->getHeight() > (getHeight() - Border_Offset)
         ){
             if (style->Allow_Dynamic_Size.value){
                 // Add the border offset to the width and the height to count for the border collision and evade it. 
-                unsigned int New_Width = std::max(Child->style->Position.get().x + Child->getWidth() + Border_Offset*2, getWidth());
-                unsigned int New_Height = std::max(Child->style->Position.get().y + Child->getHeight() + Border_Offset*2, getHeight());
+                auto New_Width = std::max(Child->style->Position.get().x() + Child->getWidth() + Border_Offset*2, (int)getWidth());
+                auto New_Height = std::max(Child->style->Position.get().y() + Child->getHeight() + Border_Offset*2, (int)getHeight());
 
                 // Resize the parent element to fit the child element
                 setHeight(New_Height);
@@ -509,9 +523,6 @@ namespace GGUI {
         core::elementNames.insert({Child->getNameAsRaw(), Child});
 
         style->Childs.push_back(Child);
-
-        // Make sure that elements with higher Z, are rendered later, making them visible as on top.
-        reOrderChilds();
 
         // Refresh the parent element's frame to reflect changes
         updateFrame();
@@ -557,7 +568,7 @@ namespace GGUI {
 
         // sort result by z-priority, higher z is first
         std::sort(result.begin(), result.end(), [](const element* a, const element* b) {
-            return a->getPosition().z > b->getPosition().z;
+            return a->getPosition().z() > b->getPosition().z();
         });
 
         return result;
@@ -578,7 +589,9 @@ namespace GGUI {
         }
 
         // sort the points
-        std::sort(result.begin(), result.end());
+        std::sort(result.begin(), result.end(), [](const IVector2& a, const IVector2& b) {
+            return std::tie(a.y(), a.x()) < std::tie(b.y(), b.x());
+        });
 
         // remove duplicates
         result.erase(
@@ -612,7 +625,7 @@ namespace GGUI {
             if (style->Childs[i] == handle){
                 // If the mouse is focused on this about to be deleted element, change mouse position into it's parent Position.
                 if (core::focusedOn == style->Childs[i]){
-                    currentMouse.position = style->Childs[i]->parent->style->Position.get();
+                    currentMouse.position = style->Childs[i]->parent->style->Position.get().surjection<IVector2::dimensions>();
                 }
 
                 delete handle;
@@ -716,7 +729,7 @@ namespace GGUI {
 
         // If the mouse is currently focused on the element that is about to be deleted, change the mouse position into the element's parent position.
         if (core::focusedOn == tmp){
-            currentMouse.position = tmp->parent->style->Position.get();
+            currentMouse.position = tmp->parent->style->Position.get().surjection<IVector2::dimensions>();
         }
 
         // Delete the element at the specified index from the vector of child elements.
@@ -756,7 +769,7 @@ namespace GGUI {
     * @param width The new width of the element.
     * @param height The new height of the element.
     */
-    void element::setDimensions(int width, int height){
+    void element::setDimensions(int16_t width, int16_t height){
         if (width != getWidth() || height != getHeight()){
             setWidth(width);
             setHeight(height);
@@ -770,9 +783,9 @@ namespace GGUI {
     *          The Update_Frame() function is also called to update the frame.
     * @param width The new width of the element.
     */
-    void element::setWidth(int width){
+    void element::setWidth(int16_t width){
         if (width != getWidth()){
-            style->Width.Set(width);
+            style->Width.set(width);
             // Set the STRETCH stain if the width is changed
             flags |= (stain::types::STRETCH);
             // Update the frame after resizing
@@ -787,9 +800,9 @@ namespace GGUI {
     *          The Update_Frame() function is also called to update the frame.
     * @param height The new height of the element.
     */
-    void element::setHeight(int height){
+    void element::setHeight(int16_t height){
         if (height != getHeight()){
-            style->Height.Set(height);
+            style->Height.set(height);
             // Set the STRETCH stain if the height is changed
             flags |= (stain::types::STRETCH);
             // Update the frame after resizing
@@ -858,7 +871,7 @@ namespace GGUI {
 
             Border_Offset = (parent->hasBorder() != hasBorder() && parent->hasBorder()) ? 1 : 0;
 
-            absolutePositionCache.z += 1;   // mainly used for the compute of rectangle priority
+            absolutePositionCache.z() += 1;   // mainly used for the compute of rectangle priority
         }
 
         // Add the position of the element to the position of its parent
@@ -1004,7 +1017,7 @@ namespace GGUI {
         */
         while (true){
             // If the width of the child element is still less than the width of this element minus the border offset
-            if (Current_Position.x + (++Result_Width) < getWidth() - Border_Offset){
+            if (Current_Position.x() + (++Result_Width) < getWidth() - Border_Offset){
                 // Increase the width of the child element
                 Result_Width++;
             }
@@ -1013,7 +1026,7 @@ namespace GGUI {
             }
             
             // If the height of the child element is still less than the height of this element minus the border offset
-            if (Current_Position.y + (++Result_Height) < getHeight() - Border_Offset){
+            if (Current_Position.y() + (++Result_Height) < getHeight() - Border_Offset){
                 // Increase the height of the child element
                 Result_Height++;
             }
@@ -1075,7 +1088,7 @@ namespace GGUI {
         style->Background_Color = color;
         
         // If the border background color matches the current background color, update it
-        if (style->Border_Background_Color.color.get<RGB>() == style->Background_Color.color.get<RGB>()) {
+        if (style->Border_Background_Color.color.get() == style->Background_Color.color.get()) {
             style->Border_Background_Color = color;
         }
         
@@ -1389,13 +1402,13 @@ namespace GGUI {
 
                 // Add the border offset to the width and the height to count for the border collision and evade it. 
                 int New_Width = std::max(
-                    (c->style->Position.get().x + c->getWidth() + Border_Offset) * Enable_Width_Modification,
-                    getWidth()
+                    (c->style->Position.get().x() + c->getWidth() + Border_Offset) * Enable_Width_Modification,
+                    (int)getWidth()
                 );
 
                 int New_Height = std::max(
-                    (c->style->Position.get().y + c->getHeight() + Border_Offset) * Enable_Height_Modification,
-                    getHeight()
+                    (c->style->Position.get().y() + c->getHeight() + Border_Offset) * Enable_Height_Modification,
+                    (int)getHeight()
                 );
 
                 // but only update those who actually allow dynamic sizing.
@@ -1506,14 +1519,14 @@ namespace GGUI {
 
     inline bool Is_In_Bounds(IVector3 index, element* parent){
         // checks if the index is out of bounds
-        if (index.x < 0 || index.y < 0 || index.x >= parent->getWidth() || index.y >= parent->getHeight())
+        if (index.x() < 0 || index.y() < 0 || index.x() >= parent->getWidth() || index.y() >= parent->getHeight())
             return false;
 
         return true;
     }
 
     inline terminal::cell* From(IVector3 index, std::vector<terminal::cell>& Parent_Buffer, element* Parent){
-        return &Parent_Buffer[index.y * Parent->getWidth() + index.x];
+        return &Parent_Buffer[index.y() * Parent->getWidth() + index.x()];
     }
 
     /**
@@ -1551,19 +1564,19 @@ namespace GGUI {
 
         // First calculate if the child is outside the parent.
         if (
-            B->style->Position.get().x + B->getWidth() < A->style->Position.get().x ||
-            B->style->Position.get().x > A->style->Position.get().x + A->getWidth() ||
-            B->style->Position.get().y + B->getHeight() < A->style->Position.get().y ||
-            B->style->Position.get().y > A->style->Position.get().y + A->getHeight()
+            B->style->Position.get().x() + B->getWidth() < A->style->Position.get().x() ||
+            B->style->Position.get().x() > A->style->Position.get().x() + A->getWidth() ||
+            B->style->Position.get().y() + B->getHeight() < A->style->Position.get().y() ||
+            B->style->Position.get().y() > A->style->Position.get().y() + A->getHeight()
         )
             return;
 
         // Now calculate if the child is inside the parent.
         if (
-            B->style->Position.get().x > A->style->Position.get().x &&
-            B->style->Position.get().x + B->getWidth() < A->style->Position.get().x + A->getWidth() &&
-            B->style->Position.get().y > A->style->Position.get().y &&
-            B->style->Position.get().y + B->getHeight() < A->style->Position.get().y + A->getHeight()
+            B->style->Position.get().x() > A->style->Position.get().x() &&
+            B->style->Position.get().x() + B->getWidth() < A->style->Position.get().x() + A->getWidth() &&
+            B->style->Position.get().y() > A->style->Position.get().y() &&
+            B->style->Position.get().y() + B->getHeight() < A->style->Position.get().y() + A->getHeight()
         )
             return;
 
@@ -1574,10 +1587,10 @@ namespace GGUI {
         // store the line x,y into a array for the nested loops to access.
         std::vector<int> Vertical_Line_X_Coordinates = {
             
-            B->style->Position.get().x,
-            A->style->Position.get().x,
-            B->style->Position.get().x + B->getWidth() - 1,
-            A->style->Position.get().x + A->getWidth() - 1,
+            B->style->Position.get().x(),
+            A->style->Position.get().x(),
+            B->style->Position.get().x() + B->getWidth() - 1,
+            A->style->Position.get().x() + A->getWidth() - 1,
 
                     
             // A->Style->Position.Get().X,
@@ -1589,10 +1602,10 @@ namespace GGUI {
 
         std::vector<int> Horizontal_Line_Y_Coordinates = {
             
-            A->style->Position.get().y,
-            B->style->Position.get().y + B->getHeight() - 1,
-            A->style->Position.get().y,
-            B->style->Position.get().y + B->getHeight() - 1,
+            A->style->Position.get().y(),
+            B->style->Position.get().y() + B->getHeight() - 1,
+            A->style->Position.get().y(),
+            B->style->Position.get().y() + B->getHeight() - 1,
 
             // B->Position.Y,
             // A->Position.Y + A->Height - 1,
@@ -1618,10 +1631,10 @@ namespace GGUI {
         // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
         for (auto c : Crossing_Indicies){
 
-            IVector3 Above = { c.x, c.y - 1 };
-            IVector3 Below = { c.x, c.y + 1 };
-            IVector3 Left = { c.x - 1, c.y };
-            IVector3 Right = { c.x + 1, c.y };
+            IVector3 Above = { c.x(), c.y() - 1 };
+            IVector3 Below = { c.x(), c.y() + 1 };
+            IVector3 Left = { c.x() - 1, c.y() };
+            IVector3 Right = { c.x() + 1, c.y() };
 
             bitMask<styledBorder::connectionTypes> Current_Masks = styledBorder::connectionTypes::NONE;
 
@@ -1736,7 +1749,10 @@ namespace GGUI {
     * @return true if any children have changed, false otherwise.
     */
     bool element::childrenChanged() const {
-        for (const auto* e : style->Childs){
+        for (const element* e : style->Childs){
+            assert(e != nullptr);
+            assert(reinterpret_cast<uintptr_t>(e) % alignof(element) == 0);
+
             if (e->getDirty().is(stain::types::FINALIZE)){
                 logger::log("Child element passthrough Finalization stage!");
             }
@@ -1867,25 +1883,12 @@ namespace GGUI {
     }
 
     /**
-    * @brief Reorders child elements based on their z-position.
-    * @details This function sorts the child elements of the current element by their z-coordinate
-    *          in ascending order, so that elements with a higher z-coordinate appear later in the list.
-    */
-    void element::reOrderChilds() {
-        // Sort the child elements using a lambda function to compare the z-coordinates.
-        std::sort(style->Childs.begin(), style->Childs.end(), [](element* a, element* b) {
-            // Compare the z-position of the two elements.
-            return a->getPosition().z < b->getPosition().z;
-        });
-    }
-
-    /**
     * @brief Focuses the element.
     * @details This function updates the global focus information by setting the mouse position to the element's position and updating the focused element.
     */
     void element::focus() {
         // Set the mouse position to the element's position.
-        currentMouse.position = this->style->Position.get();
+        currentMouse.position = this->style->Position.get().surjection<IVector2::dimensions>();
         // Update the focused element.
         core::updateFocusedElement(this);
     }
@@ -1922,17 +1925,17 @@ namespace GGUI {
         std::vector<IVector3> Result;
 
         // First construct the first square.
-        int Bigger_Square_Start_X = start_offset.x - 1;
-        int Bigger_Square_Start_Y = start_offset.y - 1;
+        int Bigger_Square_Start_X = start_offset.x() - 1;
+        int Bigger_Square_Start_Y = start_offset.y() - 1;
 
-        int Bigger_Square_End_X = start_offset.x + Width + 1;
-        int Bigger_Square_End_Y = start_offset.y + Height + 1;
+        int Bigger_Square_End_X = start_offset.x() + Width + 1;
+        int Bigger_Square_End_Y = start_offset.y() + Height + 1;
 
-        int Smaller_Square_Start_X = start_offset.x + (Offset.x * std::min(0, (int)Offset.x));
-        int Smaller_Square_Start_Y = start_offset.y + (Offset.y * std::min(0, (int)Offset.y));
+        int Smaller_Square_Start_X = start_offset.x() + (Offset.x() * std::min(0, (int)Offset.x()));
+        int Smaller_Square_Start_Y = start_offset.y() + (Offset.y() * std::min(0, (int)Offset.y()));
 
-        int Smaller_Square_End_X = start_offset.x + Width - (Offset.x * std::max(0, (int)Offset.x));
-        int Smaller_Square_End_Y = start_offset.y + Height - (Offset.y * std::max(0, (int)Offset.y));
+        int Smaller_Square_End_X = start_offset.x() + Width - (Offset.x() * std::max(0, (int)Offset.x()));
+        int Smaller_Square_End_Y = start_offset.y() + Height - (Offset.y() * std::max(0, (int)Offset.y()));
 
         for (int y = Bigger_Square_Start_Y; y < Bigger_Square_End_Y; y++){
             for (int x = Bigger_Square_Start_X; x < Bigger_Square_End_X; x++){

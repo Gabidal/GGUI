@@ -35,9 +35,9 @@ namespace GGUI {
             core::inputManager->previousKeyboardState = core::inputManager->currentKeyboardState;
 
             // Update mouse position from packet
-            if (packetInput->mouse.x >= 0 && packetInput->mouse.y >= 0) {
-                currentMouse.position.x = packetInput->mouse.x;
-                currentMouse.position.y = packetInput->mouse.y;
+            if (packetInput->mouse.x() >= 0 && packetInput->mouse.y() >= 0) {
+                currentMouse.position.x() = packetInput->mouse.x();
+                currentMouse.position.y() = packetInput->mouse.y();
             }
 
             // Handle control key modifiers
@@ -264,7 +264,7 @@ namespace GGUI {
 
                 packet::resize::base* resizePacket = reinterpret_cast<packet::resize::base*>(packetBuffer);
 
-                getRoot()->setDimensions(resizePacket->size.x, resizePacket->size.y);
+                getRoot()->setDimensions(resizePacket->size.x(), resizePacket->size.y());
 
             } catch (const std::exception& e) {
                 GGUI::logger::log("DRM connection failed: " + std::string(e.what()));
@@ -375,7 +375,7 @@ namespace GGUI {
                     // Now we can simply cast to the resize packet and read the new size and assign it to Main element
                     packet::resize::base* resizePacket = reinterpret_cast<packet::resize::base*>(rawPacketBuffer);
 
-                    getRoot()->setDimensions(resizePacket->size.x, resizePacket->size.y);
+                    getRoot()->setDimensions(resizePacket->size.x(), resizePacket->size.y());
                     break;
                 }
             case packet::type::NOTIFY:

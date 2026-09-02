@@ -45,10 +45,10 @@ namespace GGUI{
          */
         constexpr bool collides(IVector3 A, IVector3 B, int A_Width = 1, int A_Height = 1, int B_Width = 1, int B_Height = 1) noexcept {
             return (
-                A.x < B.x + B_Width &&
-                A.x + A_Width > B.x &&
-                A.y < B.y + B_Height &&
-                A.y + A_Height > B.y
+                A.x() < B.x() + B_Width &&
+                A.x() + A_Width > B.x() &&
+                A.y() < B.y() + B_Height &&
+                A.y() + A_Height > B.y()
             );
         }
 

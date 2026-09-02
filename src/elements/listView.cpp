@@ -77,9 +77,9 @@ void GGUI::listView::addChild(element* e) {
         IVector3 limits = getDimensionLimit();
 
         // Calculate the border offset for the child element.
-        int Offset = (hasBorder() - e->hasBorder()) * hasBorder();
-        int Child_Needs_Minimum_Height_Of = e->getHeight() + Offset * 2;
-        int Child_Needs_Minimum_Width_Of = e->getWidth() + Offset * 2;
+        auto Offset = (hasBorder() - e->hasBorder()) * hasBorder();
+        auto Child_Needs_Minimum_Height_Of = e->getHeight() + Offset * 2;
+        auto Child_Needs_Minimum_Width_Of = e->getWidth() + Offset * 2;
 
         // Check if overflow wrapping is supported.
         if (style->Wrap.value) {
@@ -92,35 +92,35 @@ void GGUI::listView::addChild(element* e) {
             // Adjust for minimum width needed when borders are present.
             signed int Width_Modifier = e->hasBorder() && Last_Child->hasBorder();
             if (isDynamicSizeAllowed()){
-                int Proposed_Height = std::max(Child_Needs_Minimum_Height_Of, getHeight());
-                int Proposed_Width = std::max(Last_Child->getPosition().x + Child_Needs_Minimum_Width_Of - Width_Modifier, getWidth());
+                int16_t Proposed_Height = std::max(Child_Needs_Minimum_Height_Of, (int)getHeight());
+                int16_t Proposed_Width = std::max(Last_Child->getPosition().x() + Child_Needs_Minimum_Width_Of - Width_Modifier, (int)getWidth());
 
                 // Check if the parent allows stretching or overflow.
-                setHeight(std::min(limits.y, Proposed_Height));
-                setWidth(std::min(limits.x, Proposed_Width));
+                setHeight(std::min(limits.y(), Proposed_Height));
+                setWidth(std::min(limits.x(), Proposed_Width));
                 flags |= (stain::types::STRETCH);
             }
 
             // Set positions for the child and last child elements.
-            e->setPosition({Last_Child->getPosition().x - Width_Modifier, e->getPosition().y});
-            Last_Child->setPosition({Last_Child->getPosition().x + e->getWidth() - Width_Modifier, Last_Child->getPosition().y});
+            e->setPosition({Last_Child->getPosition().x() - Width_Modifier, e->getPosition().y()});
+            Last_Child->setPosition({Last_Child->getPosition().x() + e->getWidth() - Width_Modifier, Last_Child->getPosition().y()});
             Last_Child->setDimensions(e->getWidth(), e->getHeight());
         } else {
             // Adjust for minimum height needed when borders are present.
             signed int Height_Modifier = e->hasBorder() && Last_Child->hasBorder();
             if (isDynamicSizeAllowed()){
-                int Proposed_Width = std::max(Child_Needs_Minimum_Width_Of, getWidth());
-                int Proposed_Height = std::max(Last_Child->getPosition().y + Child_Needs_Minimum_Height_Of - Height_Modifier, getHeight());
+                int16_t Proposed_Width = std::max(Child_Needs_Minimum_Width_Of, (int)getWidth());
+                int16_t Proposed_Height = std::max(Last_Child->getPosition().y() + Child_Needs_Minimum_Height_Of - Height_Modifier, (int)getHeight());
 
                 // Check if the parent allows stretching or overflow.
-                setWidth(std::min(limits.x, Proposed_Width));
-                setHeight(std::min(limits.y, Proposed_Height));
+                setWidth(std::min(limits.x(), Proposed_Width));
+                setHeight(std::min(limits.y(), Proposed_Height));
                 flags |= (stain::types::STRETCH);
             }
 
             // Set positions for the child and last child elements.
-            e->setPosition({e->getPosition().x, Last_Child->getPosition().y - Height_Modifier});
-            Last_Child->setPosition({Last_Child->getPosition().x, Last_Child->getPosition().y + e->getHeight() - Height_Modifier});
+            e->setPosition({e->getPosition().x(), Last_Child->getPosition().y() - Height_Modifier});
+            Last_Child->setPosition({Last_Child->getPosition().x(), Last_Child->getPosition().y() + e->getHeight() - Height_Modifier});
             Last_Child->setDimensions(e->getWidth(), e->getHeight());
         }
 
@@ -165,7 +165,7 @@ void GGUI::listView::calculateChildsHitboxes(size_t Starting_Offset){
             // Affect minimum width needed, when current child has borders as well as the previous one.
             int Width_Modifier = Next->hasBorder() && Current->hasBorder();
 
-            Next->setPosition({Current->getPosition().x + Current->getWidth() - Width_Modifier, Next->getPosition().y, Next->getPosition().z});
+            Next->setPosition({Current->getPosition().x() + Current->getWidth() - Width_Modifier, Next->getPosition().y(), Next->getPosition().z()});
 
             if (Next->getHeight() > Max_Height)
                 Max_Height = Next->getHeight();
@@ -180,7 +180,7 @@ void GGUI::listView::calculateChildsHitboxes(size_t Starting_Offset){
             // Affect minimum height needed, when current child has borders as well as the previous one.
             int Height_Modifier = Next->hasBorder() && Current->hasBorder();
 
-            Next->setPosition({Next->getPosition().x, Current->getPosition().y + Current->getHeight() - Height_Modifier, Next->getPosition().z});
+            Next->setPosition({Next->getPosition().x(), Current->getPosition().y() + Current->getHeight() - Height_Modifier, Next->getPosition().z()});
 
             if (Next->getWidth() > Max_Width)
                 Max_Width = Next->getWidth();
@@ -239,7 +239,7 @@ bool GGUI::listView::remove(element* remove){
             // all elements after the index, need to be removed from their x position the gap value.
             for (size_t i = Index + 1; i < style->Childs.size(); i++){
                 // You dont need to calculate the combining borders, because they have been already been calculated when they were added to the list.
-                style->Childs[i]->setPosition({style->Childs[i]->getPosition().x - Gap, style->Childs[i]->getPosition().y});
+                style->Childs[i]->setPosition({style->Childs[i]->getPosition().x() - Gap, style->Childs[i]->getPosition().y()});
 
                 // because if the removed element holds the stretching feature, then it means, that we dont need to check previous elements-
                 // although there is a slight probability that some of the previous elements were exact same size.
@@ -259,7 +259,7 @@ bool GGUI::listView::remove(element* remove){
             // all elements after the index, need to be removed from their y position the gap value.
             for (size_t i = Index + 1; i < style->Childs.size(); i++){
                 // You dont need to calculate the combining borders, because they have been already been calculated when they were added to the list.
-                style->Childs[i]->setPosition({style->Childs[i]->getPosition().x, style->Childs[i]->getPosition().y - Gap});
+                style->Childs[i]->setPosition({style->Childs[i]->getPosition().x(), style->Childs[i]->getPosition().y() - Gap});
 
                 // because if the removed element holds the stretching feature, then it means, that we dont need to check previous elements-
                 // although there is a slight probability that some of the previous elements were exact same size.
@@ -278,7 +278,7 @@ bool GGUI::listView::remove(element* remove){
         if (style->Childs.size() > 0){
             element* tmp = style->Childs[style->Childs.size() - 1];
 
-            Last_Child->setPosition({Last_Child->getPosition().x - tmp->getWidth(), Last_Child->getPosition().y - tmp->getHeight()});
+            Last_Child->setPosition({Last_Child->getPosition().x() - tmp->getWidth(), Last_Child->getPosition().y() - tmp->getHeight()});
 
             Last_Child->showBorder(tmp->hasBorder());
         }
@@ -377,9 +377,9 @@ void GGUI::scrollView::scrollUp() {
 
     // Now also re-set the container position dependent of the growth direction.
     if (Container->getFlowDirection() == DIRECTION::ROW)
-        newPosition.x -= 1; // Move right by 1 unit
+        newPosition.x() -= 1; // Move right by 1 unit
     else
-        newPosition.y += 1; // Move down by 1 unit
+        newPosition.y() += 1; // Move down by 1 unit
 
     Container->setPosition(newPosition);
 }
@@ -412,9 +412,9 @@ void GGUI::scrollView::scrollDown() {
 
     // Now also re-set the container position dependent of the growth direction.
     if (Container->getFlowDirection() == DIRECTION::ROW)
-        newPosition.x += 1; // Move right by 1 unit
+        newPosition.x() += 1; // Move right by 1 unit
     else
-        newPosition.y -= 1; // Move down by 1 unit
+        newPosition.y() -= 1; // Move down by 1 unit
 
     Container->setPosition(newPosition);
 }

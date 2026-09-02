@@ -106,11 +106,11 @@ namespace GGUI{
 
             // Adjust the width and height of the progress bar based on the border state
             if (b) {
-                style->Width.direct() += 2;
-                style->Height.direct() += 2;
+                style->Width.set(style->Width.get() + 2);
+                style->Height.set(style->Height.get() + 2);
             }else {
-                style->Width.direct() -= 2;
-                style->Height.direct() -= 2;
+                style->Width.set(style->Width.get() - 2);
+                style->Height.set(style->Height.get() - 2);
             }
 
             // Mark the element as dirty for border changes

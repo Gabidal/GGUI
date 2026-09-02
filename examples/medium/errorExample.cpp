@@ -24,22 +24,22 @@ void foo(element* self){
         C->updatePosition(C_velocity);
 
         // Check if any window hits an edge and reverse its direction
-        if (A->getPosition().x <= 0 || A->getPosition().x + A->getWidth() >= self->getWidth())
-            A_velocity.x = -A_velocity.x;
-        if (A->getPosition().y <= 0 || A->getPosition().y + A->getHeight() >= self->getHeight())
-            A_velocity.y = -A_velocity.y;
+        if (A->getPosition().x() <= 0 || A->getPosition().x() + A->getWidth() >= self->getWidth())
+            A_velocity.x() = -A_velocity.x();
+        if (A->getPosition().y() <= 0 || A->getPosition().y() + A->getHeight() >= self->getHeight())
+            A_velocity.y() = -A_velocity.y();
 
-        if (B->getPosition().x <= 0 || B->getPosition().x + B->getWidth() >= self->getWidth())
-            B_velocity.x = -B_velocity.x;
-        if (B->getPosition().y <= 0 || B->getPosition().y + B->getHeight() >= self->getHeight())
-            B_velocity.y = -B_velocity.y;
+        if (B->getPosition().x() <= 0 || B->getPosition().x() + B->getWidth() >= self->getWidth())
+            B_velocity.x() = -B_velocity.x();
+        if (B->getPosition().y() <= 0 || B->getPosition().y() + B->getHeight() >= self->getHeight())
+            B_velocity.y() = -B_velocity.y();
 
-        if (C->getPosition().x <= 0 || C->getPosition().x + C->getWidth() >= self->getWidth())
-            C_velocity.x = -C_velocity.x;
-        if (C->getPosition().y <= 0 || C->getPosition().y + C->getHeight() >= self->getHeight())
-            C_velocity.y = -C_velocity.y;
+        if (C->getPosition().x() <= 0 || C->getPosition().x() + C->getWidth() >= self->getWidth())
+            C_velocity.x() = -C_velocity.x();
+        if (C->getPosition().y() <= 0 || C->getPosition().y() + C->getHeight() >= self->getHeight())
+            C_velocity.y() = -C_velocity.y();
 
-        GGUI::report(to_string(A->getPosition().x));
+        GGUI::report(to_string(A->getPosition().x()));
         resumeGGUI();
 
         // press 'CTRL + SHIFT + I' to open the inspect window. 

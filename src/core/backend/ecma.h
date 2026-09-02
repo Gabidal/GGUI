@@ -2051,7 +2051,7 @@ namespace GGUI {
                 std::vector<terminal::cell> activePresentationBuffer;
 
                 constexpr auto getPresentationPositionAsBufferAddress() {
-                    return activePresentationBuffer.begin() + activePresentationPosition.y * activeScreenDimensions.x + activePresentationPosition.x;
+                    return activePresentationBuffer.begin() + activePresentationPosition.y() * activeScreenDimensions.x() + activePresentationPosition.x();
                 }
 
                 enum class characterMovementDirection : uint8_t {

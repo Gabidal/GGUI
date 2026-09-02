@@ -54,7 +54,7 @@ canvas* canvas2 = new canvas(
     width(0.33f) | height(0.5f) | position(STYLES::right) | 
 
     onDraw([](unsigned int x, unsigned int y){
-        srand((playerPosition.y + y) * 256 + (playerPosition.x + x));
+        srand((playerPosition.y() + y) * 256 + (playerPosition.x() + x));
 
         return getSpriteFromId(block{static_cast<unsigned int>(rand() % 4)});
     }) | 
@@ -66,22 +66,22 @@ canvas* canvas2 = new canvas(
 
 void addMovementKeybindsBasedOnArrowKeys(element* self) {
     self->on(constants::UP, [](event*){
-        playerPosition.y -= 1;
+        playerPosition.y() -= 1;
         return true;
     });
 
     self->on(constants::DOWN, [](event*){
-        playerPosition.y += 1;
+        playerPosition.y() += 1;
         return true;
     });
 
     self->on(constants::LEFT, [](event*){
-        playerPosition.x -= 1;
+        playerPosition.x() -= 1;
         return true;
     });
 
     self->on(constants::RIGHT, [](event*){
-        playerPosition.x += 1;
+        playerPosition.x() += 1;
         return true;
     });
 }
@@ -91,13 +91,13 @@ void addMovementKeybindsBasedOnWASD(element* self) {
         auto* key = static_cast<input*>(e);
 
         if (key->data == 'w' || key->data == 'W') {
-            playerPosition.y -= 1;
+            playerPosition.y() -= 1;
         } else if (key->data == 's' || key->data == 'S') {
-            playerPosition.y += 1;
+            playerPosition.y() += 1;
         } else if (key->data == 'a' || key->data == 'A') {
-            playerPosition.x -= 1;
+            playerPosition.x() -= 1;
         } else if (key->data == 'd' || key->data == 'D') {
-            playerPosition.x += 1;
+            playerPosition.x() += 1;
         } else {
             return false;   // unknown input.
         }

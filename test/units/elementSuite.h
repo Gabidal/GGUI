@@ -221,8 +221,8 @@ namespace tester {
             parent.addChild(a); parent.addChild(b); parent.addChild(c);
             // After addChild calls reOrderChilds, order should be by Z ascending
             auto& childs = parent.getChilds();
-            ASSERT_TRUE(childs[0]->getPosition().z <= childs[1]->getPosition().z);
-            ASSERT_TRUE(childs[1]->getPosition().z <= childs[2]->getPosition().z);
+            ASSERT_TRUE(childs[0]->getPosition().z() <= childs[1]->getPosition().z());
+            ASSERT_TRUE(childs[1]->getPosition().z() <= childs[2]->getPosition().z());
         }
 
         static void test_mouse_on_hover() {

@@ -36,58 +36,58 @@ namespace GGUI{
     }
 
     void textColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.evaluate(parent->Text_Color.color.get<RGB>());
+        color.evaluate(parent->Text_Color.color.get());
     }
 
     void backgroundColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.evaluate(parent->Background_Color.color.get<RGB>());
+        color.evaluate(parent->Background_Color.color.get());
     }
 
     void borderColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.evaluate(parent->Border_Color.color.get<RGB>());
+        color.evaluate(parent->Border_Color.color.get());
     }
 
     void borderBackgroundColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.evaluate(parent->Border_Background_Color.color.get<RGB>());
+        color.evaluate(parent->Border_Background_Color.color.get());
     }
 
     void hoverBorderColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.evaluate(parent->Hover_Border_Color.color.get<RGB>());
+        color.evaluate(parent->Hover_Border_Color.color.get());
     }
 
     void hoverTextColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.evaluate(parent->Hover_Text_Color.color.get<RGB>());
+        color.evaluate(parent->Hover_Text_Color.color.get());
     }
 
     void hoverBackgroundColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.evaluate(parent->Hover_Background_Color.color.get<RGB>());
+        color.evaluate(parent->Hover_Background_Color.color.get());
     }
 
     void hoverBorderBackgroundColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.evaluate(parent->Hover_Border_Background_Color.color.get<RGB>());
+        color.evaluate(parent->Hover_Border_Background_Color.color.get());
     }
 
     void focusBorderColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.evaluate(parent->Focus_Border_Color.color.get<RGB>());
+        color.evaluate(parent->Focus_Border_Color.color.get());
     }
 
     void focusTextColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.evaluate(parent->Focus_Text_Color.color.get<RGB>());
+        color.evaluate(parent->Focus_Text_Color.color.get());
     }
 
     void focusBackgroundColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.evaluate(parent->Focus_Background_Color.color.get<RGB>());
+        color.evaluate(parent->Focus_Background_Color.color.get());
     }
 
     void focusBorderBackgroundColor::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        color.evaluate(parent->Focus_Border_Background_Color.color.get<RGB>());
+        color.evaluate(parent->Focus_Border_Background_Color.color.get());
     }
 
     void margin::evaluate([[maybe_unused]] const styling* self, const styling* parent){
-        top.evaluate(parent->Margin.top.get<unsigned int>());
-        bottom.evaluate(parent->Margin.bottom.get<unsigned int>());
-        left.evaluate(parent->Margin.left.get<unsigned int>());
-        right.evaluate(parent->Margin.right.get<unsigned int>());
+        top.evaluate(parent->Margin.top.get());
+        bottom.evaluate(parent->Margin.bottom.get());
+        left.evaluate(parent->Margin.left.get());
+        right.evaluate(parent->Margin.right.get());
     }
 
     // Embeds
@@ -165,7 +165,7 @@ namespace GGUI{
         // If border background value has not been given, then set this background color inverted.
         if (host->Border_Background_Color.status < VALUE_STATE::VALUE){
             host->Border_Background_Color.color = host->Background_Color.color;
-            host->Border_Color.color.set(!host->Background_Color.color.get<RGB>());
+            host->Border_Color.color.set(!host->Background_Color.color.get());
         }
 
         return stain::types::EDGE;
@@ -598,18 +598,18 @@ namespace GGUI{
             reference = getReference(owner);
         }
 
-        RGB previous_text_color = Text_Color.color.get<RGB>();
-        RGB previous_background_color = Background_Color.color.get<RGB>();
-        RGB previous_border_color = Border_Color.color.get<RGB>();
-        RGB previous_border_background_color = Border_Background_Color.color.get<RGB>();
-        RGB previous_hover_border_color = Hover_Border_Color.color.get<RGB>();
-        RGB previous_hover_text_color = Hover_Text_Color.color.get<RGB>();
-        RGB previous_hover_background_color = Hover_Background_Color.color.get<RGB>();
-        RGB previous_hover_border_background_color = Hover_Border_Background_Color.color.get<RGB>();
-        RGB previous_focus_border_color = Focus_Border_Color.color.get<RGB>();
-        RGB previous_focus_text_color = Focus_Text_Color.color.get<RGB>();
-        RGB previous_focus_background_color = Focus_Background_Color.color.get<RGB>();
-        RGB previous_focus_border_background_color = Focus_Border_Background_Color.color.get<RGB>();
+        RGB previous_text_color = Text_Color.color.get();
+        RGB previous_background_color = Background_Color.color.get();
+        RGB previous_border_color = Border_Color.color.get();
+        RGB previous_border_background_color = Border_Background_Color.color.get();
+        RGB previous_hover_border_color = Hover_Border_Color.color.get();
+        RGB previous_hover_text_color = Hover_Text_Color.color.get();
+        RGB previous_hover_background_color = Hover_Background_Color.color.get();
+        RGB previous_hover_border_background_color = Hover_Border_Background_Color.color.get();
+        RGB previous_focus_border_color = Focus_Border_Color.color.get();
+        RGB previous_focus_text_color = Focus_Text_Color.color.get();
+        RGB previous_focus_background_color = Focus_Background_Color.color.get();
+        RGB previous_focus_border_background_color = Focus_Border_Background_Color.color.get();
 
         Text_Color.evaluate(owner->getDirectStyle(), reference);
         Background_Color.evaluate(owner->getDirectStyle(), reference);
@@ -625,18 +625,18 @@ namespace GGUI{
         Focus_Border_Background_Color.evaluate(owner->getDirectStyle(), reference);
 
         // check if any of the colors are still the same
-        return previous_text_color                      != Text_Color.color.get<RGB>()                       ||
-               previous_background_color                != Background_Color.color.get<RGB>()                 ||
-               previous_border_color                    != Border_Color.color.get<RGB>()                     ||
-               previous_border_background_color         != Border_Background_Color.color.get<RGB>()          ||
-               previous_hover_border_color              != Hover_Border_Color.color.get<RGB>()               ||
-               previous_hover_text_color                != Hover_Text_Color.color.get<RGB>()                 ||
-               previous_hover_background_color          != Hover_Background_Color.color.get<RGB>()           ||
-               previous_hover_border_background_color   != Hover_Border_Background_Color.color.get<RGB>()    ||
-               previous_focus_border_color              != Focus_Border_Color.color.get<RGB>()               ||
-               previous_focus_text_color                != Focus_Text_Color.color.get<RGB>()                 ||
-               previous_focus_background_color          != Focus_Background_Color.color.get<RGB>()           || 
-               previous_focus_border_background_color   != Focus_Border_Background_Color.color.get<RGB>();
+        return previous_text_color                      != Text_Color.color.get()                       ||
+               previous_background_color                != Background_Color.color.get()                 ||
+               previous_border_color                    != Border_Color.color.get()                     ||
+               previous_border_background_color         != Border_Background_Color.color.get()          ||
+               previous_hover_border_color              != Hover_Border_Color.color.get()               ||
+               previous_hover_text_color                != Hover_Text_Color.color.get()                 ||
+               previous_hover_background_color          != Hover_Background_Color.color.get()           ||
+               previous_hover_border_background_color   != Hover_Border_Background_Color.color.get()    ||
+               previous_focus_border_color              != Focus_Border_Color.color.get()               ||
+               previous_focus_text_color                != Focus_Text_Color.color.get()                 ||
+               previous_focus_background_color          != Focus_Background_Color.color.get()           || 
+               previous_focus_border_background_color   != Focus_Border_Background_Color.color.get();
     }
 
     void styling::compile(element* owner) const {

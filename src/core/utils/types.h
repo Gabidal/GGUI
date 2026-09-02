@@ -6,547 +6,148 @@
 #include <span>
 #include <vector>
 #include <cstdint>
+#include <type_traits>
+#include <array>
 
 namespace GGUI{
-    
-    class FVector2{
-    public:
-        float x = 0;
-        float y = 0;
+    template <typename targetT, size_t targetDIM, typename otherT, size_t otherDIM>
+    concept injectableVector = (
+        otherDIM <= targetDIM &&      // Injection is allowed
+        (
+            std::is_arithmetic_v<otherT> ||     // This allows conversion between int<->float
+            (
+                std::is_enum_v<otherT> &&       // -or enum class inheriting the same type
+                std::is_same_v<std::underlying_type_t<otherT>, targetT>
+            )
+        )
+    );
 
-        /**
-         * @brief Default constructor
-         *
-         * Initializes the FVector2 with the given x and y values.
-         *
-         * @param x The x-coordinate. Default is 0.0f.
-         * @param y The y-coordinate. Default is 0.0f.
-         */
-        constexpr FVector2(float X = 0.0f, float Y = 0.0f) noexcept : x(X), y(Y) {}
+    template<typename T, size_t DIM>
+    requires (std::is_default_constructible_v<T> && std::is_arithmetic_v<T>)
+    struct NVector {
+        std::array<T, DIM> axis = {};    // X_0, X_1, X_2, ..., X_n-1
 
-        /**
-         * @brief Copy constructor
-         *
-         * Initializes the FVector2 by copying another FVector2.
-         *
-         * @param other The FVector2 to copy.
-         */
-        constexpr FVector2(const FVector2& other) noexcept = default;
+        static constexpr size_t dimensions = DIM;
 
-        /**
-         * @brief Move constructor
-         *
-         * Initializes the FVector2 by moving another FVector2.
-         *
-         * @param other The FVector2 to move.
-         */
-        constexpr FVector2(FVector2&& other) noexcept = default;
-
-        /**
-         * @brief Copy assignment operator
-         *
-         * Assigns another FVector2 to this one by copying its values.
-         *
-         * @param other The FVector2 to copy.
-         * @return A reference to this FVector2.
-         */
-        constexpr FVector2& operator=(const FVector2& other) noexcept = default;
-
-        /**
-         * @brief Move assignment operator
-         *
-         * Moves the values from another FVector2 to this one.
-         *
-         * @param other The FVector2 to move.
-         * @return A reference to this FVector2.
-         */
-        constexpr FVector2& operator=(FVector2&& other) noexcept = default;
-
-        /**
-         * @brief + operator with a float
-         *
-         * Adds a float to FVector2, creating a new FVector2.
-         *
-         * @param num The float to add.
-         * @return A new FVector2 with the added float.
-         */
-        constexpr FVector2 operator+(float num) const noexcept {
-            return FVector2(x + num, y + num);
+        template<typename otherT = T, size_t otherDIM = DIM>
+        requires injectableVector<T, DIM, otherT, otherDIM>
+        constexpr NVector(const std::array<otherT, otherDIM>& values = {}) {
+            for (size_t i = 0; i < otherDIM; i++) axis[i] = static_cast<T>(values[i]);
         }
 
-        /**
-         * @brief - operator with a float
-         *
-         * Subtracts a float from FVector2, creating a new FVector2.
-         *
-         * @param num The float to subtract.
-         * @return A new FVector2 with the subtracted float.
-         */
-        constexpr FVector2 operator-(float num) const noexcept {
-            return FVector2(x - num, y - num);
+        template<typename... otherTs>
+        requires injectableVector<T, DIM, std::common_type_t<otherTs...>, sizeof...(otherTs)>
+        constexpr NVector(otherTs... values) : axis{ static_cast<T>(values)... } {}
+
+        // Copy constructor
+        template<typename otherT = T, size_t otherDIM = DIM>
+        requires injectableVector<T, DIM, otherT, otherDIM>
+        constexpr NVector(const NVector<otherT, otherDIM>& other) : NVector(other.axis) {}
+
+        // Move constructor
+        template<typename otherT = T, size_t otherDIM = DIM>
+        requires injectableVector<T, DIM, otherT, otherDIM>
+        constexpr NVector(NVector<otherT, otherDIM>&& other) : NVector(other.axis) {}
+
+        // Surjection helper
+        template<size_t otherDIM = DIM, typename otherT = T>    // templates prioritize size since that is the common cause for surjection
+        requires injectableVector<T, DIM, otherT, otherDIM>
+        constexpr NVector<otherT, otherDIM> surjection() const {
+            NVector<otherT, otherDIM> result;
+            for (size_t i = 0; i < otherDIM; i++) result.axis[i] = static_cast<otherT>(axis[i]);
+            return result;
         }
 
-        /**
-         * @brief * operator with a float
-         *
-         * Multiplies the FVector2 by a float, creating a new FVector2.
-         *
-         * @param num The float to multiply.
-         * @return A new FVector2 with the multiplied float.
-         */
-        constexpr FVector2 operator*(float num) const noexcept {
-            return FVector2(x * num, y * num);
-        }
-    };
-    
-    class FVector3 : public FVector2 {
-    public:
-        float z = 0;
+        // These operators use the constructor conversions stated above so they don't need to use requirement checks.
+        // ===-===-===-===-===-===-===-===-===-===-===-===-===-===-===-===
 
-        /**
-         * @brief Default constructor
-         *
-         * Initializes the FVector3 with the given x, y, and z values.
-         *
-         * @param x The x-coordinate. Default is 0.0f.
-         * @param y The y-coordinate. Default is 0.0f.
-         * @param z The z-coordinate. Default is 0.0f.
-         */
-        constexpr FVector3(float X = 0.0f, float Y = 0.0f, float Z = 0.0f) noexcept : FVector2(X, Y), z(Z) {}
-
-        /**
-         * @brief Copy constructor
-         *
-         * Initializes the FVector3 by copying another FVector3.
-         *
-         * @param other The FVector3 to copy.
-         */
-        constexpr FVector3(const FVector3& other) noexcept = default;
-
-        /**
-         * @brief Move constructor
-         *
-         * Initializes the FVector3 by moving another FVector3.
-         *
-         * @param other The FVector3 to move.
-         */
-        constexpr FVector3(FVector3&& other) noexcept = default;
-
-        /**
-         * @brief Copy assignment operator
-         *
-         * Assigns another FVector3 to this one by copying its values.
-         *
-         * @param other The FVector3 to copy.
-         * @return A reference to this FVector3.
-         */
-        constexpr FVector3& operator=(const FVector3& other) noexcept = default;
-
-        /**
-         * @brief Move assignment operator
-         *
-         * Assigns another FVector3 to this one by moving its values.
-         *
-         * @param other The FVector3 to move.
-         * @return A reference to this FVector3.
-         */
-        constexpr FVector3& operator=(FVector3&& other) noexcept = default;
-
-        /**
-         * @brief + operator with a float
-         *
-         * Adds a float to FVector3, creating a new FVector3.
-         *
-         * @param num The float to add.
-         * @return A new FVector3 with the added float.
-         */
-        constexpr FVector3 operator+(float num) const noexcept {
-            return FVector3(x + num, y + num, z + num);
+        // += operator
+        constexpr NVector& operator+=(const NVector& other) {
+            for (size_t i = 0; i < DIM; i++) axis[i] += other.axis[i];
+            return *this;
         }
 
-
-        /**
-         * @brief - operator with a float
-         *
-         * Subtracts a float from FVector3, creating a new FVector3.
-         *
-         * @param num The float to subtract.
-         * @return A new FVector3 with the subtracted float.
-         */
-        constexpr FVector3 operator-(float num) const noexcept {
-            return FVector3(x - num, y - num, z - num);
+        // + operator
+        constexpr NVector operator+(const NVector& other) const {
+            NVector result = *this;
+            result += other;
+            return result;
         }
 
-        /**
-         * @brief * operator with a float
-         *
-         * Multiplies the FVector3 by a float, creating a new FVector3.
-         *
-         * @param num The float to multiply.
-         * @return A new FVector3 with the multiplied float.
-         */
-        constexpr FVector3 operator*(float num) const noexcept {
-            return FVector3(x * num, y * num, z * num);
+        // -= operator
+        constexpr NVector& operator-=(const NVector& other) {
+            for (size_t i = 0; i < DIM; i++) axis[i] -= other.axis[i];
+            return *this;
         }
 
-        /**
-         * @brief + operator with another FVector3
-         *
-         * Adds another FVector3 to this one, creating a new FVector3.
-         *
-         * @param other The FVector3 to add.
-         * @return A new FVector3 with the added values.
-         */
-        constexpr FVector3 operator+(const FVector3& other) const noexcept {
-            return FVector3(x + other.x, y + other.y, z + other.z);
+        // - operator
+        constexpr NVector operator-(const NVector& other) const {
+            NVector result = *this;
+            result -= other;
+            return result;
         }
 
-        /**
-         * @brief - operator with another FVector3
-         *
-         * Subtracts another FVector3 from this one, creating a new FVector3.
-         *
-         * @param other The FVector3 to subtract.
-         * @return A new FVector3 with the subtracted values.
-         */
-        constexpr FVector3 operator-(const FVector3& other) const noexcept {
-            return FVector3(x - other.x, y - other.y, z - other.z);
+        // *= operator with scalar
+        constexpr NVector& operator*=(const T& scalar) {
+            for (size_t i = 0; i < DIM; i++) axis[i] *= scalar;
+            return *this;
         }
 
-        /**
-         * @brief * operator with another FVector3 (component-wise multiplication)
-         *
-         * Performs component-wise multiplication with another FVector3, creating a new FVector3.
-         *
-         * @param other The FVector3 to multiply.
-         * @return A new FVector3 with the component-wise multiplied values.
-         */
-        constexpr FVector3 operator*(const FVector3& other) const noexcept {
-            return FVector3(x * other.x, y * other.y, z * other.z);
+        // *= operator with vector
+        constexpr NVector& operator*=(const NVector& other) {
+            for (size_t i = 0; i < DIM; i++) axis[i] *= other.axis[i];
+            return *this;
         }
+
+        // * operator with scalar
+        constexpr NVector operator*(const T& scalar) const {
+            NVector result = *this;
+            result *= scalar;
+            return result;
+        }
+
+        // * operator with vector
+        constexpr NVector operator*(const NVector& other) const {
+            NVector result = *this;
+            result *= other;
+            return result;
+        }
+
+        // ==, !=, <, <=, >, and >= operator
+        constexpr auto operator<=>(const NVector&) const = default;
+
+        // ===-===-===-===-===-===-===-===-===-===-===-===-===-===-===-===
+        
+        std::string toString() const {
+            std::string result = "(";
+            for (size_t i = 0; i < DIM; i++) {
+                result += std::to_string(axis[i]);
+                if (i < DIM - 1) result += ", ";
+            }
+            result += ")";
+            return result;
+        }
+        
+        // Axis accessors
+        // ===-===-===-===-===-===-===-===-===-===-===-===-===-===-===-===
+
+        // 1D+ Accessors
+        constexpr T& x() requires (DIM >= 1) { return axis[0]; }
+        constexpr const T& x() const requires (DIM >= 1) { return axis[0]; }
+
+        // 2D+ Accessors
+        constexpr T& y() requires (DIM >= 2) { return axis[1]; }
+        constexpr const T& y() const requires (DIM >= 2) { return axis[1]; }
+
+        // 3D+ Accessors
+        constexpr T& z() requires (DIM >= 3) { return axis[2]; }
+        constexpr const T& z() const requires (DIM >= 3) { return axis[2]; }
     };
 
-    class IVector2{
-    public:
-        int x = 0;  //Horizontal
-        int y = 0;  //Vertical
-
-        /**
-         * @brief Default constructor
-         *
-         * Initializes the IVector2 with the given x and y values.
-         *
-         * @param x The x-coordinate. Default is 0.
-         * @param y The y-coordinate. Default is 0.
-         */
-        constexpr IVector2(int X = 0, int Y = 0) noexcept : x(X), y(Y) {}
-
-        /**
-         * @brief Copy constructor
-         * 
-         * Initializes the IVector2 by copying another IVector2.
-         * @param other The IVector2 to copy.
-         */
-        constexpr IVector2(const IVector2& other) noexcept = default;
-
-        /**
-         * @brief Move constructor
-         * 
-         * Initializes the IVector2 by moving another IVector2.
-         * @param other The IVector2 to move.
-         */
-        constexpr IVector2(IVector2&& other) noexcept = default;
-
-        /**
-         * @brief Copy assignment operator
-         *
-         * Assigns another IVector2 to this one by copying its values.
-         *
-         * @param other The IVector2 to copy.
-         * @return A reference to this IVector2.
-         */
-        constexpr IVector2& operator=(const IVector2& other) noexcept = default;
-
-        /**
-         * @brief Move assignment operator
-         *
-         * Moves the values from another IVector2 to this one.
-         *
-         * @param other The IVector2 to move.
-         * @return A reference to this IVector2.
-         */
-        constexpr IVector2& operator=(IVector2&& other) noexcept = default;
-
-        /**
-         * @brief += operator with a pointer to an IVector2
-         *
-         * Adds the values of the IVector2 pointed to by the pointer to this IVector2.
-         *
-         * @param other The pointer to the IVector2 to add.
-         */
-        constexpr void operator+=(IVector2* other) noexcept {
-            x += other->x;
-            y += other->y;
-        }
-
-        /**
-         * @brief += operator with an FVector2
-         *
-         * Adds the values of the FVector2 to this IVector2.
-         *
-         * @param other The FVector2 to add.
-         */
-        constexpr void operator+=(FVector2 other) noexcept {
-            x += static_cast<int>(other.x);
-            y += static_cast<int>(other.y);
-        }
-
-        /**
-         * @brief += operator with another IVector2
-         *
-         * Adds the values of another IVector2 to this one.
-         *
-         * @param other The IVector2 to add.
-         */
-        constexpr void operator+=(IVector2 other) noexcept {
-            x += other.x;  // Add the x-coordinate
-            y += other.y;  // Add the y-coordinate
-        }
-
-        /**
-         * @brief + operator with another IVector2
-         *
-         * Creates a new IVector2 with the added values of this IVector2 and the other IVector2.
-         *
-         * @param other The IVector2 to add.
-         * @return A new IVector2 with the added values.
-         */
-        constexpr IVector2 operator+(const IVector2& other) const noexcept {
-            return IVector2(x + other.x, y + other.y);
-        }
-
-        /**
-         * @brief - operator with another IVector2
-         *
-         * Creates a new IVector2 with the subtracted values of this IVector2 and the other IVector2.
-         *
-         * @param other The IVector2 to subtract.
-         * @return A new IVector2 with the subtracted values.
-         */
-        constexpr IVector2 operator-(const IVector2& other) const noexcept {
-            return IVector2(x - other.x, y - other.y);
-        }
-
-        /**
-         * @brief * operator with a float
-         *
-         * Multiplies the IVector2 by a float, creating a new IVector2.
-         *
-         * @param num The float to multiply.
-         * @return A new IVector2 with the multiplied float.
-         */
-        constexpr IVector2 operator*(float num) const noexcept {
-            return IVector2(static_cast<int>(x * num), static_cast<int>(y * num)); // Multiply each coordinate by num
-        }
-
-        constexpr IVector2 operator*(int num) const noexcept {
-            return IVector2(x * num, y * num); // Multiply each coordinate by num
-        }
-
-        /**
-         * @brief == operator with another IVector2
-         * 
-         * Compares the IVector2 with another IVector2.
-         * 
-         * @param other The IVector2 to compare with.
-         * @return True if the IVector2s are equal, otherwise false.
-         */
-        constexpr bool operator==(const IVector2& other) const noexcept {
-            return x == other.x && y == other.y; // Check if the coordinates are equal
-        }
-
-        /**
-         * @brief != operator with another IVector2
-         * 
-         * Compares the IVector2 with another IVector2.
-         * 
-         * @param other The IVector2 to compare with.
-         * @return False if the IVector2s are equal, otherwise true.
-         */
-        constexpr bool operator!=(const IVector2& other) const noexcept {
-            return x != other.x || y != other.y; // Check if the coordinates are not equal
-        }
-
-        constexpr bool operator <(const IVector2& other) const noexcept {
-            return (y < other.y) || (y == other.y && x < other.x); // Compare y first, then x if y is equal
-        }
-
-        /**
-         * @brief Converts the IVector2 to a string
-         *
-         * Converts the IVector2 to a string representation.
-         *
-         * @return A string representation of the IVector2.
-         */
-        constexpr std::string toString() const {
-            return "(" + std::to_string(x) + ", " + std::to_string(y) + ")";
-        }
-    };
-
-    class IVector3 : public IVector2{
-    public:
-        int z = 0;  //priority (the higher the more likely it will be at top).
-
-        /**
-         * @brief Default constructor
-         *
-         * Initializes the IVector3 with the given x, y and z values.
-         *
-         * @param x The x-coordinate. Default is 0.
-         * @param y The y-coordinate. Default is 0.
-         * @param z The z-coordinate. Default is 0.
-         */
-        constexpr IVector3(int X = 0, int Y = 0, int Z = 0) noexcept : IVector2(X, Y), z(Z) {}
-
-        constexpr IVector3(IVector2 lower) : IVector2(lower), z(0) {}  // Initialize z to 0 by default
-
-        /**
-         * @brief Copy constructor
-         *
-         * Initializes the IVector3 by copying another IVector3.
-         *
-         * @param other The IVector3 to copy.
-         */
-        constexpr IVector3(const IVector3& other) noexcept = default;
-
-        /**
-         * @brief Move constructor
-         *
-         * Initializes the IVector3 by moving another IVector3.
-         *
-         * @param other The IVector3 to move.
-         */
-        constexpr IVector3(IVector3&& other) noexcept = default;
-
-        /**
-         * @brief Copy assignment operator
-         *
-         * Assigns another IVector3 to this one by copying its values.
-         *
-         * @param other The IVector3 to copy.
-         * @return A reference to this IVector3.
-         */
-        constexpr IVector3& operator=(const IVector3& other) noexcept = default;
-
-        /**
-         * @brief Move assignment operator
-         *
-         * Moves the values from another IVector3 to this one.
-         *
-         * @param other The IVector3 to move.
-         * @return A reference to this IVector3.
-         */
-        constexpr IVector3& operator=(IVector3&& other) noexcept = default;
-
-        /**
-         * @brief += operator with a pointer to an IVector3
-         *
-         * Adds the values of the IVector3 pointed to by the pointer to this IVector3.
-         *
-         * @param other The pointer to the IVector3 to add.
-         */
-        constexpr void operator+=(IVector3* other) noexcept {
-            x += other->x;
-            y += other->y;
-            z += other->z;
-        }
-
-        /**
-         * @brief += operator with another IVector3
-         *
-         * Adds the values of another IVector3 to this one.
-         *
-         * @param other The IVector3 to add.
-         */
-        constexpr void operator+=(IVector3 other) noexcept {
-            x += other.x;  // Add the x-coordinate
-            y += other.y;  // Add the y-coordinate
-            z += other.z;  // Add the z-coordinate
-        }
-
-        /**
-         * @brief + operator with another IVector3
-         *
-         * Creates a new IVector3 with the added values of this IVector3 and the other IVector3.
-         *
-         * @param other The IVector3 to add.
-         * @return A new IVector3 with the added values.
-         */
-        constexpr IVector3 operator+(const IVector3& other) const noexcept {
-            return IVector3(x + other.x, y + other.y, z + other.z);
-        }
-
-        constexpr IVector3 operator-(const IVector3& other) const noexcept {
-            return IVector3(x - other.x, y - other.y, z - other.z);
-        }
-
-        constexpr IVector3 operator+(int constant) const noexcept {
-            return IVector3(x + constant, y + constant, z + constant); // Add the constant to each coordinate
-        }
-
-        constexpr IVector3 operator-(int constant) const noexcept {
-            return IVector3(x - constant, y - constant, z - constant); // Subtract the constant from each coordinate
-        }
-
-
-        /**
-         * @brief * operator with a float
-         *
-         * Multiplies the IVector3 by a float, creating a new IVector3.
-         *
-         * @param num The float to multiply.
-         * @return A new IVector3 with the multiplied float.
-         */
-        constexpr IVector3 operator*(float num) const noexcept {
-            return IVector3(static_cast<int>(x * num), static_cast<int>(y * num), static_cast<int>(z * num)); // Multiply each coordinate by num
-        }
-
-        /**
-         * @brief == operator with another IVector3
-         * 
-         * Compares the IVector3 with another IVector3.
-         * 
-         * @param other The IVector3 to compare with.
-         * @return True if the IVector3s are equal, otherwise false.
-         */
-        constexpr bool operator==(const IVector3& other) const noexcept {
-            return x == other.x && y == other.y && z == other.z; // Check if the coordinates are equal
-        }
-
-        /**
-         * @brief != operator with another IVector3
-         * 
-         * Compares the IVector3 with another IVector3.
-         * 
-         * @param other The IVector3 to compare with.
-         * @return False if the IVector3s are equal, otherwise true.
-         */
-        constexpr bool operator!=(const IVector3& other) const noexcept {
-            return x != other.x || y != other.y || z != other.z; // Check if the coordinates are not equal
-        }
-    
-        /**
-         * @brief Converts the IVector3 to a string.
-         * 
-         * This function returns a string in the format "X, Y, Z" where X, Y, and Z are the coordinates of the IVector3.
-         * The output string is designed to be human-readable, and is not designed to be efficient for serialization or other purposes.
-         * 
-         * @return A string representation of the IVector3.
-         */
-        std::string To_String() const {
-            return std::to_string(x) + ", " + std::to_string(y) + ", " + std::to_string(z);
-        }
-    };
+    using IVector2 = NVector<int16_t, 2>;
+    using IVector3 = NVector<int16_t, 3>;
+    using FVector2 = NVector<float, 2>;
+    using FVector3 = NVector<float, 3>;
 
     class rectangle {
     public:
@@ -555,12 +156,12 @@ namespace GGUI{
         
         constexpr rectangle(IVector3 pos = {}, IVector2 Size = {}) : position(pos), size(Size) {}
 
-        constexpr bool empty() const { return size.x == 0 && size.y == 0; }
+        constexpr bool empty() const { return size.x() == 0 && size.y() == 0; }
 
-        constexpr int left() const { return position.x; }
-        constexpr int right() const { return position.x + size.x; }
-        constexpr int top() const { return position.y; }
-        constexpr int bottom() const { return position.y + size.y; }
+        constexpr int left() const { return position.x(); }
+        constexpr int right() const { return position.x() + size.x(); }
+        constexpr int top() const { return position.y(); }
+        constexpr int bottom() const { return position.y() + size.y(); }
 
         constexpr std::array<IVector2, 4> getCorners() const {
             return {
@@ -597,8 +198,8 @@ namespace GGUI{
         }
 
         constexpr bool hits(IVector2 point) const {
-            return point.x >= left() && point.x < right() &&
-                   point.y >= top()  && point.y < bottom();
+            return point.x() >= left() && point.x() < right() &&
+                   point.y() >= top()  && point.y() < bottom();
         }
 
         constexpr rectangle intersection(const rectangle& other) const {

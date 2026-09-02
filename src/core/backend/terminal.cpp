@@ -25,7 +25,7 @@ namespace GGUI {
 
 
         size_t outputCapture::getActiveIndex() const {
-            return (cursor.y * dimensions.x) + cursor.x;
+            return (cursor.y() * dimensions.x()) + cursor.x();
         }
 
         void outputCapture::link(element* DOM) {
@@ -52,7 +52,7 @@ namespace GGUI {
         // first we go recursively inside the container and the child that contains this point.
         std::pair<bool, activeStyle> outputCapture::trace(IVector2 point, element* currentContainer) {
             // since overflow content inside a container only is allowed is the container is dynamic in size, otherwise overflow content is always hidden, so the lowest identity pool is always the largest. 
-            if (!currentContainer->graphicalIdentityPool.back().area.hits(point)) { return {false, {} }; }
+            if (currentContainer->graphicalIdentityPool.empty() || !currentContainer->graphicalIdentityPool.back().area.hits(point)) { return {false, {} }; }
 
             std::pair<bool, activeStyle> handle = {false, {} };
             
@@ -121,7 +121,7 @@ namespace GGUI {
         }
 
         size_t outputCapture::getIndexOf(IVector2 val) const {
-            return (val.y * dom->getWidth()) + val.x;
+            return (val.y() * dom->getWidth()) + val.x();
         }
 
         void outputCapture::computeSGRAreas() {
@@ -185,10 +185,11 @@ namespace GGUI {
             IVector2 start = {0, 0};
             // IVector2 end = cursor + dimensions;
             IVector2 end = cursor + IVector2{dom->getWidth(), dom->getHeight()};
+            assert(cursor == IVector2(0, 0) && "Packet injections not supported yet!");
 
             TODO("Since we know where SGR's are and delta of text, we could just jump between and write the small delta areas only!")
-            for (int y = start.y; y < end.y; y++) {
-                for (int x = start.x; x < end.x; x++) {
+            for (int y = start.y(); y < end.y(); y++) {
+                for (int x = start.x(); x < end.x(); x++) {
                     // Add styling
                     if (getIndexOf({x, y}) == nextSGRStartPositionAsIndex) {
                         // Insert the SGR sequence into the output buffer
@@ -210,7 +211,7 @@ namespace GGUI {
                     terminal::cell data = buffer[(y * dom->getWidth()) + x];
 
                     std::memcpy(result.data() + outputIndex, data.getGlyphs().data(), data.getLength());
-                    outputIndex += data.getGlyphs().size();
+                    outputIndex += data.getLength();
                 }
             }
 

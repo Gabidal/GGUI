@@ -67,7 +67,7 @@ namespace GGUI{
             graphicalIdentityPool.push_back(activeStyle{
                 {   // rectangle 
                     start, 
-                    {getIndexofHead(), start.y}
+                    {getIndexofHead(), start.y()}
                 },
                 Body_Color,
                 getBackgroundColor()
@@ -78,8 +78,8 @@ namespace GGUI{
 
             graphicalIdentityPool.push_back(activeStyle{
                 {   // rectangle 
-                    {start.x + getIndexofHead(), start.y}, 
-                    {end.x - start.x - getIndexofHead(), start.y}
+                    {start.x() + getIndexofHead(), start.y()}, 
+                    {end.x() - start.x() - getIndexofHead(), start.y()}
                 },
                 Empty_Color,
                 getBackgroundColor()
@@ -90,8 +90,8 @@ namespace GGUI{
 
             graphicalIdentityPool.push_back(activeStyle{
                 {   // rectangle 
-                    {start.x + getIndexofHead(), start.y}, 
-                    {1, start.y}
+                    {start.x() + getIndexofHead(), start.y()}, 
+                    {1, start.y()}
                 },
                 Head_Color,
                 getBackgroundColor()
@@ -102,8 +102,8 @@ namespace GGUI{
 
             graphicalIdentityPool.push_back(activeStyle{
                 {   // rectangle 
-                    {start.x, start.y}, 
-                    {1, start.y}
+                    {start.x(), start.y()}, 
+                    {1, start.y()}
                 },
                 Tail_Color,
                 getBackgroundColor()
@@ -266,8 +266,8 @@ namespace GGUI{
                 style->Border_Enabled = b;
 
                 // Adjust the width and height of the progress bar based on the border state
-                if (b) style->Width.direct() += 2;
-                else style->Height.direct() -= 2;
+                if (b) style->Width.set(style->Width.get() + 2);
+                else style->Height.set(style->Height.get() - 2);
 
                 // Mark the element as dirty for border changes
                 flags |= (stain::types::EDGE);
