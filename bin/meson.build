@@ -13,7 +13,7 @@ project(
   default_options : [
     'warning_level=3',
     'cpp_std=c++20'
-    # ,'b_sanitize=address'     # Enable this to check if there are any UB
+    # ,'b_sanitize=address,undefined'     # Enable this to check if there are any UB
     # ,'b_lundef=false'
   ]
 )

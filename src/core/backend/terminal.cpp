@@ -23,11 +23,6 @@ namespace GGUI {
 
         extern bool isConnected();          // Platform Specific
 
-
-        size_t outputCapture::getActiveIndex() const {
-            return (cursor.y() * dimensions.x()) + cursor.x();
-        }
-
         void outputCapture::link(element* DOM) {
             dom = DOM;
         }
@@ -241,15 +236,20 @@ namespace GGUI {
         }
 
         bool query::isConnected() {
+            std::unique_lock lock(mutex);
             return state >= status::CONNECTED;
         }
 
-        void query::acknowledgeConnection() {
+        bool query::acknowledgeConnection() {
             if (terminal::isConnected()) {      // asks the linux/win .cpp if the handles are connected properly
                 std::unique_lock lock(mutex);
                 state = status::CONNECTED;
                 condition.notify_all();
+
+                return true;
             }
+
+            return false;
         }
 
         void query::addToQueue(std::string_view input) {
@@ -262,15 +262,17 @@ namespace GGUI {
             queryOutput({input});
         }
 
-        void query::pollInput() {
-            queryInput();
-
+        void query::informParsedInput() {
             // Only notify
             if (inputSize > 0) {
                 std::unique_lock lock(mutex);
                 state = status::RECEIVING;
                 condition.notify_all();
             }
+        }
+
+        void query::pollInput() {
+            queryInput();
         }
 
         bool query::waitForInput() {
@@ -288,12 +290,12 @@ namespace GGUI {
             std::vector<ecma::sequence::base*> unwantedSequences;
 
             // Transmit the sequence
-            currentStates->transmission.addToQueue(queryDeviceAttribute);
+            transmission.addToQueue(queryDeviceAttribute);
 
-            // Wait for answer
-            currentStates->transmission.waitForInput();
+            // Wait for parsed answer
+            transmission.waitForInput();
 
-            auto sequences = ecma::sequence::parse(std::string_view(currentStates->transmission.inputBuffer.data(), currentStates->transmission.inputSize));
+            auto sequences = transmission.parsedInputBuffer;
 
             for (auto* sequence : sequences) {
                 if (decComponents.verifyExtensions(sequence)) continue;          // skip going through with others.
@@ -333,15 +335,10 @@ namespace GGUI {
             // Parses input based on modular features, each brought by their own respective flag.
 
             // If special loaders needed to be present they better have been initialized properly at initialization phase when the handshake/probing happens.
-            for (auto* sequence : ecma::sequence::parse(std::string_view(transmission.inputBuffer.data(), transmission.inputSize))) {
-
-                // This is likely redundant, since all operations have their own handler to process the functionality of the specific operation
-                if (sequence) {
-                    std::string tmp;
-                    sequence->toString(tmp);
-                    logger::log(tmp);
-                }
-            }
+            transmission.parsedInputBuffer = ecma::sequence::parse(std::string_view(transmission.inputBuffer.data(), transmission.inputSize));   // move the parsed sequences into the public buffer for outside access.
+        
+            // Inform waiters that the polled data has been received
+            terminal::currentStates->transmission.informParsedInput();
         }
     }
 }

@@ -685,7 +685,7 @@ namespace GGUI {
 
                         auto index = params.front().getValueAsInteger();
 
-                        assert(index != UINT32_MAX);    // -1 means default, but this operation does not accept default values!
+                        assert(index != static_cast<unsigned short>(-1));    // -1 means default, but this operation does not accept default values!
 
                         TODO("This one wont break after hit, so maybe change into a normal loop.")
                         currentStates->ecmaComponents.tabulationStops.erase(
@@ -1090,10 +1090,10 @@ namespace GGUI {
 
                         auto cursorPositionAtBuffer = currentStates->ecmaComponents.getPresentationPositionAsBufferAddress();
                         auto lineLimitAtBuffer = currentStates->ecmaComponents.activePresentationBuffer.begin() + (
-                            currentStates->screen.getActiveIndex() - currentStates->ecmaComponents.activePresentationPosition.x()   // Is is to ge the actual buffer cell position, and then remove the character so that we can insert our own line limit instead
+                            currentStates->screen.getIndexOf(currentStates->screen.getCursor()) - currentStates->ecmaComponents.activePresentationPosition.x()   // Is is to ge the actual buffer cell position, and then remove the character so that we can insert our own line limit instead
                         ) + currentStates->ecmaComponents.lineLimitPosition.x();
                         auto lineHomeAtBuffer = currentStates->ecmaComponents.activePresentationBuffer.begin() + (
-                            currentStates->screen.getActiveIndex() - currentStates->ecmaComponents.activePresentationPosition.x()   // Is is to ge the actual buffer cell position, and then remove the character so that we can insert our own line home instead
+                            currentStates->screen.getIndexOf(currentStates->screen.getCursor()) - currentStates->ecmaComponents.activePresentationPosition.x()   // Is is to ge the actual buffer cell position, and then remove the character so that we can insert our own line home instead
                         ) + currentStates->ecmaComponents.homeLinePosition.x();
 
                         // Since we actually cannot insert anything, because this is a screen buffer.
@@ -1141,7 +1141,7 @@ namespace GGUI {
                         auto screenWidth = currentStates->ecmaComponents.activeScreenDimensions.x();
 
                         auto activeLineBegin = currentStates->ecmaComponents.activePresentationBuffer.begin() + (
-                            currentStates->screen.getActiveIndex() - currentStates->ecmaComponents.activePresentationPosition.x()
+                            currentStates->screen.getIndexOf(currentStates->screen.getCursor()) - currentStates->ecmaComponents.activePresentationPosition.x()
                         );
 
                         auto lineLimitAtBuffer = currentStates->ecmaComponents.activePresentationBuffer.begin() + (

@@ -34,7 +34,8 @@ namespace GGUI {
 
         extern void setGlyphWidth(cell&);
 
-        class outputCapture{
+        // Links into different components and their properties to update and keep track of them while rendering
+        class outputCapture {
         protected:
             IVector2& cursor;
             IVector2& dimensions;
@@ -50,19 +51,32 @@ namespace GGUI {
                 std::vector<ecma::activeSGRStyle>& RGA
             ) : cursor(presentationPosition), dimensions(presentationDimension), buffer(activeBuffer), activeGraphicAttributes(RGA) {}
 
-            size_t getActiveIndex() const;
-
             // === Render pipeline  ===
-            void update();      // updates DOM
+            
+            // Calls getRoot()->render()
+            void update();
+
+            // Setups what element to read from
             void link(element* DOM);
+
+            // Compute SGR areas from linked element
             void computeSGRAreas();
+
+            // Combines computed traced SGR areas into buffer with text from linked element::render()
             void preparePresentationBuffer();
+
+            // Sends the combined presentation buffer into cross-platform outputing device
             void renderBuffer();
+
+            // === Helpers ===
             IVector2 getDimensions() const;
             IVector2 getCursor() const;
-        protected:
-            std::pair<bool, activeStyle> trace(IVector2 point, element* currentContainer);
+            
+            // Returns position as buffer index
             size_t getIndexOf(IVector2) const;
+        protected:
+            // Ray-tracing inspired SGR baker
+            std::pair<bool, activeStyle> trace(IVector2 point, element* currentContainer);
         public:
             // ===                  ===
             
@@ -77,6 +91,9 @@ namespace GGUI {
             std::array<char, capacity> inputBuffer;     // This is what we receive
             unsigned int inputSize = 0;
 
+            // Outside reads from here
+            std::vector<ecma::sequence::base*> parsedInputBuffer;
+
             // mutex for waiting input
             std::mutex mutex;
             std::condition_variable condition;
@@ -89,17 +106,22 @@ namespace GGUI {
 
             query() = default;
 
+            // Use this to check connection status
             bool isConnected();
 
-            void acknowledgeConnection();
+            // Used internally on initialization to confirm cross-platform acknowledgement of connection success
+            bool acknowledgeConnection();
 
-            /** 
-             * @brief This is the normal interface to access the direct device output. 
-             */
+            // Cross-platform output writer
             void addToQueue(std::string_view input);
 
+            // Cross-platform input poller
             void pollInput();
 
+            // Simple helper called from base::parseInput
+            void informParsedInput();
+
+            // Activates when the polled is received and parsed
             bool waitForInput();
         };
 
@@ -123,8 +145,10 @@ namespace GGUI {
 
             base(converter::input::base* reg) : keyRegistry(reg) {}
 
+            // Used in converter::input thread to read incoming buffer and parses them. Parsed sequences are stored inside base::transmission.
             void parseInput();
 
+            // Checks for terminal extensions and enables them if available.
             void enableExtensions();
         };
 

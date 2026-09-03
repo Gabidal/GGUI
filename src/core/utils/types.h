@@ -93,11 +93,8 @@ namespace GGUI{
             return *this;
         }
 
-        // *= operator with vector
-        constexpr NVector& operator*=(const NVector& other) {
-            for (size_t i = 0; i < DIM; i++) axis[i] *= other.axis[i];
-            return *this;
-        }
+        // *= operator with vector is disabled, since the return has to be a point and not a vector
+        constexpr NVector& operator*=(const NVector& other) = delete;
 
         // * operator with scalar
         constexpr NVector operator*(const T& scalar) const {
@@ -106,16 +103,18 @@ namespace GGUI{
             return result;
         }
 
-        // * operator with vector
-        constexpr NVector operator*(const NVector& other) const {
-            NVector result = *this;
-            result *= other;
+        // * (dot product) operator with vector
+        constexpr T operator*(const NVector& other) const {
+            T result = 0;
+            for (size_t i = 0; i < DIM; i++) result += axis[i] * other.axis[i];
             return result;
         }
 
         // ==, !=, <, <=, >, and >= operator
+        // NOTE: std::sort will prioritize x > y > z > w > ...., instead of geometrical sorting.
         constexpr auto operator<=>(const NVector&) const = default;
 
+        // Helpers
         // ===-===-===-===-===-===-===-===-===-===-===-===-===-===-===-===
         
         std::string toString() const {
@@ -125,6 +124,22 @@ namespace GGUI{
                 if (i < DIM - 1) result += ", ";
             }
             result += ")";
+            return result;
+        }
+
+        // |this|
+        constexpr T length() const {
+            size_t sum = 0;
+            for (size_t i = 0; i < DIM; i++) sum += axis[i] * axis[i];
+            return static_cast<T>(std::sqrt(sum));
+        }
+
+        // this/|this|
+        constexpr NVector normalize() const {
+            size_t len = length();
+            if (len == 0) return *this; // Avoid division by zero
+            NVector result;
+            for (size_t i = 0; i < DIM; i++) result.axis[i] = axis[i] / len;
             return result;
         }
         
