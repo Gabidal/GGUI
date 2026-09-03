@@ -1655,15 +1655,10 @@ namespace GGUI{
     };
 
     class childs : public STYLING_INTERNAL::styleBase {
-    protected:
-        std::array<element*, INT8_MAX> value;
     public:
-        constexpr childs(std::initializer_list<element*> Value, VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default, types::EMBED_ORDER::DELAYED), value{} {
-            assert(Value.size() <= INT8_MAX);
-            for (size_t i = 0; i < Value.size(); i++){
-                value[i] = *(Value.begin() + i);
-            }
-        }
+        std::vector<element*> value;
+        
+        constexpr childs(std::vector<element*> Value, VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default, types::EMBED_ORDER::DELAYED), value(Value) {}
 
         constexpr childs(const GGUI::childs& other) : styleBase(other.status, types::EMBED_ORDER::DELAYED), value(other.value) {}
 
@@ -1687,21 +1682,6 @@ namespace GGUI{
 
         stain::base embedValue(styling* host, element* owner) override;
 
-        // -----< UTILS >-----
-
-        // iterator fetcher to skip the nullptr tail of the value
-        inline std::array<element*, INT8_MAX>::const_iterator begin() const {
-            return value.cbegin();
-        }
-
-        // iterator fetcher to skip the nullptr tail of the value
-        inline std::array<element*, INT8_MAX>::const_iterator end() const {
-            return std::find(value.cbegin(), value.cend(), nullptr);
-        }
-
-        inline int length() const {
-            return std::distance(begin(), end());
-        }
     };
 
     class onInit : public STYLING_INTERNAL::styleBase {

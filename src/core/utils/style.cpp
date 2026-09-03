@@ -307,7 +307,7 @@ namespace GGUI{
     stain::base node::embedValue(styling* host, [[maybe_unused]]  element* owner){
         // Since we need to put the value adding through the owner elements own custom process.
         // Since the value is typically given as an stack allocated local object, we need to transfer it into heap
-        value = value->copy();
+        // value = value->copy();
 
         host->Childs.push_back(value);
 
@@ -315,9 +315,9 @@ namespace GGUI{
     }
     
     stain::base childs::embedValue(styling* host, [[maybe_unused]]  element* owner){
-        for (auto* c : *this){
+        for (auto* c : value){
             // Since the value is typically given as an stack allocated local object, we need to transfer it into heap
-            c = c->copy();
+            // c = c->copy();
 
             host->Childs.push_back(c);
         }
@@ -496,12 +496,12 @@ namespace GGUI{
         new_one->value = new_one->value->copy();
         return new_one;
     }
-            
+
     STYLING_INTERNAL::styleBase* childs::copy() const {
         childs* new_one = new childs(*this);
 
-        for (int i = 0; i < length(); i++){
-            new_one->value[i] = this->value[i]->copy();
+        for (size_t i = 0; i < value.size(); i++){
+            new_one->value[i] = value[i]->copy();
         }
 
         return new_one;
