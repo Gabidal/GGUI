@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <type_traits>
 #include <array>
+#include <cmath>
 
 namespace GGUI{
     template <typename targetT, size_t targetDIM, typename otherT, size_t otherDIM>
