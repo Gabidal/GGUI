@@ -19,7 +19,7 @@ GGUI::scrollView::scrollView(listView& container) : element(){
     // Make the system into a Dynamic allowing parent.
     pauseGGUI([&container, this](){
         allowOverflow(true);
-        element::addChild(&container);
+        element::addElement(&container);
     });
 }
 
@@ -62,7 +62,7 @@ GGUI::IVector3 GGUI::listView::getDimensionLimit(){
  *          border offsets, and dynamic sizing capabilities.
  * @param e The child element to be added.
  */
-void GGUI::listView::addChild(element* e) {
+void GGUI::listView::addElement(element* e) {
     pauseGGUI([this, e]() {
         // Since 0.1.8 we need to check if the given Element is Fully initialized with Style embeddings or not.
         if (e->getDirty().is(stain::types::FINALIZE)){
@@ -294,12 +294,12 @@ bool GGUI::listView::remove(element* remove){
  * @details This function adds a child element to the Scroll_View and marks the Scroll_View as dirty with the DEEP stain.
  * @param e The child element to be added.
  */
-void GGUI::scrollView::addChild(element* e) {
+void GGUI::scrollView::addElement(element* e) {
     // Mark the Scroll_View as dirty with the DEEP stain because we are adding a new child element.
     flags |= (stain::types::DEEP);
 
     // Add the child element to the List_View that is being used as the container.
-    getContainer()->addChild(e);
+    getContainer()->addElement(e);
 }
 
 /**

@@ -428,69 +428,6 @@ namespace GGUI{
         return stain::types::GRAPHICS;     // color manages all stylings, including textual styles.
     }   
 
-
-
-    std::string_view styledBorder::getBorder(bitMask<connectionTypes> flags){
-        // Corners
-        if (flags == (bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::RIGHT))
-            return topLeftCorner;
-        else if (flags == (bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::LEFT))
-            return topRightCorner;
-        else if (flags == (bitMask<connectionTypes>(connectionTypes::UP) | connectionTypes::RIGHT))
-            return bottomLeftCorner;
-        else if (flags == (bitMask<connectionTypes>(connectionTypes::UP) | connectionTypes::LEFT))
-            return bottomRightCorner;
-        // Vertical lines
-        else if (flags == (bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::UP))
-            return verticalLine;
-
-        // Horizontal lines
-        else if (flags == (bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT))
-            return horizontalLine;
-
-        // connectors
-        else if (flags == (bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::UP | connectionTypes::RIGHT))
-            return verticalRightConnector;
-        else if (flags == (bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::UP | connectionTypes::LEFT))
-            return verticalLeftConnector;
-        else if (flags == (bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT | connectionTypes::DOWN))
-            return horizontalBottomConnector;
-        else if (flags == (bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT | connectionTypes::UP))
-            return horizontalTopConnector;
-
-        // cross connectors
-        else if (flags == (bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT | connectionTypes::UP | connectionTypes::DOWN))
-            return crossConnector;
-        else
-            return "";
-    }
-
-    bitMask<styledBorder::connectionTypes> styledBorder::getBorderType(std::string_view border){
-        if (border == topLeftCorner)
-            return bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::RIGHT;
-        else if (border == topRightCorner)
-            return bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::LEFT;
-        else if (border == bottomLeftCorner)
-            return bitMask<connectionTypes>(connectionTypes::UP) | connectionTypes::RIGHT;
-        else if (border == bottomRightCorner)
-            return bitMask<connectionTypes>(connectionTypes::UP) | connectionTypes::LEFT;
-        else if (border == verticalLine)
-            return bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::UP;
-        else if (border == horizontalLine)
-            return bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT;
-        else if (border == verticalRightConnector)
-            return bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::UP | connectionTypes::RIGHT;
-        else if (border == verticalLeftConnector)
-            return bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::UP | connectionTypes::LEFT;
-        else if (border == horizontalBottomConnector)
-            return bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT | connectionTypes::DOWN;
-        else if (border == horizontalTopConnector)
-            return bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT | connectionTypes::UP;
-        else if (border == crossConnector)
-            return bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT | connectionTypes::UP | connectionTypes::DOWN;
-        else return bitMask<connectionTypes>(connectionTypes::NONE);
-    }
-
     STYLING_INTERNAL::styleBase* node::copy() const {
         node* new_one = new node(*this);
         new_one->value = new_one->value->copy();
@@ -639,44 +576,7 @@ namespace GGUI{
                previous_focus_border_background_color   != Focus_Border_Background_Color.color.get();
     }
 
-    void styling::compile(element* owner) const {
-        owner->graphicalIdentityPool.reserve(2);
-
-        const auto [textColor, backgroundColor] = owner->getActiveTextColor();
-
-        int borderOffset = 0;
-
-        owner->graphicalIdentityPool.push_back({
-            {   // rectangle area
-                owner->getAbsolutePosition() + IVector3{borderOffset, borderOffset, 0},
-                {Width.get() - borderOffset*2, Height.get() - borderOffset*2}
-            },
-            textColor, backgroundColor,
-            Opacity.Get(),
-            TextAttributes.value,
-            owner
-        });
-
-        // to keep z-priority, so largest view is last
-        if (Border_Enabled.value) {     TODO("This seems very inefficient!")
-            const auto [borderColor, borderBackgroundColor] = owner->getActiveBorderColor();
-
-            TODO("Add here the border width into the offset calculation")
-
-            borderOffset = 1;
-
-            owner->graphicalIdentityPool.push_back({
-                {   // rectangle area
-                    owner->getAbsolutePosition(),
-                    {Width.get(), Height.get()}
-                },
-                borderColor, borderBackgroundColor,
-                Opacity.Get(),
-                TextAttributes.value,
-                owner
-            });
-        }
-    }
+    
 
     /**
      * @brief Copies the values of the given Styling object to the current object.
@@ -835,7 +735,7 @@ namespace GGUI{
 
         // Now we can one by one add them back via the official channel
         for (element* c : tmp_childs){
-            owner->addChild(c);
+            owner->addElement(c);
         }
 
         owner->addStain(changes);

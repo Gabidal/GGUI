@@ -15,7 +15,7 @@ int main(){
 
                     // Since elements default width and height is 1, we can just add a new element with a random background color.
                     element* tmp = new element(backgroundColor(RGB(rand()%255,rand()%255,rand()%255)));
-                    self->addChild(tmp);
+                    self->addElement(tmp);
                 }
             })
         )) | 
@@ -31,7 +31,7 @@ int main(){
 
                     // Since elements default width and height is 1, we can just add a new element with a random background color.
                     element* tmp = new element(backgroundColor(RGB(rand()%255,rand()%255,rand()%255)));
-                    self->addChild(tmp);
+                    self->addElement(tmp);
                 }
             })
         ))

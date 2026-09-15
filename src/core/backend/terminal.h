@@ -15,14 +15,41 @@
 
 #include "../converter.h"
 #include "../utils/types.h"
-#include "../utils/style.h"
+#include "utils.h"
 
 namespace GGUI {
     namespace thread {
         void renderer();
     }
 
-    struct activeStyle;
+    // This is what styling compiles during element::render().
+    struct activeStyle {
+        rectangle area              = {};    // absolute position
+        RGB activeTextColor         = {};
+        RGB activeBackgroundColor   = {};
+        unsigned char opacity       = UINT8_MAX;
+        linearMask<terminal::textAttributeTypes, uint64_t> activeTextAttributes = terminal::textAttributeTypes::DEFAULT;
+        element* origin             = nullptr;
+
+        constexpr activeStyle computeColor(const activeStyle* other) const {
+            activeStyle result = *other;
+            result.activeTextColor.add(activeTextColor, opacity);
+            result.activeBackgroundColor.add(activeBackgroundColor, opacity);
+            result.activeTextAttributes = activeTextAttributes;
+            result.opacity = combineOpacity(opacity, other->opacity);
+            return result;
+        }
+
+    protected:
+        // from: Porter-Duff
+        constexpr unsigned char combineOpacity(unsigned char top, unsigned char bottom) const {
+            if (top == 0) return bottom;
+            if (top == UINT8_MAX) return UINT8_MAX;
+
+            const unsigned int inv = UINT8_MAX - top;
+            return (unsigned char)(top + ((unsigned int)bottom * inv + (UINT8_MAX / 2)) / UINT8_MAX);
+        }
+    };
 
     class element;
 

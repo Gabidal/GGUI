@@ -6,6 +6,8 @@
 #include <string_view>
 #include <cassert>
 
+#include "../utils/utils.h"
+
 namespace GGUI {
     namespace terminal {
         // Inspired from https://notcurses.com/html/notcurses_8h_source.html
@@ -221,6 +223,29 @@ namespace GGUI {
                 IDEOGRAM_ATTRIBUTES_OFF,                        // cancels the effect of the rendition aspects established by parameter values 60 to 64
             };
         }
+
+        enum class textAttributeTypes : uint8_t {
+            DEFAULT             = table::alias(terminal::ecma::graphicalTextAttributes::DEFAULT),
+            __min               = DEFAULT,
+            BOLD                = table::alias(terminal::ecma::graphicalTextAttributes::BOLD),
+            FAINT               = table::alias(terminal::ecma::graphicalTextAttributes::FAINT),
+            ITALIC              = table::alias(terminal::ecma::graphicalTextAttributes::ITALIC),
+            UNDERLINE           = table::alias(terminal::ecma::graphicalTextAttributes::UNDERLINE),
+            SLOW_BLINK          = table::alias(terminal::ecma::graphicalTextAttributes::SLOW_BLINK),
+            RAPID_BLINK         = table::alias(terminal::ecma::graphicalTextAttributes::RAPID_BLINK),
+            REVERSE_VIDEO       = table::alias(terminal::ecma::graphicalTextAttributes::REVERSE_VIDEO),
+            CROSSED_OUT         = table::alias(terminal::ecma::graphicalTextAttributes::CROSSED_OUT),
+            PRIMARY_FONT        = table::alias(terminal::ecma::graphicalTextAttributes::PRIMARY_FONT),
+            ALTERNATIVE_FONT_1  = table::alias(terminal::ecma::graphicalTextAttributes::ALT_FONT_1),
+            DOUBLE_UNDERLINE    = table::alias(terminal::ecma::graphicalTextAttributes::DOUBLY_UNDERLINED),
+            FOREGROUND_COLOR    = table::alias(terminal::ecma::graphicalTextAttributes::FOREGROUND_COLOR),
+            BACKGROUND_COLOR    = table::alias(terminal::ecma::graphicalTextAttributes::BACKGROUND_COLOR),
+            FRAMED              = table::alias(terminal::ecma::graphicalTextAttributes::FRAMED),
+            ENCIRCLED           = table::alias(terminal::ecma::graphicalTextAttributes::ENCIRCLED),
+            OVERLINE            = table::alias(terminal::ecma::graphicalTextAttributes::OVERLINED),
+
+            __max               = OVERLINE
+        };
     }
 }
 

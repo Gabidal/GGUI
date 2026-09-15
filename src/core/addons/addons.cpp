@@ -28,7 +28,7 @@ namespace GGUI{
 
         // Finally after all addons are loaded
         for (auto* a : addons){
-            getRoot()->addChild(a);
+            getRoot()->addElement(a);
         }
     }
 

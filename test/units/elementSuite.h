@@ -14,7 +14,7 @@ namespace tester {
             add_test("dimensions_set", "Width/Height and STRETCH staining", test_dimensions_set);
             add_test("individual_width_height", "Independent width / height setters", test_individual_width_height);
             // add_test("position_and_absolute", "Position + absolute cache incl. border offset", test_position_and_absolute);
-            add_test("add_child_parent_relationship", "addChild establishes parent & ordering", test_add_child_parent_relationship);
+            add_test("add_child_parent_relationship", "addElement establishes parent & ordering", test_add_child_parent_relationship);
             add_test("remove_child_by_pointer", "remove(element*) deletes child entry", test_remove_child_by_pointer);
             add_test("remove_child_by_index", "remove(index) deletes child entry", test_remove_child_by_index);
             add_test("display_toggle_propagation", "display(false/true) cascades to children", test_display_toggle_propagation);
@@ -66,7 +66,7 @@ namespace tester {
         //     GGUI::element parent; parent.setDimensions(20,10);
         //     auto child = new GGUI::element();
         //     child->setPosition({2,3,0});
-        //     parent.addChild(child);
+        //     parent.addElement(child);
         //     child->updateAbsolutePositionCache();
         //     ASSERT_TRUE(child->getAbsolutePosition().X == (short)2);
         //     ASSERT_TRUE(child->getAbsolutePosition().Y == (short)3);
@@ -79,7 +79,7 @@ namespace tester {
         static void test_add_child_parent_relationship(){
             GGUI::element parent; parent.setDimensions(10,10);
             auto child = new GGUI::element();
-            parent.addChild(child);
+            parent.addElement(child);
             ASSERT_TRUE(child->getParent() == &parent);
             ASSERT_EQ((size_t)1, parent.getChilds().size());
         }
@@ -87,7 +87,7 @@ namespace tester {
         static void test_remove_child_by_pointer(){
             GGUI::element parent; parent.setDimensions(10,10);
             auto child = new GGUI::element();
-            parent.addChild(child);
+            parent.addElement(child);
             ASSERT_EQ((size_t)1, parent.getChilds().size());
             bool removed = parent.remove(child); // deletes child
             ASSERT_TRUE(removed);
@@ -98,8 +98,8 @@ namespace tester {
             GGUI::element parent; parent.setDimensions(10,10);
             auto c1 = new GGUI::element();
             auto c2 = new GGUI::element();
-            parent.addChild(c1);
-            parent.addChild(c2);
+            parent.addElement(c1);
+            parent.addElement(c2);
             ASSERT_EQ((size_t)2, parent.getChilds().size());
             bool ok = parent.remove(static_cast<size_t>(0));
             ASSERT_TRUE(ok);
@@ -109,7 +109,7 @@ namespace tester {
         static void test_display_toggle_propagation(){
             GGUI::element parent; parent.setDimensions(5,5);
             auto child = new GGUI::element();
-            parent.addChild(child);
+            parent.addElement(child);
             ASSERT_TRUE(child->isDisplayed());
             parent.display(false);
             ASSERT_FALSE(parent.isDisplayed());
@@ -122,7 +122,7 @@ namespace tester {
         static void test_dynamic_size_allowed(){
             GGUI::element parent; parent.setDimensions(1,1); parent.allowDynamicSize(true);
             auto child = new GGUI::element(); child->setDimensions(6,4);
-            parent.addChild(child);
+            parent.addElement(child);
             ASSERT_TRUE(parent.getWidth() >= child->getWidth());
             ASSERT_TRUE(parent.getHeight() >= child->getHeight());
         }
@@ -130,7 +130,7 @@ namespace tester {
         static void test_dynamic_size_disallowed(){
             GGUI::element parent; parent.setDimensions(1,1); parent.allowDynamicSize(false);
             auto child = new GGUI::element(); child->setDimensions(6,4);
-            parent.addChild(child);
+            parent.addElement(child);
             ASSERT_EQ(1, parent.getWidth());
             ASSERT_EQ(1, parent.getHeight());
         }
@@ -201,13 +201,13 @@ namespace tester {
             GGUI::element root; root.setDimensions(20,10);
             auto c1 = new GGUI::element(); c1->setName("child1");
             auto c2 = new GGUI::element(); c2->setName("child2");
-            root.addChild(c1); root.addChild(c2);
+            root.addElement(c1); root.addElement(c2);
             ASSERT_TRUE(root.getElement("child2") == c2);
         }
 
         // static void test_fitting_dimensions_basic(){
         //     GGUI::element parent; parent.setDimensions(10,5); parent.showBorder(false);
-        //     auto c = new GGUI::element(); c->setDimensions(3,2); parent.addChild(c);
+        //     auto c = new GGUI::element(); c->setDimensions(3,2); parent.addElement(c);
         //     auto fit = parent.getFittingDimensions(c);
         //     ASSERT_TRUE(fit.first  <= parent.getWidth());
         //     ASSERT_TRUE(fit.second <= parent.getHeight());
@@ -218,8 +218,8 @@ namespace tester {
             auto a = new GGUI::element(); a->setPosition({0,0,5});
             auto b = new GGUI::element(); b->setPosition({0,0,1});
             auto c = new GGUI::element(); c->setPosition({0,0,3});
-            parent.addChild(a); parent.addChild(b); parent.addChild(c);
-            // After addChild calls reOrderChilds, order should be by Z ascending
+            parent.addElement(a); parent.addElement(b); parent.addElement(c);
+            // After addElement calls reOrderChilds, order should be by Z ascending
             auto& childs = parent.getChilds();
             ASSERT_TRUE(childs[0]->getPosition().z() <= childs[1]->getPosition().z());
             ASSERT_TRUE(childs[1]->getPosition().z() <= childs[2]->getPosition().z());

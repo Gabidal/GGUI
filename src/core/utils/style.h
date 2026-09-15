@@ -45,10 +45,6 @@ namespace GGUI{
             DELAYED
         };
 
-        enum class EVALUATION_TYPE : uint8_t {
-            DEFAULT,        // no further evaluation needed, just return the value
-            PERCENTAGE     // the value is a percentage of the parent attribute
-        };
     }
 
     enum class ANCHOR : uint8_t {
@@ -69,137 +65,6 @@ namespace GGUI{
         ROW,
         COLUMN
     };
-
-    // This namespace is an wrapper for the user not to see these !!
-    namespace STYLING_INTERNAL {
-
-        template<typename P>
-        constexpr bool isNonDiscriminantScalar(const P& value, const float scalar);
-
-        template<typename P>
-        std::string toString(P value);
-
-        template<typename T>
-        requires std::is_default_constructible_v<T>
-        class value {
-        protected:
-            T data;
-            float percentage;   // This will be changed later on into an std::variant holding different scaling types.
-            types::EVALUATION_TYPE evaluationType;
-        public:
-            /**
-             * Constructor for value class
-             * @param value The value to be stored in the variant
-             * @param type The type of the value
-             * @param use_constexpr Whether to use constexpr or not
-             */
-            template<typename P>
-            constexpr value(P value) {
-                if constexpr (std::is_floating_point_v<P>) {
-                    evaluationType = types::EVALUATION_TYPE::PERCENTAGE;
-                    percentage = value;
-                    data = {};
-                } else {
-                    evaluationType = types::EVALUATION_TYPE::DEFAULT;
-                    percentage = 0.0f;
-                    data = value;
-                }
-            }
-
-            constexpr value(const value<T>& other) = default;
-            constexpr value& operator=(const value& other) = default;
-
-            constexpr bool operator==(const value<T>& other) const {
-                return data == other.data;
-            }
-
-            constexpr value<T> operator+(const value<T>& other) {
-                assert(evaluationType == other.evaluationType && "Cannot add two different eval type values!");
-
-                switch (evaluationType) {
-                case types::EVALUATION_TYPE::DEFAULT:
-                    return value<T>(data + other.data);
-                case types::EVALUATION_TYPE::PERCENTAGE:
-                    return value<T>(percentage + other.percentage);
-                }
-
-                assert(false && "Evaluation type not supported!");
-                return value<T>(0);
-            }
-
-            constexpr value<T> operator-(const value<T>& other) {
-                assert(evaluationType == other.evaluationType && "Cannot subtract two different eval type values!");
-
-                switch (evaluationType) {
-                case types::EVALUATION_TYPE::DEFAULT:
-                    return value<T>(data - other.data);
-                case types::EVALUATION_TYPE::PERCENTAGE:
-                    return value<T>(percentage - other.percentage);
-                }
-
-                assert(false && "Evaluation type not supported!");
-                return value<T>(0);
-            }
-
-            /**
-             * evaluate function
-             * @param parental_value The value to be multiplied by. Only used if the evaluation type is PERCENTAGE.
-             * 
-             * This function is used to evaluate the value of the variant based on the evaluation type.
-             * If the evaluation type is DEFAULT, the data is returned without any modification.
-             * If the evaluation type is PERCENTAGE, the parental value is multiplied by the data and the result is returned.
-             * If the evaluation type is not supported, an error message is printed and the data is returned without any modification.
-             */
-            constexpr void evaluate(T parental_value) {
-                switch (evaluationType) {
-                case types::EVALUATION_TYPE::DEFAULT:
-                    // If the evaluation type is DEFAULT then just return the data without any modification
-                    return;
-                case types::EVALUATION_TYPE::PERCENTAGE:
-                    // If the evaluation type is PERCENTAGE then multiply the parental value by the data and return the result
-                    data = static_cast<T>(static_cast<T>(parental_value) * percentage);
-                    return;
-                }
-
-                assert(false && "Evaluation type not supported!");
-            }
-
-            /**
-             * Get the value of the variant.
-             * @return The value of the variant as the requested type.
-             * @throws std::bad_variant_access If the requested type doesn't match the type of the data.
-             */
-            constexpr T get() const { return data; }
-
-            /**
-             * Get the evaluation type of the variant.
-             * @return The evaluation type of the variant.
-             */
-            constexpr types::EVALUATION_TYPE getType() const { return evaluationType; }
-
-            /**
-             * @brief Set the value of the variant.
-             * @param value The value to set the variant to.
-             * @details This sets the value of the variant to the provided value.
-             *          The evaluation type is set to types::EVALUATION_TYPE::DEFAULT.
-             */
-            template<typename P>
-            requires (std::is_same_v<P, T> || std::is_integral_v<P>)
-            constexpr void set(P d) {
-                data = d;
-                evaluationType = types::EVALUATION_TYPE::DEFAULT;
-            }
-
-            /**
-             * @brief Set the value of the variant to a percentage.
-             * @param value The value to set the variant to.
-             * @details This sets the value of the variant to the provided value, and sets the evaluation type to types::EVALUATION_TYPE::PERCENTAGE.
-             */
-            constexpr void set(float f) {
-                percentage = f;
-                evaluationType = types::EVALUATION_TYPE::PERCENTAGE;
-            }
-        };
 
         class styleBase {
         public:
@@ -822,41 +687,6 @@ namespace GGUI{
              */
             stain::base embedValue([[maybe_unused]] styling* host,  element* owner) override;
         };
-
-        template<typename P>
-        std::string toString(P value){
-            if constexpr (std::is_same_v<P, std::string> || std::is_same_v<P, const char*> || std::is_same_v<P, char*>){
-                // These are already strings
-                return value;
-            }
-            else if constexpr (std::is_integral<P>() || std::is_floating_point<P>()){
-                return std::to_string(value);
-            }
-            else if constexpr (std::is_same_v<P, RGB>){
-                return toString(value.red) + ", " + toString(value.green) + ", " + toString(value.blue);
-            }
-            else if constexpr (std::is_same_v<P, FVector2>){
-                return toString(value.X) + ", " + toString(value.Y);
-            }
-            else if constexpr (std::is_same_v<P, FVector3>){
-                return toString(value) + ", " + toString(value.Z);
-            }
-            else if constexpr (std::is_same_v<P, IVector3>){
-                return toString(value.X) + ", " + toString(value.Y) + ", " + toString(value.Z);
-            }
-            else if constexpr (std::is_same_v<P, GGUI::STYLING_INTERNAL::vectorValue>){
-                return toString(value.Get());
-            }
-            else if constexpr (std::is_same_v<P, RGBValue>){
-                return toString(value.color.get());
-            }
-            else if constexpr (std::is_same_v<P, numberValue>){
-                return toString(value.number.get());
-            }
-            else {
-                static_assert(!std::is_same_v<P, P>, "Unsupported type!");
-            }
-        }
     
         class empty : public styleBase{
         public:
@@ -1307,97 +1137,6 @@ namespace GGUI{
         stain::base embedValue(styling* host, element* owner) override;
     };
 
-    class styledBorder : public STYLING_INTERNAL::styleBase {
-    public:
-        std::string_view topLeftCorner             = "┌";//"\e(0\x6c\e(B";
-        std::string_view bottomLeftCorner          = "└";//"\e(0\x6d\e(B";
-        std::string_view topRightCorner            = "┐";//"\e(0\x6b\e(B";
-        std::string_view bottomRightCorner         = "┘";//"\e(0\x6a\e(B";
-        std::string_view verticalLine               = "│";//"\e(0\x78\e(B";
-        std::string_view horizontalLine             = "─";//"\e(0\x71\e(B";
-        std::string_view verticalRightConnector    = "├";//"\e(0\x74\e(B";
-        std::string_view verticalLeftConnector     = "┤";//"\e(0\x75\e(B";
-        std::string_view horizontalBottomConnector = "┬";//"\e(0\x76\e(B";
-        std::string_view horizontalTopConnector    = "┴";//"\e(0\x77\e(B";
-        std::string_view crossConnector             = "┼";//"\e(0\x6e\e(B";
-    
-        enum class connectionTypes : uint8_t {
-            NONE    = 0 << 0,
-            UP      = 1 << 0,
-            DOWN    = 1 << 1,
-            LEFT    = 1 << 2,
-            RIGHT   = 1 << 3
-        };
-
-        /**
-         * @brief A structure to hold the border style of a widget.
-         *
-         * The style is represented as a vector of strings, each string being a character
-         * that will be used to draw the border of the widget. The vector must have the
-         * following size and order:
-         * - 0: Top left corner
-         * - 1: Bottom left corner
-         * - 2: Top right corner
-         * - 3: Bottom right corner
-         * - 4: Vertical line
-         * - 5: Horizontal line
-         * - 6: Vertical right connector
-         * - 7: Vertical left connector
-         * - 8: Horizontal bottom connector
-         * - 9: Horizontal top connector
-         * - 10: Cross connector
-         */
-        constexpr styledBorder(const std::array<std::string_view, 11> values, const VALUE_STATE Default = VALUE_STATE::VALUE) : styleBase(Default) {
-            topLeftCorner = values[0];
-            bottomLeftCorner = values[1];
-            topRightCorner = values[2];
-            bottomRightCorner = values[3];
-            verticalLine = values[4];
-            horizontalLine = values[5];
-            verticalRightConnector = values[6];
-            verticalLeftConnector = values[7];
-            horizontalBottomConnector = values[8];
-            horizontalTopConnector = values[9];
-            crossConnector = values[10];
-        }
-
-        constexpr styledBorder() = default;
-
-        inline ~styledBorder() override { styleBase::~styleBase(); }
-
-        inline styleBase* copy() const override {
-            return new styledBorder(*this);
-        }
-
-        constexpr styledBorder& operator=(const styledBorder& other) {
-            if (other.status >= status){
-                topLeftCorner = other.topLeftCorner;
-                bottomLeftCorner = other.bottomLeftCorner;
-                topRightCorner = other.topRightCorner;
-                bottomRightCorner = other.bottomRightCorner;
-                verticalLine = other.verticalLine;
-                horizontalLine = other.horizontalLine;
-                verticalRightConnector = other.verticalRightConnector;
-                verticalLeftConnector = other.verticalLeftConnector;
-                horizontalBottomConnector = other.horizontalBottomConnector;
-                horizontalTopConnector = other.horizontalTopConnector;
-                crossConnector = other.crossConnector;
-
-                status = other.status;
-            }
-            return *this;
-        }
-    
-        constexpr styledBorder(const GGUI::styledBorder& other) = default;
-
-        inline void evaluate([[maybe_unused]] const styling* self, [[maybe_unused]] const styling* owner) override {};
-        
-        stain::base embedValue(styling* host, element* owner) override;
-
-        std::string_view getBorder(bitMask<connectionTypes> flags);
-
-        bitMask<connectionTypes> getBorderType(std::string_view border);
-    };
 
     class flowPriority : public STYLING_INTERNAL::enumValue<DIRECTION> {
     public:
@@ -2033,29 +1772,6 @@ namespace GGUI{
         stain::base embedValue(styling* host, element* owner) override;
     };
 
-    enum class textAttributeTypes : uint8_t {
-        DEFAULT             = table::alias(terminal::ecma::graphicalTextAttributes::DEFAULT),
-        __min               = DEFAULT,
-        BOLD                = table::alias(terminal::ecma::graphicalTextAttributes::BOLD),
-        FAINT               = table::alias(terminal::ecma::graphicalTextAttributes::FAINT),
-        ITALIC              = table::alias(terminal::ecma::graphicalTextAttributes::ITALIC),
-        UNDERLINE           = table::alias(terminal::ecma::graphicalTextAttributes::UNDERLINE),
-        SLOW_BLINK          = table::alias(terminal::ecma::graphicalTextAttributes::SLOW_BLINK),
-        RAPID_BLINK         = table::alias(terminal::ecma::graphicalTextAttributes::RAPID_BLINK),
-        REVERSE_VIDEO       = table::alias(terminal::ecma::graphicalTextAttributes::REVERSE_VIDEO),
-        CROSSED_OUT         = table::alias(terminal::ecma::graphicalTextAttributes::CROSSED_OUT),
-        PRIMARY_FONT        = table::alias(terminal::ecma::graphicalTextAttributes::PRIMARY_FONT),
-        ALTERNATIVE_FONT_1  = table::alias(terminal::ecma::graphicalTextAttributes::ALT_FONT_1),
-        DOUBLE_UNDERLINE    = table::alias(terminal::ecma::graphicalTextAttributes::DOUBLY_UNDERLINED),
-        FOREGROUND_COLOR    = table::alias(terminal::ecma::graphicalTextAttributes::FOREGROUND_COLOR),
-        BACKGROUND_COLOR    = table::alias(terminal::ecma::graphicalTextAttributes::BACKGROUND_COLOR),
-        FRAMED              = table::alias(terminal::ecma::graphicalTextAttributes::FRAMED),
-        ENCIRCLED           = table::alias(terminal::ecma::graphicalTextAttributes::ENCIRCLED),
-        OVERLINE            = table::alias(terminal::ecma::graphicalTextAttributes::OVERLINED),
-
-        __max               = OVERLINE
-    };
-
     class textAttribute : public STYLING_INTERNAL::styleBase {
     public:
         linearMask<textAttributeTypes, uint64_t> value;
@@ -2083,35 +1799,6 @@ namespace GGUI{
         inline void evaluate(const styling*, const styling*) override {};
 
         stain::base embedValue(styling* host, element* owner) override;
-    };
-
-    // This is what styling compiles during element::render().
-    struct activeStyle {
-        rectangle area              = {};    // absolute position
-        RGB activeTextColor         = {};
-        RGB activeBackgroundColor   = {};
-        unsigned char opacity       = UINT8_MAX;
-        linearMask<textAttributeTypes, uint64_t> activeTextAttributes = textAttributeTypes::DEFAULT;
-        element* origin             = nullptr;
-
-        constexpr activeStyle computeColor(const activeStyle* other) const {
-            activeStyle result = *other;
-            result.activeTextColor.add(activeTextColor, opacity);
-            result.activeBackgroundColor.add(activeBackgroundColor, opacity);
-            result.activeTextAttributes = activeTextAttributes;
-            result.opacity = combineOpacity(opacity, other->opacity);
-            return result;
-        }
-
-    protected:
-        // from: Porter-Duff
-        constexpr unsigned char combineOpacity(unsigned char top, unsigned char bottom) const {
-            if (top == 0) return bottom;
-            if (top == UINT8_MAX) return UINT8_MAX;
-
-            const unsigned int inv = UINT8_MAX - top;
-            return (unsigned char)(top + ((unsigned int)bottom * inv + (UINT8_MAX / 2)) / UINT8_MAX);
-        }
     };
 
     /**

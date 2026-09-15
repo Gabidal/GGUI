@@ -35,7 +35,7 @@ namespace GGUI {
         if (Embed_Styles_On_Construct){
             style->embedStyles(this);
 
-            check(STATE::INIT);
+            processStateHandler(STATE::INIT);
 
             // Tell the main Main->Embed_Stylings() to not call this elements On_Init, since it is already called here.
             flags ^= (stain::types::FINALIZE);
@@ -57,7 +57,7 @@ namespace GGUI {
     */
     element::~element(){
         // Call handler for on destroying moment.
-        check(STATE::DESTROYED);
+        processStateHandler(STATE::DESTROYED);
 
         // Make sure this element is not listed in the parent element.
         // And if it does, then remove it from the parent element.
@@ -181,7 +181,7 @@ namespace GGUI {
         if (flags.has(stain::types::DEEP)){
             flags ^= (stain::types::DEEP);
 
-            childsWithBorders = 0;
+            flags |= stain::types::COMBINE_BORDERS;
 
             // clean reflection pool
             graphicalReflectionPool.clear();
@@ -218,12 +218,16 @@ namespace GGUI {
         if (flags.has(stain::types::EDGE)){
             flags ^= (stain::types::EDGE);
 
+            flags |= stain::types::COMBINE_BORDERS;
+
             renderBorders(cellBuffer);
             renderTitle(cellBuffer);
         }
 
         // This will calculate the connecting borders.
-        if (childsWithBorders > 0){
+        if (flags.has(stain::types::COMBINE_BORDERS)){
+            flags ^= (stain::types::COMBINE_BORDERS);
+
             for (auto A : this->style->Childs){
                 for (auto B : this->style->Childs){
                     if (A == B)
@@ -240,80 +244,6 @@ namespace GGUI {
         }
 
         return cellBuffer;
-    }
-
-    /**
-    * @brief Sets the opacity of the element.
-    * @details This function takes a float value between 0.0f and 1.0f and sets the
-    * opacity of the element to that value. If the value is greater than 1.0f, the
-    * function will report an error and do nothing.
-    * @param[in] Opacity The opacity value to set.
-    */
-    void element::setOpacity(float Opacity){
-        if (Opacity > 1.0f)
-            logger::log("Opacity value is too high: " + std::to_string(Opacity) + " for element: " + getName());
-
-        style->Opacity.Set(Opacity);
-
-        flags |= (stain::types::RESET);
-        updateFrame();
-    }
-
-    /**
-    * @brief Sets the opacity of the element using an integer percentage.
-    * @details This function takes an unsigned integer value between 0 and 100, representing the opacity percentage,
-    * and sets the element's opacity. If the value is greater than 100, it will report an error and do nothing.
-    * @param[in] Opacity The opacity percentage to set.
-    */
-    void element::setOpacity(unsigned int Opacity) {
-        constexpr unsigned int MAX_OPACITY = 100;
-        constexpr unsigned int HALF_OPACITY = 50;
-        // Check if the provided opacity is within valid range (0-100)
-        if (Opacity > MAX_OPACITY) {
-            // Report an error if the opacity value is too high
-            logger::log("Opacity value is too high: " + std::to_string(Opacity) + " for element: " + getName());
-        }
-
-        // Convert the opacity percentage to an 8-bit value (0..255) and set it.
-        // Keep behavior consistent with existing code: even if Opacity > 100 is reported, we still set (saturated).
-        unsigned int P = Opacity;
-        if (P >= MAX_OPACITY) {
-            style->Opacity.Set((unsigned char)UINT8_MAX);
-        } else {
-            // Rounded mapping: 0..99 -> 0..252/253, 100 -> 255
-            const unsigned int Byte = (P * (unsigned)UINT8_MAX + HALF_OPACITY) / MAX_OPACITY;
-            style->Opacity.Set((unsigned char)Byte);
-        }
-
-        // Mark the element as dirty to trigger a visual update
-        flags |= (stain::types::RESET);
-        updateFrame(); // Update the frame to reflect the changes
-    }
-
-    /**
-    * @brief Gets the opacity of the element.
-    * @details This function returns the current opacity of the element as a float value.
-    *          The opacity is a value between 0.0 and 1.0, where 0.0 is fully transparent
-    *          and 1.0 is fully opaque.
-    * @return The current opacity of the element.
-    */
-    float element::getOpacity() const {
-        return (float)getOpacityByte() / (float)UINT8_MAX;
-    }
-
-    unsigned char element::getOpacityByte() const {
-        return style->Opacity.Get();
-    }
-
-    /**
-    * @brief Checks if the element is transparent.
-    * @details This function determines whether the element is transparent by checking
-    *          if the element's opacity is not equal to 1.0f. An opacity less than 1.0f
-    *          indicates that the element is partially or fully transparent.
-    * @return True if the element is transparent; otherwise, false.
-    */
-    bool element::isTransparent() const {
-        return getOpacityByte() != UINT8_MAX;
     }
 
     /**
@@ -365,7 +295,7 @@ namespace GGUI {
         }
     }
 
-    void element::check(STATE s){
+    void element::processStateHandler(STATE s){
         if (s == STATE::INIT && onInit){
             // Since the rendering hasn't yet started and the function here may be reliant on some relative information, we need to evaluate the the dynamic values.
             style->evaluateDynamicAttributevalues(this);
@@ -437,26 +367,6 @@ namespace GGUI {
         }
     }
 
-    /**
-    * @brief Sets the border visibility of the element.
-    * @details This function toggles the border visibility based on the provided state.
-    *          If the state has changed, it updates the border visibility, marks the 
-    *          element as dirty with the EDGE stain, and updates the frame.
-    * @param b The desired state of the border visibility.
-    * @param Previous_State The current state of the border visibility.
-    */
-    void element::showBorder(bool b, bool Previous_State) {
-        if (b != Previous_State) {
-            // Update the border enabled state
-            style->Border_Enabled = b;
-
-            // Mark the element as dirty for border changes
-            flags |= (stain::types::EDGE);
-
-            // Refresh the element's frame to reflect changes
-            updateFrame();
-        }
-    }
 
     /**
     * @brief Checks if the element has a border.
@@ -477,7 +387,7 @@ namespace GGUI {
     *          fit the parent element.
     * @param Child The child element to add.
     */
-    void element::addChild(element* Child){
+    void element::addElement(element* Child){
         // Since 0.1.8 we need to check if the given Element is Fully initialized with Style embeddings or not.
         if (Child->flags.has(stain::types::FINALIZE)){
             // Finalize flag is cleaned Style Embedding with On_Init Call.
@@ -535,10 +445,10 @@ namespace GGUI {
     * This function adds all the child elements to the current element by calling the Add_Child function for each element in the vector.
     * It also marks the current element as dirty with the DEEP stain after adding all the elements.
     */
-    void element::setChilds(std::vector<element*> childs){
+    void element::addElements(std::vector<element*> childs){
         pauseGGUI([this, childs](){
             for (auto& Child : childs){
-                addChild(Child);
+                addElement(Child);
             }
             flags |= (stain::types::DEEP);
         });
@@ -574,7 +484,7 @@ namespace GGUI {
         return result;
     }
 
-    std::vector<IVector2> element::getDeltaPoints() {
+    std::vector<IVector2> terminal::renderable::getDeltaPoints() {
         std::vector<IVector2> result;
         // Rough heuristic to prevent constant reallocations
         result.reserve(graphicalReflectionPool.size() * 50);    // multiply by the probable vertical length
@@ -638,35 +548,6 @@ namespace GGUI {
         return false;
     }
 
-    /**
-    * @brief Updates the parent element of the current element.
-    * @details This function is called when the current element is added, removed, or moved
-    *          to a different parent element. It marks the parent element as dirty and
-    *          requests a render update.
-    * @param New_Element The new parent element.
-    *
-    * @note If the parent element does not have a valid render buffer (i.e., its
-    *       `Is_Displayed()` function returns false), this function marks the parent
-    *       element as dirty with the `stain::types::DEEP` and `stain::types::COLOR` stains.
-    *       This ensures that the parent element is re-rendered from scratch when the
-    *       rendering thread is updated.
-    */
-    void element::updateParent(element* New_Element){
-        // Normally elements don't do anything
-        if (!New_Element->isDisplayed()){
-            // Mark the parent element as dirty with the stain::types::DEEP and stain::types::COLOR stains
-            fullyStain();
-        }
-
-        // When the child is unable to flag changes on parent Render(), like on removal-
-        // Then ask the parent to discard the previous buffer and render from scratch.
-        if (parent){
-            // Mark the parent element as dirty with the stain::types::DEEP and stain::types::COLOR stains
-            fullyStain();
-            // Request a render update
-            updateFrame();
-        }
-    }
 
     /**
     * @brief Displays or hides the element and all its children.
@@ -677,14 +558,14 @@ namespace GGUI {
     */
     void element::display(bool f){
         // Check if the to be displayed is true and the element wasn't already displayed.
-        if (f != Show){
-            Show = f;
+        if (f != display){
+            display = f;
             
             if (f){
-                check(STATE::SHOWN);
+                processStateHandler(STATE::SHOWN);
             }
             else{
-                check(STATE::HIDDEN);
+                processStateHandler(STATE::HIDDEN);
                 
                 // Ask the parent to flush its buffer from this.
                 if (parent){
@@ -709,7 +590,7 @@ namespace GGUI {
     */
     bool element::isDisplayed() const {
         bool Parent_Exists = parent;
-        return (Parent_Exists && parent->isDisplayed()) || !Parent_Exists ? Show : false;
+        return (Parent_Exists && parent->isDisplayed()) || !Parent_Exists ? display : false;
     }
 
     /**
@@ -762,106 +643,10 @@ namespace GGUI {
     }
 
     /**
-    * @brief Set the width and height of the element.
-    * @details This function sets the width and height of the element to the specified values.
-    *          If the width or height is different from the current width or height, then the element will be resized and the STRETCH stain is set.
-    *          The Update_Frame() function is also called to update the frame.
-    * @param width The new width of the element.
-    * @param height The new height of the element.
-    */
-    void element::setDimensions(int16_t width, int16_t height){
-        if (width != getWidth() || height != getHeight()){
-            setWidth(width);
-            setHeight(height);
-        }
-    }
-
-    /**
-    * @brief Set the width of the element.
-    * @details This function sets the width of the element to the specified value.
-    *          If the width is different from the current width, then the element will be resized and the STRETCH stain is set.
-    *          The Update_Frame() function is also called to update the frame.
-    * @param width The new width of the element.
-    */
-    void element::setWidth(int16_t width){
-        if (width != getWidth()){
-            style->Width.set(width);
-            // Set the STRETCH stain if the width is changed
-            flags |= (stain::types::STRETCH);
-            // Update the frame after resizing
-            updateFrame();
-        }
-    }
-
-    /**
-    * @brief Set the height of the element.
-    * @details This function sets the height of the element to the specified value.
-    *          If the height is different from the current height, then the element will be resized and the STRETCH stain is set.
-    *          The Update_Frame() function is also called to update the frame.
-    * @param height The new height of the element.
-    */
-    void element::setHeight(int16_t height){
-        if (height != getHeight()){
-            style->Height.set(height);
-            // Set the STRETCH stain if the height is changed
-            flags |= (stain::types::STRETCH);
-            // Update the frame after resizing
-            updateFrame();
-        }
-    }
-
-    /**
-    * @brief Set the position of the element.
-    * @details This function sets the position of the element to the specified coordinates.
-    *          If the position changes, the element will be marked as dirty for movement
-    *          and the frame will be updated.
-    * @param c The new position of the element.
-    */
-    void element::setPosition(IVector3 c) {
-        // Update the element's position in the style
-        style->Position.set(c);
-        
-        // Mark the element as dirty for movement updates
-        this->flags |= (stain::types::MOVE);
-
-        // Update the frame to reflect the position change
-        updateFrame();
-    }
-
-    /**
-    * @brief Set the position of the element.
-    * @details This function sets the position of the element to the specified coordinates.
-    *          If the position changes, the element will be marked as dirty for movement
-    *          and the frame will be updated.
-    * @param c The new position of the element.
-    */
-    void element::setPosition(IVector3* c){
-        if (c){
-            // Set the position of the element to the specified coordinates
-            setPosition(*c);
-        }
-    }
-
-    /**
-    * @brief Updates the position of the element by adding the given vector.
-    *
-    * This function increments the current position of the element by the specified vector `v`.
-    *
-    * @param v The vector to add to the element's current position.
-    */
-    void element::updatePosition(IVector3 v){
-        style->Position += v;
-
-        flags |= (stain::types::MOVE);
-
-        updateFrame();
-    }
-
-    /**
     * @brief Update the absolute position cache of the element.
     * @details This function updates the cached absolute position of the element by adding the position of the element to the position of its parent.
     */
-    void element::updateAbsolutePositionCache(){
+    void terminal::renderable::updateAbsolutePositionCache(){
         absolutePositionCache = {0, 0, 0};
         int Border_Offset = 0;
 
@@ -876,15 +661,6 @@ namespace GGUI {
 
         // Add the position of the element to the position of its parent
         absolutePositionCache += getPosition() + Border_Offset;
-    }
-
-    void element::setTitle(const std::string& t){
-        style->Title.value = t;
-    }
-
-    std::string_view element::getTitle() const {
-        // Return the title of the element
-        return style->Title.value;
     }
 
     /**
@@ -978,7 +754,7 @@ namespace GGUI {
         if (flags.has(stain::types::FINALIZE)){
             flags ^= (stain::types::FINALIZE);
 
-            check(STATE::INIT);
+            processStateHandler(STATE::INIT);
         }
     }
 
@@ -993,11 +769,10 @@ namespace GGUI {
     * @param child The child element for which the fitting dimensions are calculated.
     * @return A pair containing the width and height of the fitting dimensions.
     */
-    std::pair<int, int> element::getFittingDimensions(element* child) const {
+    IVector2 element::getFittingDimensions(element* child) const {
         IVector3 Current_Position = child->getPosition();
 
-        int Result_Width = 0;
-        int Result_Height = 0;
+        IVector2 result;
 
         int Border_Offset = hasBorder() != child->hasBorder() && hasBorder() ? 1 * 2 : 0;
 
@@ -1017,18 +792,18 @@ namespace GGUI {
         */
         while (true){
             // If the width of the child element is still less than the width of this element minus the border offset
-            if (Current_Position.x() + (++Result_Width) < getWidth() - Border_Offset){
+            if (Current_Position.x() + (++result.x()) < getWidth() - Border_Offset){
                 // Increase the width of the child element
-                Result_Width++;
+                result.x()++;
             }
             else{
                 break;
             }
             
             // If the height of the child element is still less than the height of this element minus the border offset
-            if (Current_Position.y() + (++Result_Height) < getHeight() - Border_Offset){
+            if (Current_Position.y() + (++result.y()) < getHeight() - Border_Offset){
                 // Increase the height of the child element
-                Result_Height++;
+                result.y()++;
             }
             else{
                 break;
@@ -1037,14 +812,14 @@ namespace GGUI {
             // Check if the child element is colliding with any other child elements.
             for (auto c : style->Childs) {
                 // Use local positioning since this is a civil dispute :)
-                if (child != c && utils::collides(c->getPosition(), Current_Position, c->getWidth(), c->getHeight(), Result_Width, Result_Height)) {
+                if (child != c && utils::collides(c->getPosition(), Current_Position, c->getWidth(), c->getHeight(), result.x(), result.y())) {
                     // If the child element is colliding with another child element, then we can stop here.
-                    return {Result_Width, Result_Height};
+                    return {result.x(), result.y()};
                 }
             }
         }
 
-        return {Result_Width, Result_Height};
+        return {result.x(), result.y()};
     }
 
     /**
@@ -1361,7 +1136,7 @@ namespace GGUI {
     */
     void element::setWrap(bool Wrap){
         style->Wrap = Wrap;
-    }
+    } 
 
     /**
     * @brief Recursively computes the size of the element based on its children.
@@ -1423,8 +1198,43 @@ namespace GGUI {
         return;
     }
 
-    void element::compileActiveGraphics(){
-        style->compile(this);
+    void terminal::renderable::compileActiveGraphics() {
+        owner->graphicalIdentityPool.reserve(2);
+
+        const auto [textColor, backgroundColor] = owner->getActiveTextColor();
+
+        int borderOffset = 0;
+
+        owner->graphicalIdentityPool.push_back({
+            {   // rectangle area
+                owner->getAbsolutePosition() + IVector3{borderOffset, borderOffset, 0},
+                {Width.get() - borderOffset*2, Height.get() - borderOffset*2}
+            },
+            textColor, backgroundColor,
+            Opacity.Get(),
+            TextAttributes.value,
+            owner
+        });
+
+        // to keep z-priority, so largest view is last
+        if (Border_Enabled.value) {     TODO("This seems very inefficient!")
+            const auto [borderColor, borderBackgroundColor] = owner->getActiveBorderColor();
+
+            TODO("Add here the border width into the offset calculation")
+
+            borderOffset = 1;
+
+            owner->graphicalIdentityPool.push_back({
+                {   // rectangle area
+                    owner->getAbsolutePosition(),
+                    {Width.get(), Height.get()}
+                },
+                borderColor, borderBackgroundColor,
+                Opacity.Get(),
+                TextAttributes.value,
+                owner
+            });
+        }
 
         std::transform(
             graphicalIdentityPool.begin(), graphicalIdentityPool.end(),
@@ -1779,7 +1589,7 @@ namespace GGUI {
     */
     bool element::hasTransparentChildren() const {
         // If the element is not visible, return false.
-        if (!Show)
+        if (!display)
             return false;
 
         // Recursively check each child element for transparency.
@@ -1793,19 +1603,6 @@ namespace GGUI {
 
         // No transparent children found.
         return false;
-    }
-
-    /**
-    * @brief Retrieves the name of the element as a raw string.
-    * 
-    * If the element's name is not set (i.e., the Name string is empty),
-    * this function returns the memory address of the element as a string.
-    * Otherwise, it returns the Name string.
-    * 
-    * @return A std::string_view containing either the element's name or its memory address.
-    */
-    std::string_view element::getNameAsRaw() const {
-        return ID;
     }
 
     /**
@@ -1866,7 +1663,7 @@ namespace GGUI {
         std::vector<element*> result;
 
         // If the element is not visible and hidden elements should not be shown, return an empty vector.
-        if (!Show && !Show_Hidden)
+        if (!display && !Show_Hidden)
             return {};
 
         // Add the current element to the result vector.

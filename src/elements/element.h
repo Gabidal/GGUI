@@ -7,7 +7,7 @@
 #include <functional>
 
 #include "../core/utils/color.h"
-#include "../core/utils/style.h"
+#include "../core/utils/types.h"
 #include "../core/backend/terminal.h"
 
 #include "../core/converter.h"
@@ -17,77 +17,63 @@ namespace GGUI{
         extern void renderer();
     }
 
+    extern void updateFrame();
+
     namespace terminal {
         class outputCapture;
+
+        struct renderable {
+            // Updated by element: Only fetch one parent UP, and own position +, then child repeat in Render pipeline.
+            IVector3 absolutePositionCache;
+    
+            std::vector<terminal::cell> cellBuffer;
+            std::vector<activeStyle> graphicalIdentityPool;
+            std::vector<const activeStyle*> graphicalReflectionPool;
+            
+            // Returns list of minimum points of the deltas.
+            std::vector<IVector2> getDeltaPoints();
+
+            void compileActiveGraphics();
+            
+            void updateAbsolutePositionCache();
+        };
     }
 
-    class element{
+    class element : public terminal::renderable {
     protected:
-        // Only fetch one parent UP, and own position +, then child repeat in Render pipeline.
-        IVector3 absolutePositionCache;
-
-        class element* parent = nullptr;
+        relativeNVector<int16_t, 2> dimensions = {1, 1};
+        relativeNVector<int16_t, 3> position = {0, 0, 0};
 
         std::vector<converter::output::event::action> handlers;
-
-        // Determines if the element is rendered or not.
-        bool Show = true;
         
-        std::vector<terminal::cell> cellBuffer;
-        std::vector<activeStyle> graphicalIdentityPool;
-        std::vector<const activeStyle*> graphicalReflectionPool;
-
-        // State machine for render pipeline only focus on changed aspects.
-        stain::base flags;
-
-        // Used as a simple state, which is updated on stain::types::DEEP
-        uint16_t childsWithBorders = 0;
-
-        bool focused = false;
-        bool hovered = false;
-
+        // Determines if the element is rendered or not.
+        bool display = true;
+        bool showBorder = false;
+        
         // Human readable ID.
         std::string ID = "";
-
-        // For long term support made this a pointer to avoid size mismatch.
-        styling* style = nullptr;
-
+        std::string_view title = "";
+        
         void (*onInit)(element*) = nullptr;
         void (*onDestroy)(element*) = nullptr;
         void (*onHide)(element*) = nullptr;
         void (*onShow)(element*) = nullptr;
         void (*onRender)(element*) = nullptr;
+        
+        float opacity = 1.0f;
+
+        RGB textColor, backgroundColor;
+        RGB borderGlyphColor, borderGlyphBackgroundColor;
+
+        styledBorder borderStyle;
     public:
+        // State machine for render pipeline only focus on changed aspects.
+        stain::base flags = stain::types::FINALIZE;
+        class element* parent = nullptr;
+        
+        element() = default;
 
-        /**
-         * @brief Constructor for the GGUI::element class.
-         * 
-         * This constructor initializes an element with a given style and optionally embeds styles during construction.
-         * 
-         * @param style A reference to a STYLING_INTERNAL::styleBase object that defines the base styling for the element.
-         * @param Embed_Styles_On_Construct A boolean flag indicating whether styles should be embedded during construction.
-         *        - If true, styles are embedded immediately, and the element's initialization state is finalized.
-         *        - If false, styles are not embedded, and a deep copy of unparsed styles is created for later use.
-         * 
-         * @note If styles are embedded during construction, the element's `On_Init` method will not be called again by 
-         *       the main embedding process.
-         * 
-         * @todo Implement the deep copy functionality for unparsed styles in `Style->copyUnParsedStyles()`.
-         */
-        element(STYLING_INTERNAL::styleBase& Style = STYLES::CONSTANTS::Default, bool Embed_Styles_On_Construct = false);
-
-        /**
-         * @brief Constructs an element with the given style and optional embedding of styles.
-         * 
-         * @param style A rvalue reference to a `STYLING_INTERNAL::styleBase` object representing the style to be applied to the element.
-         * @param Embed_Styles_On_Construct A boolean flag indicating whether to embed styles during construction. Defaults to `false`.
-         */
-        element(STYLING_INTERNAL::styleBase&& Style, bool Embed_Styles_On_Construct = false) : element(Style, Embed_Styles_On_Construct) {}
-
-        /**
-         * @brief For correctly copying data between elements, use the copy() function.
-         * Copying is removed, so that Slicing doesn't happen for the VTable
-         */
+        // Use copy() instead!
         element(const element&) = delete;
         element& operator=(const GGUI::element&) = delete;
 
@@ -95,71 +81,9 @@ namespace GGUI{
         element& operator=(element&&) = default;
         element(element&&) = default;
 
-        /**
-         * @brief The destructor for the Element class.
-         *
-         * This destructor is responsible for properly deallocating all the memory
-         * allocated by the Element object.
-         *
-         * @note This destructor is also responsible for cleaning up the parent
-         * element's vector of child elements and the event handlers list.
-         */
         virtual ~element();
 
-        /**
-         * @brief Creates a deep copy of this Element, including all its children.
-         * 
-         * @return A new Element object that is a copy of this one.
-         */
         element* copy() const;
-
-        /**
-         * @brief Applies the given styling to the element.
-         *
-         * This function copies the provided styling object into the element's current style,
-         * updating its appearance accordingly.
-         *
-         * @param s Reference to a styling object containing the new style properties to apply.
-         */
-        void addStyling(styling& s){
-            style->copy(s);
-        }
-
-        /**
-         * @brief Adds a style to the current element's style collection.
-         *
-         * This function takes a reference to a style object and adds it to the element's
-         * internal style handler. It allows dynamic modification or extension of the element's
-         * appearance at runtime.
-         *
-         * @param s Reference to a style_base object containing the styling information to add.
-         */
-        void addStyling(STYLING_INTERNAL::styleBase& s){
-            style->add(s);
-            style->embedStyles(this);
-        }
-        
-        /**
-         * @brief Adds a new style to the element's styling collection.
-         *
-         * This function takes ownership of the provided style object and adds it to the
-         * element's internal style manager. The style is passed as an rvalue reference,
-         * allowing for efficient move semantics.
-         *
-         * @param s An rvalue reference to a style_base object representing the style to add.
-         */
-        void addStyling(STYLING_INTERNAL::styleBase&& s){
-            addStyling(s);
-        }
-
-        /**
-         * @brief Returns the Dirty object for the Element.
-         * @details This function returns the Dirty object, which is a bitfield
-         *          that keeps track of what needs to be reprocessed on the
-         *          Element when it is asked to render.
-         * @return A reference to the Dirty object.
-         */
-        constexpr stain::base getDirty() const { return flags; }
 
         constexpr const std::vector<converter::output::event::action>& getEventHandlers() const {
             return handlers;
@@ -167,875 +91,141 @@ namespace GGUI{
 
         void addEventhandler(const converter::output::event::action& handler);
 
-        /**
-         * @brief Returns true if the element is currently focused.
-         * @return A boolean indicating whether the element is focused.
-         */
-        constexpr bool isFocused() const {
-            return focused;
+        void processStateHandler(STATE s);
+
+        void setOpacity(float Opacity) {
+            // Only allow 0.0 - 1.0
+            assert(Opacity >= 0.0f && Opacity <= 1.0f && "Opacity must be between 0.0 and 1.0");
+
+            opacity = Opacity;
+
+            flags |= stain::types::RESET;
+
+            updateFrame();
         }
 
-        /**
-         * @brief Sets the focus state of the element.
-         * @details Sets the focus state of the element to the given value.
-         *          If the focus state changes, the element will be dirtied and the frame will be updated.
-         * @param f The new focus state.
-         */
-        void setFocus(bool f);
-
-        /**
-         * @brief Returns true if the element is currently hovered.
-         * @return A boolean indicating whether the element is hovered.
-         */
-        constexpr bool isHovered() const {
-            return hovered;
+        float getOpacity() const {
+            return opacity;
         }
 
-        /**
-         * @brief Sets the hover state of the element.
-         * @details Sets the hover state of the element to the given value.
-         *          If the hover state changes, the element will be dirtied and the frame will be updated.
-         * @param h The new hover state.
-         */
-        void setHoverState(bool h);
-
-        /**
-         * @brief Executes the handler function associated with a given state.
-         * @details This function checks if there is a registered handler for the specified state.
-         *          If a handler exists, it invokes the handler function.
-         * @param s The state for which the handler should be executed.
-         */
-        void check(STATE s);
-
-        /**
-         * @brief Retrieves the styling information of the element.
-         * @details This function returns the current styling object associated with the element.
-         *          The styling object contains various style attributes such as colors, borders, etc.
-         * @return The styling object of the element.
-         */
-        styling getStyle() const;
-
-        /**
-         * @brief Sets the styling information of the element.
-         * @details This function sets the styling information of the element to the given value.
-         *          If the element already has a styling object associated with it, the function will
-         *          copy the given styling information to the existing object. Otherwise, the function
-         *          will create a new styling object and associate it with the element.
-         * @param css The new styling information to associate with the element.
-         */
-        void setStyle(styling css);
-
-        /**
-         * @brief Sets the opacity of the element.
-         * @details This function takes a float value between 0.0f and 1.0f and sets the
-         * opacity of the element to that value. If the value is greater than 1.0f, the
-         * function will report an error and do nothing.
-         * @param[in] Opacity The opacity value to set.
-         */
-        void setOpacity(float Opacity);
-        
-        /**
-         * @brief Sets the opacity of the element using an integer percentage.
-         * @details This function takes an unsigned integer value between 0 and 100, representing the opacity percentage,
-         * and sets the element's opacity. If the value is greater than 100, it will report an error and do nothing.
-         * @param[in] Opacity The opacity percentage to set.
-         */
-        void setOpacity(unsigned int Opacity);
-
-        /**
-         * @brief Gets the current border style of the element.
-         * @details This function returns the current border style of the element.
-         *          The border style is a structure that contains the strings for
-         *          the top left corner, top right corner, bottom left corner, bottom
-         *          right corner, horizontal line, vertical line, vertical right connector,
-         *          vertical left connector, horizontal bottom connector, horizontal top
-         *          connector, and cross connector.
-         * @return The current border style of the element.
-         */
-        styledBorder getBorderStyle() const {
-            return style->Border_Style;
+        bool isTransparent() const {
+            return opacity < 1.0f;
         }
 
-        /**
-         * @brief Gets the opacity of the element.
-         * @details This function returns the current opacity of the element as a float value.
-         *          The opacity is a value between 0.0 and 1.0, where 0.0 is fully transparent
-         *          and 1.0 is fully opaque.
-         * @return The current opacity of the element.
-         */
-        float getOpacity() const; 
+        void setBorder(bool b) {
+            if (b != showBorder) {
+                flags |= stain::types::EDGE;
+            }
 
-        /**
-         * @brief Gets the opacity as an 8-bit value.
-         * @details Returns 0..255 where 0 is fully transparent and 255 is fully opaque.
-         * @return The current opacity byte.
-         */
-        unsigned char getOpacityByte() const;
-
-        /**
-         * @brief Checks if the element is transparent.
-         * @details This function determines whether the element is transparent by checking
-         *          if the element's opacity is not equal to 1.0f. An opacity less than 1.0f
-         *          indicates that the element is partially or fully transparent.
-         * @return True if the element is transparent; otherwise, false.
-         */
-        bool isTransparent() const;
-        
-        /**
-         * @brief Retrieves the parent element.
-         * @details This function returns the parent element of the current element.
-         *          If the element has no parent, it will return nullptr.
-         * @return A pointer to the parent element.
-         */
-        constexpr element* getParent() const noexcept {
-            return parent;
+            showBorder = b;
+            updateFrame();
         }
 
-        /**
-         * @brief Sets the parent of this element.
-         * @details This function sets the parent of this element to the given element.
-         *          If the given element is nullptr, it will clear the parent of this
-         *          element.
-         * @param parent The parent element to set.
-         */
-        void setParent(element* parent);
-
-        /**
-         * @brief Sets the border visibility of the element.
-         * @details This function takes a boolean as a parameter and sets the border visibility of the element accordingly.
-         *          If the new state is different from the current state, the element will be marked as dirty with the EDGE stain.
-         * @param b The new state of the border visibility.
-         */
-        virtual void showBorder(bool b);
-
-        /**
-         * @brief Sets the border visibility of the element.
-         * @details This function toggles the border visibility based on the provided state.
-         *          If the state has changed, it updates the border visibility, marks the 
-         *          element as dirty with the EDGE stain, and updates the frame.
-         * @param b The desired state of the border visibility.
-         * @param Previous_State The current state of the border visibility.
-         */
-        virtual void showBorder(bool b, bool Previous_state);
-
-        /**
-         * @brief Checks if the element has a border.
-         * @details This function checks if the element has a border.
-         *          It returns true if the element has a border, false otherwise.
-         * @return True if the element has a border, false otherwise.
-         */
-        bool hasBorder() const;
-
-        /**
-         * @brief Displays or hides the element and all its children.
-         * @details This function changes the display status of the element and all its children.
-         *          If the element is displayed, all its children are also displayed. If the element is hidden,
-         *          all its children are also hidden.
-         * @param f A boolean indicating whether to display (true) or hide (false) the element and its children.
-         */
-        void display(bool f);
-
-        /**
-         * @brief Returns whether the element is currently displayed.
-         * @details This function is used to check whether the element is currently displayed or hidden.
-         *          It returns true if the element is displayed and false if the element is hidden.
-         * @return A boolean indicating whether the element is displayed (true) or hidden (false).
-         */
-        bool isDisplayed() const;
-
-        /**
-         * @brief Adds a child element to the element.
-         * @details This function adds a child element to the element. If the element has a border, it will
-         *          be taken into account when calculating the size of the parent element. If the child element
-         *          exceeds the size of the parent element, the parent element will be resized to fit the child
-         *          element. If the parent element is not allowed to resize, the child element will be resized to
-         *          fit the parent element.
-         * @param Child The child element to add.
-         */
-        virtual void addChild(element* Child);
-
-        /**
-         * @brief Adds a vector of child elements to the current element.
-         * @param childs The vector of child elements to add.
-         *
-         * This function adds all the child elements to the current element by calling the Add_Child function for each element in the vector.
-         * It also marks the current element as dirty with the DEEP stain after adding all the elements.
-         */
-        virtual void setChilds(std::vector<element*> childs);
-
-        /**
-         * @brief Retrieves the list of child elements.
-         * @details This function returns a reference to the vector containing all child elements
-         *          associated with the current element's style.
-         * @return A reference to the vector of child elements.
-         */
-        virtual std::vector<element*>& getChilds();
-
-        /**
-         * @brief Returns sorted listing of visible child elements.
-         * @details Sorting is done via z-priority, where higher z values are at the beginning.
-         */
-        virtual std::vector<element*> getVisibleChilds();
-
-        /**
-         * @brief Returns list of minimum points of the deltas.
-         * @details Delta point means where the reflected areas change appearance at.
-         */
-        virtual std::vector<IVector2> getDeltaPoints();
-
-        /**
-         * @brief Removes a child element from the current element.
-         * @param handle The pointer to the child element to be removed.
-         * @return true if the element was successfully removed, false if not.
-         *
-         * This function iterates through the vector of child elements and checks
-         * if the element at the current index is equal to the handle passed as an argument.
-         * If it is, the element is deleted and the parent element is marked as dirty with the DEEP and COLOR stains.
-         * If the currently focused element is the one being removed, the mouse position is set to the parent element's position.
-         */
-        virtual bool remove(element* handle);
-
-        /**
-         * @brief Removes the element at a given index from the list of child elements.
-         * @details This function checks if the index is valid (i.e. if the index is within the bounds of the vector of child elements).
-         *          If the index is valid, it removes the element at the specified index from the vector of child elements and deletes the element.
-         *          If the index is invalid, the function returns false.
-         * @param index The index of the element to remove.
-         * @return True if the element was successfully removed, false otherwise.
-         */
-        virtual bool remove(size_t index);
-
-        /**
-         * @brief Set the width and height of the element.
-         * @details This function sets the width and height of the element to the specified values.
-         *          If the width or height is different from the current width or height, then the element will be resized and the STRETCH stain is set.
-         *          The Update_Frame() function is also called to update the frame.
-         * @param width The new width of the element.
-         * @param height The new height of the element.
-         */
-        void setDimensions(int16_t width, int16_t height);
-
-        /**
-         * @brief Get the width of the element.
-         * @details This function returns the width of the element.
-         * @return The width of the element.
-         */
-        constexpr int16_t getWidth() const { return style->Width.get(); }
-
-        /**
-         * @brief Get the height of the element.
-         * @details This function returns the height of the element.
-         * @return The height of the element.
-         */
-        constexpr int16_t getHeight() const { return style->Height.get(); }
-
-        /**
-         * @brief Set the width of the element.
-         * @details This function sets the width of the element to the specified value.
-         *          If the width is different from the current width, then the element will be resized and the STRETCH stain is set.
-         *          The Update_Frame() function is also called to update the frame.
-         * @param width The new width of the element.
-         */
-        void setWidth(int16_t width);
-
-        /**
-         * @brief Set the height of the element.
-         * @details This function sets the height of the element to the specified value.
-         *          If the height is different from the current height, then the element will be resized and the STRETCH stain is set.
-         *          The Update_Frame() function is also called to update the frame.
-         * @param height The new height of the element.
-         */
-        void setHeight(int16_t height);
-
-        /**
-         * @brief Retrieves the evaluation type of the width property.
-         * 
-         * This function returns the evaluation type of the width property
-         * from the style's width value.
-         * 
-         * @return EVALUATION_TYPE The evaluation type of the width property.
-         */
-        constexpr types::EVALUATION_TYPE getWidthType() const { return style->Width.number.getType(); }
-
-        /**
-         * @brief Retrieves the evaluation type of the height value.
-         * 
-         * This function returns the evaluation type of the height value from the style's height property.
-         * 
-         * @return EVALUATION_TYPE The evaluation type of the height value.
-         */
-        constexpr types::EVALUATION_TYPE getHeightType() const { return style->Height.number.getType(); }
-
-        /**
-         * @brief Set the position of the element.
-         * @details This function sets the position of the element to the specified coordinates.
-         *          If the position changes, the element will be marked as dirty for movement
-         *          and the frame will be updated.
-         * @param c The new position of the element.
-         */
-        void setPosition(IVector3 c);
-       
-        /**
-         * @brief Set the position of the element.
-         * @details This function sets the position of the element to the specified coordinates.
-         *          If the position changes, the element will be marked as dirty for movement
-         *          and the frame will be updated.
-         * @param c The new position of the element.
-         */
-        void setPosition(IVector3* c);
-
-        /**
-         * @brief Updates the position of the element by adding the given vector.
-         *
-         * This function increments the current position of the element by the specified vector `v`.
-         *
-         * @param v The vector to add to the element's current position.
-         */
-        void updatePosition(IVector3 v);
-
-        /**
-         * @brief Get the position of the element.
-         * @details This function retrieves the position of the element from its style.
-         * @return The position of the element as an IVector3 object.
-         */
-        constexpr IVector3 getPosition() const { return style->Position.get(); }
-
-        /**
-         * @brief Get the absolute position of the element.
-         * @details This function returns the cached absolute position of the element.
-         *          The absolute position is the position of the element in the context of the entire document or window.
-         * @return The absolute position of the element as an IVector3 object.
-         */
-        constexpr IVector3 getAbsolutePosition() const { return absolutePositionCache; }
-
-        /**
-         * @brief Sets the title of the window and updates border visibility and colors accordingly.
-         * 
-         * This function sets the window's title and ensures that the border is shown if the title is not empty.
-         * If the window previously had hidden borders, it updates the border colors based on the background color.
-         * 
-         * @param t The new title for the window.
-         */
-        void setTitle(const std::string& t);
-
-        /**
-         * @brief Returns the title of the window.
-         * 
-         * @return The title of the window as a string.
-         */
-        std::string_view getTitle() const;
-
-        /**
-         * @brief Set the margin of the element.
-         * @details This function sets the margin of the element to the specified margin values.
-         *          The margin is stored in the element's style.
-         * @param margin The new margin values for the element.
-         */
-        void setMargin(margin margin);
-
-        /**
-         * @brief Get the margin of the element.
-         * @details This function retrieves the margin of the element from its style.
-         * @return The margin of the element as a GGUI::margin object.
-         */
-        margin getMargin() const { return style->Margin; }
-        
-        /**
-         * @brief Sets the background color of the element.
-         * 
-         * This function sets the background color of the element to the specified RGB value. 
-         * If the border background color is the same as the current background color, 
-         * it updates the border background color as well. Marks the element as dirty for 
-         * color updates and triggers a frame update.
-         * 
-         * @param color The RGB color to set as the background color.
-         */
-        void setBackgroundColor(RGB color);
-
-        /**
-         * @brief Retrieves the background color of the element.
-         * 
-         * This function returns the RGB value of the background color 
-         * from the element's style.
-         * 
-         * @return The RGB color of the element's background.
-         */
-        constexpr RGB getBackgroundColor() const { return style->Background_Color.color.get(); }
-        
-        /**
-         * @brief Sets the border color of the element.
-         * 
-         * This function sets the border color of the element to the specified RGB value. Marks the element as dirty for color updates and triggers a frame update.
-         * 
-         * @param color The RGB color to set as the border color.
-         */
-        void setBorderColor(RGB color);
-        
-        /**
-         * @brief Retrieves the border color of the element.
-         * 
-         * This function returns the RGB value of the border color 
-         * from the element's style.
-         * 
-         * @return The RGB color of the element's border.
-         */
-        constexpr RGB getBorderColor() const { return style->Border_Color.color.get(); }
-
-        /**
-         * @brief Sets the border background color of the element.
-         * 
-         * This function sets the border background color of the element to the specified RGB value.
-         * It marks the element as dirty for color updates and triggers a frame update.
-         * 
-         * @param color The RGB color to set as the border background color.
-         */
-        void setBorderBackgroundColor(RGB color);
-        
-        /**
-         * @brief Retrieves the border background color of the element.
-         * 
-         * This function returns the RGB value of the border background color
-         * from the element's style.
-         * 
-         * @return The RGB color of the element's border background.
-         */
-        constexpr RGB getBorderBackgroundColor() const { return style->Border_Background_Color.color.get(); }
-        
-        /**
-         * @brief Sets the text color of the element.
-         * 
-         * This function sets the text color of the element to the specified RGB value. 
-         * It marks the element as dirty for color updates and triggers a frame update.
-         * 
-         * @param color The RGB color to set as the text color.
-         */
-        void setTextColor(RGB color);
-
-        /**
-         * @brief Retrieves the text color of the element.
-         * 
-         * This function returns the RGB value of the text color
-         * from the element's style.
-         * 
-         * @return The RGB color of the element's text.
-         */
-        constexpr RGB getTextColor() const { return style->Text_Color.color.get(); }
-
-        /**
-         * @brief Sets the hover border color of the element.
-         * 
-         * This function sets the border color of the element when the mouse hovers over it
-         * to the specified RGB value. Marks the element as dirty for color updates and
-         * triggers a frame update.
-         * 
-         * @param color The RGB color to set as the hover border color.
-         */
-        void setHoverBorderColor(RGB color);
-
-        /**
-         * @brief Retrieves the hover border color of the element.
-         * 
-         * This function returns the RGB value of the border color when the mouse hovers over the element
-         * from the element's style.
-         * 
-         * @return The RGB color of the element's hover border.
-         */
-        constexpr RGB getHoverBorderColor() const { return style->Hover_Border_Color.color.get(); }
-
-        /**
-         * @brief Sets the hover background color of the element.
-         * 
-         * This function sets the background color of the element when the mouse hovers over it
-         * to the specified RGB value. Marks the element as dirty for color updates and triggers
-         * a frame update.
-         * 
-         * @param color The RGB color to set as the hover background color.
-         */
-        void setHoverBackgroundColor(RGB color);
-
-        /**
-         * @brief Retrieves the hover background color of the element.
-         * 
-         * This function returns the RGB value of the background color when the mouse hovers over the element
-         * from the element's style.
-         * 
-         * @return The RGB color of the element's hover background.
-         */
-        constexpr RGB getHoverBackgroundColor() const { return style->Hover_Background_Color.color.get(); }
-
-        /**
-         * @brief Sets the hover text color of the element.
-         * 
-         * This function sets the text color of the element when the mouse hovers over it
-         * to the specified RGB value. Marks the element as dirty for color updates and triggers
-         * a frame update.
-         * 
-         * @param color The RGB color to set as the hover text color.
-         */
-        void setHoverTextColor(RGB color);
-
-        /**
-         * @brief Retrieves the hover text color of the element.
-         * 
-         * This function returns the RGB value of the text color when the mouse hovers over the element
-         * from the element's style.
-         * 
-         * @return The RGB color of the element's hover text.
-         */
-        constexpr RGB getHoverTextColor() const { return style->Hover_Text_Color.color.get(); }
-
-        /**
-         * @brief Sets the hover border background color of the element.
-         * 
-         * This function sets the background color of the element's border 
-         * when the mouse hovers over it to the specified RGB value. It marks 
-         * the element as dirty for color updates and triggers a frame update.
-         * 
-         * @param color The RGB color to set as the hover border background color.
-         */
-        void setHoverBorderBackgroundColor(RGB color);
-
-        /**
-         * @brief Retrieves the hover border background color of the element.
-         * 
-         * This function returns the RGB value of the background color of the element's border
-         * when the mouse hovers over it from the element's style.
-         * 
-         * @return The RGB color of the element's hover border background.
-         */
-        constexpr RGB getHoverBorderBackgroundColor() const { return style->Hover_Border_Background_Color.color.get(); }
-
-        /**
-         * @brief Sets the focus border color of the element.
-         * 
-         * This function sets the color of the element's border when it is focused to the specified RGB value. It marks the element as dirty for color updates and triggers a frame update.
-         * 
-         * @param color The RGB color to set as the focus border color.
-         */
-        void setFocusBorderColor(RGB color);
-
-        /**
-         * @brief Retrieves the focus border color of the element.
-         * 
-         * This function returns the RGB value of the border color when the element is focused
-         * from the element's style.
-         * 
-         * @return The RGB color of the element's focus border.
-         */
-        constexpr RGB getFocusBorderColor() const { return style->Focus_Border_Color.color.get(); }
-
-        /**
-         * @brief Sets the focus background color of the element.
-         * 
-         * This function sets the background color of the element when it is focused to the specified RGB value. It marks the element as dirty for color updates and triggers a frame update.
-         * 
-         * @param color The RGB color to set as the focus background color.
-         */
-        void setFocusBackgroundColor(RGB color);
-
-        /**
-         * @brief Retrieves the focus background color of the element.
-         * 
-         * This function returns the RGB value of the background color when the element is focused
-         * from the element's style.
-         * 
-         * @return The RGB color of the element's focus background.
-         */
-        constexpr RGB getFocusBackgroundColor() const { return style->Focus_Background_Color.color.get(); }
-
-        /**
-         * @brief Sets the focus text color of the element.
-         * 
-         * This function sets the text color of the element when it is focused to the specified RGB value. It marks the element as dirty for color updates and triggers a frame update.
-         * 
-         * @param color The RGB color to set as the focus text color.
-         */
-        void setFocusTextColor(RGB color);
-
-        /**
-         * @brief Retrieves the focus text color of the element.
-         * 
-         * This function returns the RGB value of the text color when the element is focused
-         * from the element's style.
-         * 
-         * @return The RGB color of the element's focus text.
-         */
-        constexpr RGB getFocusTextColor() const { return style->Focus_Text_Color.color.get(); }
-
-        /**
-         * @brief Sets the focus border background color of the element.
-         * 
-         * This function sets the focus border background color of the element to the specified RGB value.
-         * It marks the element as dirty for color updates and triggers a frame update.
-         * 
-         * @param color The RGB color to set as the focus border background color.
-         */
-        void setFocusBorderBackgroundColor(RGB color);
-
-        /**
-         * @brief Retrieves the focus border background color of the element.
-         * 
-         * This function returns the RGB value of the focus border background color
-         * from the element's style.
-         * 
-         * @return The RGB color of the element's focus border background.
-         */
-        constexpr RGB getFocusBorderBackgroundColor() const { return style->Focus_Border_Background_Color.color.get(); }
-
-        /**
-         * @brief Sets the alignment of the element.
-         * 
-         * This function sets the alignment of the element to the specified ALIGN value.
-         * 
-         * @param Align The alignment value to set for the element.
-         */
-        void setAnchor(ANCHOR Anchor);
-
-        /**
-         * @brief Sets the alignment of the element.
-         * 
-         * This function sets the alignment of the element to the specified ALIGN value.
-         * 
-         * @param Align The alignment value to set for the element.
-         */
-        constexpr ANCHOR getAlign() const { return style->Align.value; }
-
-        /**
-         * @brief Sets the flow priority of the element.
-         * 
-         * This function sets the flow priority of the element to the specified DIRECTION value.
-         * The flow priority determines how the element will be aligned in its parent when the parent is a flow layout.
-         * 
-         * @param Priority The flow priority value to set for the element.
-         */
-        void setFlowPriority(DIRECTION d);
-
-        /**
-         * @brief Retrieves the flow priority of the element.
-         * 
-         * This function returns the DIRECTION value that was previously set with Set_Flow_Priority.
-         * The flow priority determines how the element will be aligned in its parent when the parent is a flow layout.
-         * 
-         * @return The flow priority value of the element.
-         */
-        constexpr DIRECTION getFlowPriority() const { return style->Flow_Priority.value; }
-
-        /**
-         * @brief Sets whether the element will wrap its contents to the next line when it hits the edge of the screen.
-         * 
-         * This function sets whether the element will wrap its contents to the next line when it hits the edge of the screen.
-         * If true, the element will wrap its contents to the next line when it hits the edge of the screen.
-         * If false, the element will not wrap its contents to the next line when it hits the edge of the screen.
-         * 
-         * @param Wrap The value to set for whether the element will wrap its contents to the next line.
-         */
-        void setWrap(bool w);
-
-        /**
-         * @brief Retrieves the wrap setting of the element.
-         * 
-         * This function returns whether the element will wrap its contents to the next line
-         * when it reaches the edge of the screen.
-         * 
-         * @return True if the element will wrap its contents, false otherwise.
-         */
-        constexpr bool getWrap() const { return style->Wrap.value; }
-
-        /**
-         * @brief Sets whether the element is allowed to dynamically resize.
-         * 
-         * This function enables or disables the ability of the element to 
-         * adjust its size based on its content.
-         * 
-         * @param True A boolean indicating whether dynamic resizing is allowed.
-         */
-        void allowDynamicSize(bool True);
-
-        /**
-         * @brief Checks whether the element is allowed to dynamically resize.
-         * 
-         * This function checks the Allow_Dynamic_Size property in the element's style
-         * and returns its value.
-         * 
-         * @return True if the element is allowed to dynamically resize, false otherwise.
-         */
-        constexpr bool isDynamicSizeAllowed() const { return style->Allow_Dynamic_Size.value; }
-
-        /**
-         * @brief Sets whether the element allows overflow.
-         * 
-         * This function enables or disables the overflow property of the element,
-         * allowing child elements to exceed the parent's dimensions without resizing it.
-         * 
-         * @param True A boolean indicating whether overflow is allowed.
-         */ 
-        void allowOverflow(bool True);
-
-        /**
-         * @brief Checks whether the element allows overflow.
-         * 
-         * This function checks the Allow_Overflow property in the element's style
-         * and returns its value.
-         * 
-         * @return True if the element allows overflow, false otherwise.
-         */
-        constexpr bool isOverflowAllowed() const { return style->Allow_Overflow.value; }
-        
-        /**
-         * @brief Recursively computes the size of the element based on its children.
-         * 
-         * This function will go through all the elements that are being displayed and
-         * compute their size based on the size of their children. If the element has
-         * children and the children have changed, then the element will be resized
-         * to fit the children. If the element does not have children, then the function
-         * will not do anything.
-         * 
-         * @note This function is called automatically by the framework when the
-         *       elements are being rendered. It is not necessary to call this function
-         *       manually.
-         */
-        void computeDynamicSize();
-
-        /**
-         * @brief Updates the parent element of the current element.
-         * @details This function is called when the current element is added, removed, or moved
-         *          to a different parent element. It marks the parent element as dirty and
-         *          requests a render update.
-         * @param New_Element The new parent element.
-         *
-         * @note If the parent element does not have a valid render buffer (i.e., its
-         *       `Is_Displayed()` function returns false), this function marks the parent
-         *       element as dirty with the `stain::types::DEEP` and `stain::types::COLOR` stains.
-         *       This ensures that the parent element is re-rendered from scratch when the
-         *       rendering thread is updated.
-         */
-        void updateParent(element* New_Element);
-
-        /**
-         * @brief Resizes the element to fit the size of its parent element.
-         * @details This function is called when the parent element is resized and the
-         *          current element is a child of the parent element. It resizes the
-         *          current element to fit the size of its parent element. If the parent
-         *          element does not have a valid render buffer (i.e., its
-         *          `Is_Displayed()` function returns false), this function does
-         *          nothing.
-         * @param parent The parent element to resize to.
-         * @return true if the resize was successful, false otherwise.
-         */
-        virtual bool resizeTo(element*) {
-            return false;
+        bool hasBorder() const {
+            return showBorder;
         }
 
-        /**
-         * @brief Sets the custom border style for the element.
-         * @details This function sets the custom border style for the element, marks the element's edges as dirty, and ensures that the border is visible.
-         * @param style The custom border style to set.
-         */
+        // Notifies parent to refresh when display is changed.
+        void setDisplay(bool d) {
+            display = d;
+
+            if (parent) {
+                parent->flags |= stain::types::DEEP;
+                updateFrame();
+            }
+        }
+
+        bool getDisplay() const {
+            return display;
+        }
+
+        void setDimensions(relativeNVector<int16_t, 2> dim) {
+            if (dim != dimensions) {
+                return;
+            }
+
+            dimensions = dim;
+
+            flags |= stain::types::STRETCH;
+            updateFrame();
+        }
+
+        auto getDimensions() const { return dimensions; }
+
+        auto getWidth() const { return dimensions.x(); }
+        auto getHeight() const { return dimensions.y(); }
+
+        rectangle getAsRectangle() const { 
+            return {
+                {position.x().get(), position.y().get(), position.z().get()},
+                {dimensions.x().get(), dimensions.y().get()}
+            };
+        }
+
+        void setPosition(IVector3 c) {
+            // Update the element's position in the style
+            position = { c.x(), c.y(), c.z() };
+            
+            // Mark the element as dirty for movement updates
+            this->flags |= (stain::types::MOVE);
+
+            // Update the frame to reflect the position change
+            updateFrame();
+        }
+
+        void updatePosition(IVector3 v){
+            position += v;
+
+            flags |= (stain::types::MOVE);
+
+            updateFrame();
+        }
+
+        auto getPosition() const { return position; }
+
+        auto getAbsolutePosition() const { return absolutePositionCache; }
+
+        // Allocate the string somewhere else and give it as a view
+        void setTitle(std::string_view t) {
+            title = t;
+        }
+
+        std::string_view getTitle() const {
+            return title;
+        }
+
+        void setBackgroundColor(RGB color) { backgroundColor = color; }
+
+        RGB getBackgroundColor() const { return backgroundColor; }
+        
+        void setBorderColor(RGB color) { borderGlyphColor = color; }
+        
+        RGB getBorderColor() const { return borderGlyphBackgroundColor; }
+
+        void setBorderBackgroundColor(RGB color) { borderGlyphBackgroundColor = color; }
+        
+        RGB getBorderBackgroundColor() const { return borderGlyphBackgroundColor; }
+        
+        void setTextColor(RGB color) { textColor = color; }
+
+        RGB getTextColor() const { return textColor; }
+
         void setCustomBorderStyle(GGUI::styledBorder style);
 
-        /**
-         * @brief Gets the custom border style of the element.
-         * @return The custom border style of the element.
-         */
-        GGUI::styledBorder getCustomBorderStyle() const { return style->Border_Style; }
+        GGUI::styledBorder getCustomBorderStyle() const { return borderStyle; }
 
-        /**
-         * @brief Composes the RGB values of the text color and background color of the element.
-         * 
-         * This function will return a pair of RGB values, where the first element is the
-         * color of the text and the second element is the color of the background.
-         * 
-         * If the element is focused, the function will return the RGB values of the focused
-         * text color and background color. If the element is hovered, the function will
-         * return the RGB values of the hovered text color and background color. Otherwise,
-         * the function will return the RGB values of the normal text color and background
-         * color.
-         * 
-         * @return A pair of RGB values representing the text color and background color of the element.
-         */
-        constexpr std::pair<RGB, RGB>  getActiveTextColor() const {
-            if (focused){
-                return {style->Focus_Text_Color.color.get(), style->Focus_Background_Color.color.get()};
-            }
-            else if (hovered){
-                return {style->Hover_Text_Color.color.get(), style->Hover_Background_Color.color.get()};
-            }
-            else{
-                return {style->Text_Color.color.get(), style->Background_Color.color.get()};
-            }
+        virtual std::string getTypedName() const {
+            return "element<" + ID + ">";
         }
 
-        /**
-         * @brief Composes the RGB values of the border color and background color of the element.
-         * @details This function will return the RGB values of the border color and background color of the element.
-         * If the element is focused, the function will return the RGB values of the focused border color and background color.
-         * If the element is hovered, the function will return the RGB values of the hovered border color and background color.
-         * Otherwise, the function will return the RGB values of the normal border color and background color.
-         * @return A pair of RGB values representing the border color and background color of the element.
-         */
-        constexpr std::pair<RGB, RGB> getActiveBorderColor() const {
-            if (focused){
-                return {style->Focus_Border_Color.color.get(), style->Focus_Border_Background_Color.color.get()};
-            }
-            else if (hovered){
-                return {style->Hover_Border_Color.color.get(), style->Hover_Border_Background_Color.color.get()};
-            }
-            else{
-                return {style->Border_Color.color.get(), style->Border_Background_Color.color.get()};
-            }
-        }
+        std::string_view getName() const { return ID; }
 
-        /**
-         * @brief Returns the name of the element.
-         * @details This function returns a string that represents the name of the element.
-         *          The name is constructed by concatenating the name of the element with the 
-         *          class name of the element, separated by a "<" and a ">".
-         * @return The name of the element.
-         */
-        virtual std::string getName() const {
-            return "element<" + std::string(getNameAsRaw()) + ">";
-        }
+        bool hasEmptyName() { return ID.empty(); }
 
-        /**
-         * @brief Retrieves the name of the element as a raw string.
-         * 
-         * If the element's name is not set (i.e., the Name string is empty),
-         * this function returns the memory address of the element as a string.
-         * Otherwise, it returns the Name string.
-         * 
-         * @return A std::string_view containing either the element's name or its memory address.
-         */
-        std::string_view getNameAsRaw() const;
-
-        /**
-         * @brief Checks if the element's name is empty.
-         * 
-         * @return true if the name of the element has no characters, false otherwise.
-         */
-        bool hasEmptyName() const;
-
-        /**
-         * @brief Set the name of the element.
-         * @details This function sets the name of the element and stores it in the global Element_Names map.
-         * @param name The name of the element.
-         */
         void setName(const std::string& name);
 
-        /**
-         * @brief Removes the element from the parent element.
-         * @details This function first checks if the element has a parent.
-         *          If the element has a parent, it calls the parent's Remove() function to remove the element from the parent.
-         *          If the element does not have a parent, it prints an error message to the console.
-         *          The function does not update the frame, so it is the caller's responsibility to update the frame after calling this function.
-         */
-        void remove();
+        void remove();  TODO("need element::container types!")
 
-        /**
-         * @brief A function that registers a lambda to be executed when the element is clicked.
-         * @details The lambda is given a pointer to the Event object that triggered the call.
-         *          The lambda is expected to return true if it was successful and false if it failed.
-         * @param action The lambda to be called when the element is clicked.
-         */
         void onClick(std::function<bool(converter::output::event::base*)> action);
 
         /**
@@ -1048,314 +238,22 @@ namespace GGUI{
          */
         void on(std::initializer_list<converter::input::key::types> criteria, std::function<bool(converter::output::event::base*)> job, bool GLOBAL = false);
 
-        /**
-         * @brief Retrieves an element by its name.
-         * 
-         * This function searches through the child elements of the current element
-         * to find an element with the specified name. It performs a recursive search
-         * through all descendants.
-         * 
-         * @param name The name of the element to search for.
-         * @return A pointer to the element with the specified name, or nullptr if no such element is found.
-         */
-        element* getElement(std::string_view name);
-
-        // TEMPLATES
-        //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
-
-        /**
-         * @brief Retrieves all child elements that have the same type as the given template.
-         * @details This function takes a template argument representing the type of the elements to retrieve.
-         *          It goes through the child AST, and checks if the element in question is the same type as the template T.
-         *          If the element in question is of the same type as the template T, it adds it to the result vector.
-         *          The function then recursively goes through the child AST, and checks if any of the child elements are of the same type as the template T.
-         *          If any of the child elements are of the same type as the template T, it adds them to the result vector.
-         *          The function then returns the result vector, which contains all child elements that have the same type as the given template.
-         * @param T The type of the elements to retrieve.
-         * @return A vector of pointers to the elements that have the same type as the given template.
-         */
-        template<typename T>
-        std::vector<T*> getElements() {
-            std::vector<T*> result;
-
-            // Check if the element in question is of the same type as the template T.
-            if (dynamic_cast<T*>(this)){
-                result.push_back((T*)this);
-            }
-
-            // Go through the child AST, and check if any of the child elements are of the same type as the template T.
-            for (auto e : style->Childs){
-                // Recursively go through the child AST, and check if any of the child elements are of the same type as the template T.
-                std::vector<T*> child_result = e->getElements<T>();
-
-                // Add the results of the recursive call to the result vector.
-                result.insert(result.end(), child_result.begin(), child_result.end());
-            }
-
-            // Return the result vector, which contains all child elements that have the same type as the given template.
-            return result;
-        }
-
-        /**
-         * @brief Retrieves all nested elements, including this element.
-         * @details This function collects all nested elements recursively, starting from this element.
-         *          If 'Show_Hidden' is false, hidden elements are excluded from the result.
-         * @param Show_Hidden Flag to determine whether to include hidden elements in the result.
-         * @return A vector of pointers to all nested elements.
-         */
-        std::vector<element*> getAllNestedElements(bool Show_Hidden = false);
-
-        //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
-
-        /**
-         * @brief Default virtual function for scrolling up.
-         * @details By default, elements do not have inherent scrolling abilities.
-         *          This function is used as a base for other elements to implement their own scrolling.
-         */
-        virtual void scrollUp() {}
-
-        /**
-         * @brief Default virtual function for scrolling down.
-         * @details By default, elements do not have inherent scrolling abilities.
-         *          This function is used as a base for other elements to implement their own scrolling.
-         */
-        virtual void scrollDown() {}
-
-        /**
-         * @brief Focuses the element.
-         * @details This function updates the global focus information by setting the mouse position to the element's position and updating the focused element.
-         */
+        // Sets focus on this element
         void focus();
 
-        /**
-         * @brief Adds a handler function to the state handlers map.
-         * @details This function takes a state and a handler function as arguments.
-         *          The handler function is stored in the State_Handlers map with the given state as the key.
-         * @param s The state for which the handler should be executed.
-         * @param job The handler function to be executed
-         */
+        // Add custom state handlers
         void onState(STATE s, void (*job)(element* self));
-
-        // Customization helper function
-        //-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
-        
-        /**
-         * @brief Adds a stain to the element.
-         * @details This function adds the given stain to the element's stains list.
-         *          The stains list is used to keep track of which properties of the element need to be re-evaluated.
-         *          The function takes a STAIN_TYPE as a parameter and adds it to the list of stains.
-         * @param s The stain to be added.
-         */
-        void addStain(const stain::base& s){
-            flags |= s;
-        }
-
-        /**
-         * @brief
-         * This function determines if the given element is a direct child of this element (in the DOM tree),
-         * and if it is visible on the screen (does not go out of bounds of the parent element).
-         * @param other Child element to check
-         * @return True if the child element is visible within the bounds of the parent.
-         */
-        bool childIsShown(element* other);
-
-        /**
-         * @brief Sets the callback function to be executed during the initialization of the element.
-         * 
-         * @param func A pointer to a function that takes a pointer to the current element (`element* self`) 
-         *             as its parameter and returns void. This function will be called during the 
-         *             initialization phase of the element.
-         */
-        inline void setOnInit(void (*func)(element* self)){
-            onInit = func;
-        }
-
-        /**
-         * @brief Sets a callback function to be executed when the element is destroyed.
-         * 
-         * @param func A pointer to a function that takes a pointer to the current element 
-         *             (`element* self`) as its parameter. This function will be called 
-         *             during the destruction process of the element.
-         */
-        inline void setOnDestroy(void (*func)(element* self)){
-            onDestroy = func;
-        }
-
-        /**
-         * @brief Sets the callback function to be executed when the element is hidden.
-         * 
-         * @param func A pointer to a function that takes a pointer to the current 
-         *             element (`element* self`) as its parameter. This function will 
-         *             be called when the element is hidden.
-         */
-        inline void setOnHide(void (*func)(element* self)){
-            onHide = func;
-        }
-
-        /**
-         * @brief Sets the callback function to be executed when the element is shown.
-         * 
-         * @param func A pointer to a function that takes a pointer to the current 
-         *             element (`element* self`) as its parameter. This function 
-         *             will be called when the element is shown.
-         */
-        inline void setOnShow(void (*func)(element* self)){
-            onShow = func;
-        }
-
-        /**
-         * @brief Sets the callback function to be called during the render phase of the element.
-         *
-         * This function assigns a user-defined function to be executed when the element is rendered.
-         * The callback receives a pointer to the element itself as its parameter.
-         *
-         * @param func Pointer to a function that takes an element* as its argument and returns void.
-         */
-        inline void setOnRender(void (*func)(element* self)){
-            onRender = func;
-        }
-
-        /**
-         * @brief Forces the evaluation of dynamic style attributes for the current element.
-         * 
-         * This method checks if the element has an associated style object. If a style object
-         * exists, it triggers the evaluation of dynamic attribute values for the element
-         * by calling the `evaluateDynamicAttributevalues` method on the style object.
-         * 
-         * @note This function is typically used to ensure that the element's style is
-         * up-to-date, especially when dynamic attributes are involved.
-         */
-        inline void forceStyleEvaluation(){
-            if (style)
-                style->evaluateDynamicAttributevalues(this);
-        }
-        
     protected:
     
-        /**
-         * @brief Retrieves the direct styling associated with this element.
-         * 
-         * This function returns a pointer to the styling object (`GGUI::styling`) 
-         * that is directly associated with the current element. The returned 
-         * styling object can be used to access or modify the visual properties 
-         * of the element.
-         * 
-         * @return GGUI::styling* Pointer to the direct styling object of the element.
-         */
-        styling* getDirectStyle() const;
-
-        /**
-         * @brief Add the border of the window to the rendered string.
-         *
-         * @param Result The string to add the border to.
-         */
+        // Applies border glyphs into this render output
         void renderBorders(std::vector<terminal::cell>& Result);
 
-        /**
-         * @brief Renders the title of the element into the provided result buffer.
-         * 
-         * This function writes the title text of the element into the `Result` vector,
-         * taking into account the available width and applying an ellipsis ("...") if
-         * the title is too long to fit within the allocated space. The title is styled
-         * using the element's text RGB values.
-         * 
-         * @param Result A vector of UTF objects where the rendered title will be stored.
-         *               The vector should have sufficient size to accommodate the rendered text.
-         * 
-         * @details
-         * - If the title is empty, the function returns immediately without modifying `Result`.
-         * - The title's length is determined by the `Style->Title.value.size`.
-         * - The function calculates the writable length based on the element's width,
-         *   taking into account borders and the space required for the ellipsis.
-         * - If the title exceeds the writable length, an ellipsis is appended to indicate truncation.
-         * - The function ensures that no characters are written beyond the available width.
-         * 
-         * @note The function assumes that the `Result` vector is pre-allocated and large enough
-         *       to hold the rendered title and ellipsis.
-         */
+        // Applies tittle into this render output
         void renderTitle(std::vector<terminal::cell>& Result);
 
-        /**
-         * @brief resets baked graphics and adds its own baked graphics
-         */
-        void compileActiveGraphics();
-        
-        /**
-         * @brief Posts a process that handles the intersection of borders between two elements and their parent.
-         * @details This function posts a process that handles the intersection of borders between two elements and their parent.
-         *          The process calculates the intersection points of the borders and then constructs a bit mask that portraits the connections the middle point has.
-         *          With the calculated bit mask it can fetch from the 'SYMBOLS::Border_Identifiers' the right border string.
-         * @param A The first element.
-         * @param B The second element.
-         * @param Parent_Buffer The buffer of the parent element.
-         */
+        // Combines border glyphs where applicable
         void postProcessBorders(element* A, element* B, std::vector<terminal::cell>& Parent_Buffer);
-
-        /**
-         * @brief Update the absolute position cache of the element.
-         * @details This function updates the cached absolute position of the element by adding the position of the element to the position of its parent.
-         */
-        void updateAbsolutePositionCache();
         
-        /**
-         * @brief Check if any children have changed.
-         * @details This function will check if any of the children have changed, this is used to determine if the element needs to be re-drawn.
-         * @return true if any children have changed, false otherwise.
-         */
-        bool childrenChanged() const;
-        
-        /**
-         * @brief Check if there are any transparent children.
-         * @details This function determines if the current element or any of its children
-         *          are transparent and require redrawing.
-         * @return True if any child is transparent and not clean; otherwise, false.
-         */
-        bool hasTransparentChildren() const;    
-        
-        /**
-         * @brief Retrieves the final size limit of the element.
-         *
-         * This function calculates the final size limit of the element based on its
-         * properties and its parent's constraints. If overflow is allowed, the size
-         * limit is set to the maximum possible value. Otherwise, the size is determined
-         * by the element's dimensions or inherited from the parent if dynamic sizing
-         * is allowed.
-         *
-         * @return GGUI::IVector3 The final size limit of the element.
-         */
-        IVector3 getFinalLimit() const;
-        
-        /**
-         * @brief Get the fitting dimensions for the given child element.
-         *
-         * This function takes a child element and calculates the fitting dimensions for it.
-         * The fitting dimensions are the width and height of the child element that does not exceed the
-         * bounds of the parent element. If the child element is colliding with another child element
-         * then the fitting dimensions are reduced to the point where the collision is resolved.
-         *
-         * @param child The child element for which the fitting dimensions are calculated.
-         * @return A pair containing the width and height of the fitting dimensions.
-         */
-        std::pair<int, int> getFittingDimensions(element* child) const;
-
-        /**
-         * @brief Calculates the hitboxes of all child elements of the element.
-         * @details This function calculates the hitboxes of all child elements of the element.
-         *          The hitbox of a child element is the area of the element that is actually visible
-         *          on the screen. The function takes the starting offset into the child array as an
-         *          argument. If no argument is provided, the function starts at the beginning of the
-         *          child array.
-         * @param Starting_Offset The starting offset into the child array. If no argument is provided,
-         *                         the function starts at the beginning of the child array.
-         */
-        virtual void calculateChildsHitboxes([[maybe_unused]] size_t Starting_Offset = 0) {}
-
-        /** 
-         * @brief Marks the Element as fully dirty by setting all stain types.
-         * 
-         * This function sets each stain type on the Dirty object, indicating
-         * that the Element needs to be reprocessed for all attributes.
-         */
         constexpr void fullyStain(){
             // Mark the element as dirty for all possible stain types to ensure
             // complete re-evaluation and rendering.
@@ -1367,15 +265,6 @@ namespace GGUI{
                 | stain::types::NOT_RENDERED
             );
         }
-        
-        /**
-         * @brief Embeds styles into the current element and its child elements.
-         * 
-         * This function calls the Embed_Styles method on the current element's style,
-         * passing the current element as a parameter. It then recursively calls the 
-         * Embed_Styles method on each child element's style.
-         */
-        void embedStyles();
         
         /**
          * @brief Creates a new instance of the element class.
@@ -1390,20 +279,11 @@ namespace GGUI{
             return new element();
         }
         
-        /**
-         * @brief Renders the element and its children into the Render_Buffer nested buffer of the window.
-         * @details This function processes the element to generate a vector of UTF objects representing the current state.
-         * It handles different stains such as CLASS, STRETCH, COLOR, and EDGE to ensure the element is rendered correctly.
-         * @return A vector of UTF objects representing the rendered element and its children.
-         */
+        // The main rendering pipeline for each element and its derived classes
         virtual std::vector<terminal::cell>& render();
 
         // Give thread::renderer() access to our private render method.
         friend void thread::renderer();
-        
-        // Give styling class access to some private methods.
-        friend class styling;
-        friend class STYLING_INTERNAL::styleBase;
 
         // Since protected methods can be accessed via the derived class only if it is as "this" pointer, so we need to give it access.
         friend class listView;
@@ -1421,26 +301,14 @@ namespace GGUI{
          * virtual table (VT) has not yet been set to the derived class that is calling
          * the base class constructor.
          */
-        void compile() { embedStyles(); }
+        void compile() {  }
         
     };
 
     namespace utils {
-        /**
-         * @brief Checks if a given point collides with a specified element.
-         * 
-         * This function determines if the point `b` collides with the element `a` by 
-         * calling another `Collides` function with the element's absolute position, 
-         * width, height, and the point's assumed dimensions of 1x1.
-         * 
-         * @param a Pointer to the Element to check for collision.
-         * @param b The point (as IVector3) to check for collision with the element.
-         * @return true if the point collides with the element, false otherwise.
-         */
         constexpr bool collides(const element* a, IVector3 b) {
             if (!a) return false;   // Safe guard
-            // Call the Collides function with the element's position and dimensions, and the point with assumed dimensions of 1x1.
-            return utils::collides(a->getAbsolutePosition(), b, a->getWidth(), a->getHeight(), 1, 1);
+            return a->getAsRectangle().hits(b.surjection<2>());
         }
     }
 }

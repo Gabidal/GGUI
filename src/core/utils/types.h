@@ -23,8 +23,32 @@ namespace GGUI{
         )
     );
 
+    template<typename T, typename N>
+    concept is_arithmetic_with = requires(T a, N n) {
+        a + n;
+        a - n;
+        a * n;
+        a / n;
+    };
+
+    template<typename T>
+    concept is_arithmeticType = (
+        std::is_arithmetic_v<T> || 
+        (
+            requires(T a, T b) {
+                a + b;
+                a - b;
+                a * b;
+                a / b;
+            } && (
+                is_arithmetic_with<T, float> ||
+                is_arithmetic_with<T, int16_t>
+            )
+        )
+    );
+
     template<typename T, size_t DIM>
-    requires (std::is_default_constructible_v<T> && std::is_arithmetic_v<T>)
+    requires (std::is_default_constructible_v<T> && is_arithmeticType<T>)
     struct NVector {
         std::array<T, DIM> axis = {};    // X_0, X_1, X_2, ..., X_n-1
 
@@ -64,7 +88,7 @@ namespace GGUI{
 
         // += operator
         constexpr NVector& operator+=(const NVector& other) {
-            for (size_t i = 0; i < DIM; i++) axis[i] += other.axis[i];
+            for (size_t i = 0; i < DIM; i++) axis[i] = axis[i] + other.axis[i];
             return *this;
         }
 
@@ -77,7 +101,7 @@ namespace GGUI{
 
         // -= operator
         constexpr NVector& operator-=(const NVector& other) {
-            for (size_t i = 0; i < DIM; i++) axis[i] -= other.axis[i];
+            for (size_t i = 0; i < DIM; i++) axis[i] = axis[i] - other.axis[i];
             return *this;
         }
 
@@ -90,7 +114,7 @@ namespace GGUI{
 
         // *= operator with scalar
         constexpr NVector& operator*=(const T& scalar) {
-            for (size_t i = 0; i < DIM; i++) axis[i] *= scalar;
+            for (size_t i = 0; i < DIM; i++) axis[i] = axis[i] * scalar;
             return *this;
         }
 
@@ -107,7 +131,7 @@ namespace GGUI{
         // * (dot product) operator with vector
         constexpr T operator*(const NVector& other) const {
             T result = 0;
-            for (size_t i = 0; i < DIM; i++) result += axis[i] * other.axis[i];
+            for (size_t i = 0; i < DIM; i++) result = result + ( axis[i] * other.axis[i]);
             return result;
         }
 
@@ -481,15 +505,16 @@ namespace GGUI{
 
     namespace stain {
         enum class types : uint16_t {
-            GRAPHICS = 1 << 0,      // BG and other color related changes
-            EDGE = 1 << 1,          // Title and border changes.
-            DEEP = 1 << 2,          // Children changes. Deep because the childs are connected via AST.
-            STRETCH = 1 << 3,       // Width and or height changes.
-            STATE = 1 << 4,         // This is for Switches that based on their state display one symbol differently.
-            MOVE = 1 << 5,          // Enabled, to signal absolute position caching.
-            FINALIZE = 1 << 6,      // This is used to signal that the element is finalized and the stylings are successfully been embedded.
-            RESET = 1 << 7,         // This is to make stretch less slaggy flagging.
-            NOT_RENDERED = 1 << 8,  // This is a single time flag, noting when the first render pass occurs for the element, triggers On_Render().
+            GRAPHICS            = 1 << 0,   // BG and other color related changes
+            EDGE                = 1 << 1,   // Title and border changes.
+            DEEP                = 1 << 2,   // Children changes. Deep because the childs are connected via AST.
+            STRETCH             = 1 << 3,   // Width and or height changes.
+            STATE               = 1 << 4,   // This is for Switches that based on their state display one symbol differently.
+            MOVE                = 1 << 5,   // Enabled, to signal absolute position caching.
+            FINALIZE            = 1 << 6,   // This is used to signal that the element is finalized and the stylings are successfully been embedded.
+            RESET               = 1 << 7,   // This is to make stretch less slaggy flagging.
+            NOT_RENDERED        = 1 << 8,   // This is a single time flag, noting when the first render pass occurs for the element, triggers On_Render().
+            COMBINE_BORDERS     = 1 << 9,   // States if the borders need to be re-combined after DEEP or EDGE compute.
         };
 
         struct base : public bitMask<stain::types> {
@@ -613,6 +638,182 @@ namespace GGUI{
         [[nodiscard]] constexpr std::span<T> getWritten() const { return std::span<T>(data, size); }
 
         [[nodiscard]] constexpr std::span<T> getStorage() const { return std::span<T>(data, capacity); } 
+    };
+
+    template<typename T>
+    requires std::is_default_constructible_v<T> && is_arithmeticType<T>
+    struct optionallyRelative {
+        enum class types : uint8_t {
+            DEFAULT,        // no further evaluation needed, just return the value
+            PERCENTAGE      // the value is a percentage of the parent attribute
+        };
+
+        constexpr optionallyRelative() = default;
+
+        template<typename P>
+        constexpr optionallyRelative(P value) {
+            if constexpr (std::is_floating_point_v<P>) {
+                evaluationType = types::PERCENTAGE;
+                percentage = value;
+                data = {};
+            } else {
+                evaluationType = types::DEFAULT;
+                percentage = 0.0f;
+                data = value;
+            }
+        }
+
+        constexpr bool operator==(const optionallyRelative<T>& other) const {
+            return evaluationType == other.evaluationType && data == other.data && percentage == other.percentage;
+        }
+
+        constexpr void evaluate(T parental_value) {
+            switch (evaluationType) {
+            case types::DEFAULT:
+                // If the evaluation type is DEFAULT then just return the data without any modification
+                return;
+            case types::PERCENTAGE:
+                // If the evaluation type is PERCENTAGE then multiply the parental value by the data and return the result
+                data = static_cast<T>(static_cast<T>(parental_value) * percentage);
+                return;
+            }
+
+            assert(false && "Evaluation type not supported!");
+        }
+
+        constexpr T get() const { return data; }
+
+        constexpr types getType() const { return evaluationType; }
+
+        template<typename P>
+        requires (std::is_same_v<P, T> || std::is_integral_v<P>)
+        constexpr void set(P d) {
+            data = d;
+            evaluationType = types::DEFAULT;
+        }
+
+        constexpr void set(float f) {
+            percentage = f;
+            evaluationType = types::PERCENTAGE;
+        }
+
+        // Adding arithmetic operator overloads for relativeNVector to work
+        constexpr T operator + (T other) const {
+            return data + other;
+        }
+
+        constexpr T operator + (const optionallyRelative<T>& other) const {
+            return data + other.data;
+        }
+
+        constexpr T operator - (T other) const {
+            return data - other;
+        }
+
+        constexpr T operator - (const optionallyRelative<T>& other) const {
+            return data - other.data;
+        }
+
+        constexpr T operator * (T other) const {
+            return data * other;
+        }
+
+        constexpr T operator * (const optionallyRelative<T>& other) const {
+            return data * other.data;
+        }
+
+        constexpr T operator / (T other) const {
+            return data / other;
+        }
+
+        constexpr T operator / (const optionallyRelative<T>& other) const {
+            return data / other.data;
+        }
+
+
+    protected:
+        T data;     // Contains the actual data
+        float percentage;   // Only used at evaluation on render pipeline
+        types evaluationType;
+    };
+
+    template<typename T, size_t DIM>
+    using relativeNVector = NVector<optionallyRelative<T>, DIM>;
+
+    struct styledBorder {
+        std::array<std::string_view, 11> data = {
+            "┌", "└", "┐", "┘", "│", "─", "├", "┤", "┬", "┴", "┼"
+        };
+
+        enum class connectionTypes : uint8_t {
+            NONE    = 0 << 0,
+            UP      = 1 << 0,
+            DOWN    = 1 << 1,
+            LEFT    = 1 << 2,
+            RIGHT   = 1 << 3
+        };
+
+        constexpr std::string_view getBorder(bitMask<connectionTypes> flags) const {
+            // Corners
+            if (flags == (bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::RIGHT))
+                return data[0];
+            else if (flags == (bitMask<connectionTypes>(connectionTypes::UP) | connectionTypes::RIGHT))
+                return data[1];
+            else if (flags == (bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::LEFT))
+                return data[2];
+            else if (flags == (bitMask<connectionTypes>(connectionTypes::UP) | connectionTypes::LEFT))
+                return data[3];
+            // Vertical lines
+            else if (flags == (bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::UP))
+                return data[4];
+
+            // Horizontal lines
+            else if (flags == (bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT))
+                return data[5];
+
+            // connectors
+            else if (flags == (bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::UP | connectionTypes::RIGHT))
+                return data[6];
+            else if (flags == (bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::UP | connectionTypes::LEFT))
+                return data[7];
+            else if (flags == (bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT | connectionTypes::DOWN))
+                return data[8];
+            else if (flags == (bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT | connectionTypes::UP))
+                return data[9];
+
+            // cross connectors
+            else if (flags == (bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT | connectionTypes::UP | connectionTypes::DOWN))
+                return data[10];
+            else
+                return "";
+        }
+
+        constexpr bitMask<styledBorder::connectionTypes> getBorderType(std::string_view border) const {
+            if (border == data[0])
+                return bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::RIGHT;
+            else if (border == data[1])
+                return bitMask<connectionTypes>(connectionTypes::UP) | connectionTypes::RIGHT;
+            else if (border == data[2])
+                return bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::LEFT;
+            else if (border == data[3])
+                return bitMask<connectionTypes>(connectionTypes::UP) | connectionTypes::LEFT;
+            else if (border == data[4])
+                return bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::UP;
+            else if (border == data[5])
+                return bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT;
+            else if (border == data[6])
+                return bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::UP | connectionTypes::RIGHT;
+            else if (border == data[7])
+                return bitMask<connectionTypes>(connectionTypes::DOWN) | connectionTypes::UP | connectionTypes::LEFT;
+            else if (border == data[8])
+                return bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT | connectionTypes::DOWN;
+            else if (border == data[9])
+                return bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT | connectionTypes::UP;
+            else if (border == data[10])
+                return bitMask<connectionTypes>(connectionTypes::LEFT) | connectionTypes::RIGHT | connectionTypes::UP | connectionTypes::DOWN;
+            else return bitMask<connectionTypes>(connectionTypes::NONE);
+        }
+
     };
 }
 

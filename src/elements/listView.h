@@ -3,10 +3,8 @@
 
 #include "element.h"
 
-#include "../core/utils/style.h"
-
 namespace GGUI{
-    class listView : public element{
+    class listView : public element {
     protected:
         //We can always assume that the list starts from the upper left corner, right?
         element* Last_Child = new element(position(0, 0) | width(0) | height(0));
@@ -52,7 +50,7 @@ namespace GGUI{
          *          border offsets, and dynamic sizing capabilities.
          * @param e The child element to be added.
          */
-        void addChild(element* e) override;
+        void addElement(element* e) override;
         
         /**
          * @brief Gets the name of the list view.
@@ -184,7 +182,7 @@ namespace GGUI{
          * @details This function adds a child element to the Scroll_View and marks the Scroll_View as dirty with the DEEP stain.
          * @param e The child element to be added.
          */
-        void addChild(element* e) override;
+        void addElement(element* e) override;
 
         /**
          * @brief Enables or disables scrolling for the Scroll_View.
@@ -296,7 +294,7 @@ namespace GGUI{
             // If the container has not been yet initialized, do so.
             if (element::getChilds().size() == 0){
                 allowOverflow(true);
-                element::addChild(new listView(
+                element::addElement(new listView(
                     name((getName() + "::container").c_str()) | 
                     flowPriority(element::getFlowPriority())
                 ));
