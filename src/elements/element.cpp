@@ -386,7 +386,7 @@ namespace GGUI {
         // Set the mouse position to the element's position.
         currentMouse.position = absolutePositionCache.surjection<IVector2::dimensions>();
         // Update the focused element.
-        core::updateFocusedElement(this);
+        core::focusedOn.link(this);
     }
 
     /**

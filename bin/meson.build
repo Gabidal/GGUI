@@ -9,7 +9,7 @@
 
 project(
   'GGUI', 'cpp',
-  version : '0.1.9',
+  version : '0.1.9.5',
   default_options : [
     'warning_level=3',
     'cpp_std=c++20'
@@ -26,7 +26,6 @@ enable_pic_pie = false
 # Source files for the project
 lib_sources = [
   # Core utilities
-  '../src/core/utils/style.cpp',
   '../src/core/utils/logger.cpp',
   '../src/core/utils/settings.cpp',
   '../src/core/utils/drm.cpp',

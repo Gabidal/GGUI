@@ -271,6 +271,7 @@ namespace GGUI{
 
         // Since protected methods can be accessed via the derived class only if it is as "this" pointer, so we need to give it access.
         friend class listView;
+        friend class scrollView;
 
         friend class terminal::outputCapture;
     

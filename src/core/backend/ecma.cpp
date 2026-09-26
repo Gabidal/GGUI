@@ -2,6 +2,7 @@
 #include "ecma.h"
 
 #include "../utils/utils.h"
+#include "../utils/logger.h"
 
 #include <algorithm> // std::remove_if
 
@@ -1026,7 +1027,7 @@ namespace GGUI {
                         const auto& activeModes = currentStates->ecmaComponents.activeModes;
 
                         if (activeModes.has(mode::presets::DCSM_DATA)) {
-                            GGUI::logger::log("GGUI Does not support input data stream manipulation!");
+                            logger::log("GGUI Does not support input data stream manipulation!");
                             return;
                         }
 

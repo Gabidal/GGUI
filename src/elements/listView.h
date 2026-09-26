@@ -80,7 +80,7 @@ namespace GGUI{
             return (T*)this->content[index];
         }
 
-        template<typename T>
+        template<typename T = element>
         T* getElement(std::string_view Name) const {
             for (auto* c : content){
                 if (c->getName() == Name)
@@ -96,7 +96,7 @@ namespace GGUI{
             return nullptr;
         }
 
-        template<typename T>
+        template<typename T = element>
         std::vector<T*> getElements() const {
             std::vector<T*> Result;
 
@@ -169,7 +169,6 @@ namespace GGUI{
 
         std::string getTypedName() const override;
     protected:
-
         std::vector<terminal::cell>& render() override;
     
         element* createInstance() const override {

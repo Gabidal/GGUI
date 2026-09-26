@@ -41,7 +41,6 @@ void Compile_Headers(const std::string& destination, const std::string& source_r
         "src/core/backend/dec.h",
         "src/core/backend/terminal.h",
 
-        "src/core/utils/style.h",
         "src/core/utils/settings.h",
         "src/core/utils/drm.h",
 

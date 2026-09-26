@@ -10,14 +10,8 @@
 
 namespace GGUI {
     namespace core {
-        extern element* focusedOn;
-        extern element* hoveredOn;
-
-        extern void updateFocusedElement(GGUI::element* new_candidate);
-        extern void updateHoveredElement(GGUI::element* new_candidate);
-
-        extern void unFocusElement();
-        extern void unHoverElement();
+        extern selectable focusedOn;
+        extern selectable hoveredOn;
     }
 
     namespace converter {
@@ -116,9 +110,9 @@ namespace GGUI {
                             Has_Enter_Press_Event = currentInput->has(input::key::types::ENTER) && in->currentKeyboardState[(uint8_t)input::key::types::ENTER].state;
         
                             // Check if the host is prime to be focused on
-                            if ((Has_Mouse_Left_Click_Event || Has_Enter_Press_Event) && currentElement->isHovered()){
-                                core::updateFocusedElement(currentElement);
-                                core::unHoverElement();
+                            if ((Has_Mouse_Left_Click_Event || Has_Enter_Press_Event) && core::hoveredOn == currentElement){
+                                core::focusedOn.link(currentElement);
+                                core::hoveredOn.unlink();
 
                                 // Remove the input, since it's job is used here:
                                 data.erase(data.begin() + k);
@@ -126,7 +120,7 @@ namespace GGUI {
                             }
 
                             // Criteria must be identical for more accurate criteria listing.
-                            if (currentEventHandler.criteria == currentInput->criteria && currentElement->isFocused()){
+                            if (currentEventHandler.criteria == currentInput->criteria && core::focusedOn == currentElement){
                                 try{
                                     // Check if this job could be run successfully.
                                     if (currentEventHandler.job(currentInput)){
@@ -147,14 +141,14 @@ namespace GGUI {
                         }
 
                         // If the current event handler is not focused, then we can check wether to set it on/off onHovering
-                        if (!currentElement->isFocused()) {
+                        if (currentElement != core::focusedOn) {
                             if (currentMouse.state != mouse::states::ENABLE) {
                                 if (overlapsWithMouse){
-                                    core::updateHoveredElement(currentElement);
+                                    core::hoveredOn.link(currentElement);
                                 }
                                 else {
                                     if (core::hoveredOn == currentElement)
-                                        core::unHoverElement();
+                                        core::hoveredOn.unlink();
                                 }
                             }
                         }
@@ -261,11 +255,11 @@ namespace GGUI {
             void base::scrollAPI() {
                 // Check if the mouse scroll up button has been pressed
                 if (in->currentKeyboardState[(uint8_t)input::key::types::SCROLL_UP].state){
-                    if (core::focusedOn)    // If the focused element is not null, call the scroll up function
-                        core::focusedOn->scrollUp();
+                    if (core::focusedOn != nullptr && dynamic_cast<scrollView*>(core::focusedOn.operate()))    // If the focused element is not null, call the scroll up function
+                        dynamic_cast<scrollView*>(core::focusedOn.operate())->scrollUp();
                 } else if (in->currentKeyboardState[(uint8_t)input::key::types::SCROLL_DOWN].state){  // Check if the mouse scroll down button has been pressed
-                    if (core::focusedOn)    // If the focused element is not null, call the scroll down function
-                        core::focusedOn->scrollDown();
+                    if (core::focusedOn != nullptr && dynamic_cast<scrollView*>(core::focusedOn.operate()))    // If the focused element is not null, call the scroll down function
+                        dynamic_cast<scrollView*>(core::focusedOn.operate())->scrollDown();
                 }
             }
 
@@ -282,13 +276,13 @@ namespace GGUI {
                     return;
 
                 // If the focused element is not null, remove the focus
-                if (core::focusedOn){
-                    core::updateHoveredElement(core::focusedOn); // Update the hovered element to be the focused element before un-focusing it.
-                    core::unFocusElement();
+                if (core::focusedOn != nullptr){
+                    core::hoveredOn.link(core::focusedOn.operate()); // Update the hovered element to be the focused element before un-focusing it.
+                    core::focusedOn.unlink();
                 }
-                else if (core::hoveredOn){
+                else if (core::hoveredOn != nullptr){
                     // If nothing is focused, ESC clears hover.
-                    core::unHoverElement();
+                    core::hoveredOn.unlink();
                 }
             }
 
@@ -302,7 +296,7 @@ namespace GGUI {
                 if (!in->currentKeyboardState[(uint8_t)input::key::types::TABULATOR].state)
                     return;
 
-                if (core::focusedOn) return;   // Tabulator is disabled from switching if an element is focused on, this gives us the ability to insert tabs into textFields.
+                if (core::focusedOn != nullptr) return;   // Tabulator is disabled from switching if an element is focused on, this gives us the ability to insert tabs into textFields.
 
                 if (handlers.empty())
                     return;
@@ -322,16 +316,13 @@ namespace GGUI {
                 // Check if the shift key is pressed
                 bool Shift_Is_Pressed = in->currentKeyboardState[(uint8_t)input::key::types::SHIFT].state;
 
-                // Get the current element from the selected element
-                element* Current = core::hoveredOn;
-                
                 int Current_Index = 0;
 
                 // Find the index of the current element in the list of event handlers
-                if (Current){
+                if (core::hoveredOn != nullptr){
                     // Find the first occurrence of the event handlers with this Current being their Host.
                     for (;(size_t)Current_Index < handlers.size(); Current_Index++){
-                        if (handlers[(size_t)Current_Index] == Current)
+                        if (handlers[(size_t)Current_Index] == core::hoveredOn)
                             break;
                     }
                 }
@@ -352,7 +343,7 @@ namespace GGUI {
 
                 // Now update the hovered element with the new index
                 currentMouse.state = mouse::states::DISABLE;
-                core::updateHoveredElement(handlers[(size_t)Current_Index]);
+                core::hoveredOn.link(handlers[(size_t)Current_Index]);
             }
 
             void base::transformInput() {

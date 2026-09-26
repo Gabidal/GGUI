@@ -64,6 +64,7 @@ namespace GGUI{
                 return selected == other;
             }
         
+            element* operate() const { return selected; }
         };
 
         extern selectable focusedOn;
@@ -85,14 +86,6 @@ namespace GGUI{
         extern void SignalThreadTermination();
 
         extern void recallMemories();
-
-        extern void unFocusElement();
-
-        extern void unHoverElement();
-
-        extern void updateFocusedElement(GGUI::element* new_candidate);
-
-        extern void updateHoveredElement(GGUI::element* new_candidate);
 
         extern void eventHandler();
 
@@ -129,7 +122,7 @@ namespace GGUI{
 
     extern void pauseGGUI(std::function<void()> f);
 
-    extern void GGUI(listView& App, unsigned long long Sleep_For = 0);
+    extern void GGUI(listView&& App, unsigned long long Sleep_For = 0);
 
     extern element* getElement(std::string_view name);
 }

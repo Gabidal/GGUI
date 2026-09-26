@@ -581,6 +581,135 @@ namespace GGUI {
         return result;
     }
 
+    TODO("This does not account for scroll index currently!")
+    std::vector<terminal::cell>& scrollView::render() {
+        // Check for Dynamic attributes
+        evaluateDynamicAttributes();
+
+        if (contentChanged()) {
+            computeDynamicSize();
+        }
+
+        //if inned children have changed without this changing, then this will trigger.
+        if (!flags.has(stain::base(stain::types::STRETCH) | stain::types::RESET)){
+            bool tmp = contentChanged();
+
+            if (!tmp && flags.isEmpty()){
+                return cellBuffer;
+            }
+            else if (tmp || hasTransparentContent()){
+                flags |= (stain::types::RESET);
+            }
+        }
+
+        // This is to tell the rendering thread that some or no changes were made to the rendering buffer.
+        if (this == getRoot() && !flags.isEmpty()){
+            thread::identicalFrame = false;
+        }
+
+        if (flags.isEmpty())
+            return cellBuffer;
+
+        if (flags.has(stain::types::MOVE)){
+            flags ^= stain::types::MOVE;
+
+            updateAbsolutePositionCache();
+        }
+
+        if (flags.has(stain::types::RESET)){
+            flags ^= (stain::types::RESET);
+
+            std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
+            
+            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP);
+        }
+
+        if (flags.has(stain::types::STRETCH)){
+            flags ^= (stain::types::STRETCH);
+            
+            cellBuffer.clear();
+            cellBuffer.resize(getWidth() * getHeight(), ' ');
+
+            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP | stain::types::NOT_RENDERED);
+        }
+
+        if (flags.has(stain::types::NOT_RENDERED)) {
+            if (onRender) onRender(this);
+
+            // Clean regardless of On_Render existing or not.
+            flags ^= (stain::types::NOT_RENDERED);
+        }
+
+        //This will add the child windows to the Result buffer
+        if (flags.has(stain::types::DEEP)){
+            flags ^= (stain::types::DEEP);
+
+            // clean reflection pool
+            graphicalReflectionPool.clear();
+            graphicalIdentityPool.clear();
+            // Resets baked graphics and reserves for content*2+2, for the incoming deep stains.
+            graphicalReflectionPool.reserve(content.size() * 2 + 2); 
+            flags |= (stain::types::GRAPHICS);
+
+            for (element* c : content){
+                // check if the child is within the rendering area.
+                if (!c || !c->getDisplay()|| !contentIsShown(c))
+                    continue;
+
+                if (c->hasBorder())
+                    flags |= stain::types::COMBINE_BORDERS;
+
+                const std::vector<terminal::cell>& tmp = c->render();
+
+                // compile graphical reflection pool
+                graphicalReflectionPool.insert(graphicalReflectionPool.end(), c->graphicalReflectionPool.begin(), c->graphicalReflectionPool.end());
+
+                core::nestElement(this, c, cellBuffer, tmp);
+            }
+        }
+
+        if (flags.has(stain::types::GRAPHICS)) {     
+            flags ^= (stain::types::GRAPHICS);
+
+            compileActiveGraphics();    // compiles identifying graphics pools
+        }
+
+        // DEEP wont trigger this if this container does not have borders
+        if (flags.has(stain::types::COMBINE_BORDERS) && hasBorder())
+            flags |= (stain::types::EDGE);
+
+        //This will add the borders if necessary and the title of the window.
+        if (flags.has(stain::types::EDGE)){
+            flags ^= (stain::types::EDGE);
+
+            flags |= stain::types::COMBINE_BORDERS;
+
+            renderBorders(cellBuffer);
+            renderTitle(cellBuffer);
+        }
+
+        // This will calculate the connecting borders.
+        if (flags.has(stain::types::COMBINE_BORDERS)){
+            flags ^= (stain::types::COMBINE_BORDERS);
+
+            for (auto A : content){
+                for (auto B : content){
+                    if (A == B)
+                        continue;
+
+                    if (!A->getDisplay() || !A->hasBorder() || !B->getDisplay() || !B->hasBorder())
+                        continue;
+
+                    postProcessBorders(A, B, cellBuffer);
+                }
+
+                postProcessBorders(this, A, cellBuffer);
+            }
+        }
+
+        return cellBuffer;
+    }
+
     void scrollView::setScrolling(bool allow) {
         bool scrollingEventsExists = false;
         size_t scrollUpEventHandlerIndex = 0;

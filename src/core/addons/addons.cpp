@@ -28,7 +28,7 @@ namespace GGUI{
 
         // Finally after all addons are loaded
         for (auto* a : addons){
-            getRoot()->addElement(a);
+            getRoot()->add(a);
         }
     }
 
@@ -98,76 +98,76 @@ namespace GGUI{
     void initInspectTool(){
         const char* ERROR_logger = "_ERROR_logger_";
 
-        addons.push_back(new GGUI::listView(
-            width(0.5f) | height(1.0f) | 
-            textColor(1.0f) | backgroundColor(GGUI::COLOR::BLACK) |
-            // Set the flow direction to column so the elements stack vertically
-            flowPriority(DIRECTION::COLUMN) | 
-            // Set the position of the list view to the right side of the main window
-            position(
-                STYLES::top + STYLES::right + STYLES::prioritize
-            ) | 
-            // Set the opacity of the list view to 0.8
-            opacity(0.8f) |
-            // Set the name of the list view to "Inspect"
-            name("Inspect") |
+        // addons.push_back(new GGUI::listView(
+        //     width(0.5f) | height(1.0f) | 
+        //     textColor(1.0f) | backgroundColor(GGUI::COLOR::BLACK) |
+        //     // Set the flow direction to column so the elements stack vertically
+        //     flowPriority(DIRECTION::COLUMN) | 
+        //     // Set the position of the list view to the right side of the main window
+        //     position(
+        //         STYLES::top + STYLES::right + STYLES::prioritize
+        //     ) | 
+        //     // Set the opacity of the list view to 0.8
+        //     opacity(0.8f) |
+        //     // Set the name of the list view to "Inspect"
+        //     name("Inspect") |
 
-            // enable_border(true) |     // <- will crash since the child nodes do not have borders enabled.
+        //     // enable_border(true) |     // <- will crash since the child nodes do not have borders enabled.
 
-            // Add the error logger kidnapper:
-            node(new element(
-                width(1.0f) | height(0.5f) |
-                enableBorder(true) | 
-                title("LOG: ") | 
-                // Set the name of the window to "LOG"
-                name(ERROR_logger) | 
-                // Allow the window to overflow, so that the text can be seen even if it is longer than the window
-                allowOverflow(true)
-            )) | 
+        //     // Add the error logger kidnapper:
+        //     node(new element(
+        //         width(1.0f) | height(0.5f) |
+        //         enableBorder(true) | 
+        //         title("LOG: ") | 
+        //         // Set the name of the window to "LOG"
+        //         name(ERROR_logger) | 
+        //         // Allow the window to overflow, so that the text can be seen even if it is longer than the window
+        //         allowOverflow(true)
+        //     )) | 
                         
-            // Add a count for how many UTF are being streamed.
-            node(new textField(
-                anchor(ANCHOR::LEFT) | 
-                width(1.0f) |
-                height(9) |
-                // Set the name of the text field to "STATS"
-                name("STATS")
-                // text(getStatsText().c_str())
-            )) | 
+        //     // Add a count for how many UTF are being streamed.
+        //     node(new textField(
+        //         anchor(ANCHOR::LEFT) | 
+        //         width(1.0f) |
+        //         height(9) |
+        //         // Set the name of the text field to "STATS"
+        //         name("STATS")
+        //         // text(getStatsText().c_str())
+        //     )) | 
 
-            // Hide the inspect tool by default
-            display(false) | 
+        //     // Hide the inspect tool by default
+        //     display(false) | 
 
-            onInit([](element* self){
-                // Register an event handler to toggle the inspect tool on and off
-                GGUI::getRoot()->on(
-                    {
-                        converter::input::key::types::SHIFT, 
-                        converter::input::key::types::CTRL, 
-                        (converter::input::key::types)'i'
-                    }, 
-                    [self](converter::output::event::base*){
-                        // Toggle the inspect tool, so if it is hidden, show it and if it is shown, hide it
-                        self->display(!self->getDisplay());
+        //     onInit([](element* self){
+        //         // Register an event handler to toggle the inspect tool on and off
+        //         GGUI::getRoot()->on(
+        //             {
+        //                 converter::input::key::types::SHIFT, 
+        //                 converter::input::key::types::CTRL, 
+        //                 (converter::input::key::types)'i'
+        //             }, 
+        //             [self](converter::output::event::base*){
+        //                 // Toggle the inspect tool, so if it is hidden, show it and if it is shown, hide it
+        //                 self->display(!self->getDisplay());
 
-                        // Return true to indicate that the event was handled
-                        return true;
-                    }, 
-                true);
+        //                 // Return true to indicate that the event was handled
+        //                 return true;
+        //             }, 
+        //         true);
 
-                // Remember the inspect tool, so it will be updated every second
-                core::remember([](std::vector<converter::output::event::memory>& rememberable){
-                    rememberable.push_back(
-                        converter::output::event::memory(
-                            std::chrono::seconds(1),
-                            updateStats,
-                            converter::output::event::memory::types::RETRIGGER,
-                            "Update Stats"
-                        )
-                    );
-                });
-            })
-        ));
+        //         // Remember the inspect tool, so it will be updated every second
+        //         core::remember([](std::vector<converter::output::event::memory>& rememberable){
+        //             rememberable.push_back(
+        //                 converter::output::event::memory(
+        //                     std::chrono::seconds(1),
+        //                     updateStats,
+        //                     converter::output::event::memory::types::RETRIGGER,
+        //                     "Update Stats"
+        //                 )
+        //             );
+        //         });
+        //     })
+        // ));
     }
 
 }

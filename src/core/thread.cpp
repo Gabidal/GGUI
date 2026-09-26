@@ -1,6 +1,6 @@
 #include "utils/utils.h"
 #include "utils/settings.h"
-#include "utils/settings.h"
+#include "utils/logger.h"
 
 #include "thread.h"
 

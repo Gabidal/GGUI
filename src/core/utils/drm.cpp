@@ -264,7 +264,7 @@ namespace GGUI {
 
                 packet::resize::base* resizePacket = reinterpret_cast<packet::resize::base*>(packetBuffer);
 
-                getRoot()->setDimensions(resizePacket->size.x(), resizePacket->size.y());
+                getRoot()->setDimensions(resizePacket->size);
 
             } catch (const std::exception& e) {
                 GGUI::logger::log("DRM connection failed: " + std::string(e.what()));
@@ -375,7 +375,7 @@ namespace GGUI {
                     // Now we can simply cast to the resize packet and read the new size and assign it to Main element
                     packet::resize::base* resizePacket = reinterpret_cast<packet::resize::base*>(rawPacketBuffer);
 
-                    getRoot()->setDimensions(resizePacket->size.x(), resizePacket->size.y());
+                    getRoot()->setDimensions(resizePacket->size);
                     break;
                 }
             case packet::type::NOTIFY:
