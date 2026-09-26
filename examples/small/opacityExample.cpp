@@ -9,8 +9,8 @@ int main(){
         // This element should look like Red + White = Pink
         node(new element(
             width(1.0f) | height(0.7f) |    // <-- 70% because we want little bit of overlap between the two elements
-            backgroundColor(COLOR::RED) |          // base color is red, but 50% of its value is given from its parent
-            opacity(0.5f) | position(STYLES::top)   // positioned at the top of the parent element
+            backgroundColor(COLOR::RED) |          // base color is red, but 50% of its value is given from its container
+            opacity(0.5f) | position(STYLES::top)   // positioned at the top of the container element
         )) | 
 
         // <-- The overlap between the two elements will produce Pink + Cyan = Magenta.
@@ -18,8 +18,8 @@ int main(){
         // This element should look like Blue + White = Cyan
         node(new element(
             width(1.0f) | height(0.7f) |    // <-- 70% because we want little bit of overlap between the two elements
-            backgroundColor(COLOR::BLUE) |      // base color is blue, but 50% of its value is given from its parent
-            opacity(0.5f) | position(STYLES::bottom) // positioned at the bottom of the parent element
+            backgroundColor(COLOR::BLUE) |      // base color is blue, but 50% of its value is given from its container
+            opacity(0.5f) | position(STYLES::bottom) // positioned at the bottom of the container element
         ))
     );
 

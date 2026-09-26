@@ -16,9 +16,9 @@ namespace GGUI {
         // Call handler for on destroying moment.
         processStateHandler(STATE::DESTROYED);
 
-        // Make sure this element is not listed in the parent element.
-        if (parent) {
-            parent->remove(this);
+        // Make sure this element is not listed in the container element.
+        if (container) {
+            container->remove(this);
         }
 
         //now also update the event handlers.
@@ -41,16 +41,16 @@ namespace GGUI {
     }   
 
     void element::evaluateDynamicAttributes() {
-        if (parent) {        // Dynamic require parent container to exist
+        if (container) {        // Dynamic require container container to exist
             IVector2 previousDimensions = { getWidth(), getHeight() };
             IVector3 previousPosition = getPosition();
 
-            dimensions.x().evaluate(parent->dimensions.x().get());
-            dimensions.y().evaluate(parent->dimensions.y().get());
+            dimensions.x().evaluate(container->dimensions.x().get());
+            dimensions.y().evaluate(container->dimensions.y().get());
 
-            // position = parent->dimensions - this->dimensions to get the actual usable relative positions otherwise the positions could clip outside 
-            position.x().evaluate(parent->dimensions.x().get() - dimensions.x().get());
-            position.y().evaluate(parent->dimensions.y().get() - dimensions.y().get());
+            // position = container->dimensions - this->dimensions to get the actual usable relative positions otherwise the positions could clip outside 
+            position.x().evaluate(container->dimensions.x().get() - dimensions.x().get());
+            position.y().evaluate(container->dimensions.y().get() - dimensions.y().get());
     
             if (previousDimensions != IVector2{ getWidth(), getHeight() })
                 flags |= stain::types::STRETCH;
@@ -63,7 +63,7 @@ namespace GGUI {
         if (flags.has(stain::types::FINALIZE)) {
             flags ^= stain::types::FINALIZE;
 
-            // Regardless of present parent state handlers should be called
+            // Regardless of present container state handlers should be called
             processStateHandler(STATE::INIT);
         }
     }
@@ -177,9 +177,9 @@ namespace GGUI {
                 else{
                     processStateHandler(STATE::HIDDEN);
                     
-                    // Ask the parent to flush its buffer from this.
-                    if (parent){
-                        parent->flags |= (stain::types::RESET);
+                    // Ask the container to flush its buffer from this.
+                    if (container){
+                        container->flags |= (stain::types::RESET);
                     }
                 }
             }
@@ -187,13 +187,13 @@ namespace GGUI {
     }
 
     void element::remove() {
-        if (parent){
-            // Tell the parent what is about to happen.
-            // You need to update the parent before removing the child, otherwise the code cannot erase it when it is not found!
-            parent->remove(this);
+        if (container){
+            // Tell the container what is about to happen.
+            // You need to update the container before removing the content, otherwise the code cannot erase it when it is not found!
+            container->remove(this);
         }
         else{
-            logger::log("Cannot remove " + getTypedName() + ", with no parent\n");
+            logger::log("Cannot remove " + getTypedName() + ", with no container\n");
         }
     }
 
@@ -208,8 +208,8 @@ namespace GGUI {
         else 
             new_element->ID = "";
 
-        // reset the parent info.
-        new_element->parent = nullptr;
+        // reset the container info.
+        new_element->container = nullptr;
 
         // now also update the event handlers.
         // NOTE: We don't have enough power to update the lambda captures of the this ptr value, so please use the self->host ptr instead!

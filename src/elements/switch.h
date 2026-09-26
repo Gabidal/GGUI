@@ -22,7 +22,7 @@ namespace GGUI{
     class switchBox : public element {
     protected:
         bool State = false;
-        bool SingleSelect = false;   // Represents whether switching this box should disable other single selected switchBoxes under the same parent.
+        bool SingleSelect = false;   // Represents whether switching this box should disable other single selected switchBoxes under the same container.
 
         //Contains the unchecked version of the symbol and the checked version.
         terminal::cell Off = ' ', On = ' ';

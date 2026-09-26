@@ -49,7 +49,7 @@ void foo(element* self){
 
 int main(){
     GGUI::GGUI(
-        childs({
+        contents({
             new element(
                 title("A") |
                 width(20) | height(10) |

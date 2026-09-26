@@ -7,8 +7,8 @@ int main(){
         node(new listView(
             flowPriority(DIRECTION::COLUMN) | 
 
-            // Instead of spamming node(new ...) everytime, you can make an childs which accepts an initializer list of element*
-            childs({
+            // Instead of spamming node(new ...) everytime, you can make an contents which accepts an initializer list of element*
+            contents({
                 // Giving no width or height enables dynamic size.
                 new listView(
                     flowPriority(DIRECTION::ROW) |     // <-- make this an horizontal list
@@ -17,7 +17,7 @@ int main(){
                         width(20) | height(10) | 
                         textColor(COLOR::TEAL) | title("TEAL") |
                         backgroundColor(COLOR::DARK_RED) |
-                        enableBorder(true)     // <-- enabling borders for two neighboring child nodes, will enable border optimization, saving space.
+                        enableBorder(true)     // <-- enabling borders for two neighboring content nodes, will enable border optimization, saving space.
                     )) |
                     node(new element(
                         width(10) | height(15) | 
@@ -27,7 +27,7 @@ int main(){
                     ))
                 ),
 
-                // If we have child elements that have borders enabled by default, we can give the parent also borders to also optimize those away if wanted.
+                // If we have content elements that have borders enabled by default, we can give the container also borders to also optimize those away if wanted.
                 new listView(
                     flowPriority(DIRECTION::ROW) | enableBorder(true) | 
         

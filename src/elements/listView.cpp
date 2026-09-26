@@ -35,9 +35,9 @@ namespace GGUI {
 
         IVector2 End_Address = {getWidth(), getHeight()};
 
-        // We can check if the parent allows some flexibility.
-        if (parent && parent->containerFlag.has(containerFlags::dynamic)) {
-            End_Address = parent->getOuterBounds();
+        // We can check if the container allows some flexibility.
+        if (container && container->containerFlag.has(containerFlags::dynamic)) {
+            End_Address = container->getOuterBounds();
         }
 
         return End_Address;
@@ -65,7 +65,7 @@ namespace GGUI {
         //static_assert(std::is_same<T&, decltype(*this)>::value, "T must be the same as the type of the object");
         listView* new_element = static_cast<listView*>(element::copy());
         
-        // copy the childs over.
+        // copy the contents over.
         for (unsigned int i = 0; i < this->content.size(); i++){
             new_element->content[i] = this->content[i]->copy();
         }
@@ -126,9 +126,9 @@ namespace GGUI {
 
         result = getInnerBounds();
 
-        // Get the bound limits from the parent container
-        if (containerFlag.has(containerFlags::dynamic) && parent) {
-            result = parent->getBoundLimits();
+        // Get the bound limits from the container container
+        if (containerFlag.has(containerFlags::dynamic) && container) {
+            result = container->getBoundLimits();
         }
 
         // overflown containers have no bound limits
@@ -145,7 +145,7 @@ namespace GGUI {
     void listView::add(element* e) {
         pauseGGUI([this, e]() {
             // Update dynamic attributes to align with this container
-            e->parent = this;
+            e->container = this;
             e->evaluateDynamicAttributes();
 
             IVector2 growthDirection = {1, 0};  // Default to horizontal growth direction
@@ -203,7 +203,7 @@ namespace GGUI {
             assert(e != nullptr);
             assert(reinterpret_cast<uintptr_t>(e) % alignof(element) == 0);
 
-            assert(e->flags.has(stain::types::FINALIZE) && "Child element passthrough Finalization stage!");
+            assert(e->flags.has(stain::types::FINALIZE) && "Content element passthrough Finalization stage!");
 
             // Not counting State machine, if element is not being drawn return always false.
             if (!e->getDisplay())
@@ -220,7 +220,7 @@ namespace GGUI {
     }
 
     bool listView::hasTransparentContent() const {
-        // Recursively check each child element for transparency.
+        // Recursively check each content element for transparency.
         for (const element* e : content) {
             if (!e->getDisplay())
                 continue;
@@ -248,7 +248,7 @@ namespace GGUI {
             for (element* c : content) {
                 if (!c->getDisplay()) continue;
 
-                // If the child is also a dynamic container such as a listView, then we need to process that first
+                // If the content is also a dynamic container such as a listView, then we need to process that first
                 if (dynamic_cast<listView*>(c)) static_cast<listView*>(c)->computeDynamicSize();
 
                 // Compare the required space end
@@ -330,7 +330,7 @@ namespace GGUI {
             flags ^= (stain::types::NOT_RENDERED);
         }
 
-        //This will add the child windows to the Result buffer
+        //This will add the content windows to the Result buffer
         if (flags.has(stain::types::DEEP)){
             flags ^= (stain::types::DEEP);
 
@@ -342,7 +342,7 @@ namespace GGUI {
             flags |= (stain::types::GRAPHICS);
 
             for (element* c : content){
-                // check if the child is within the rendering area.
+                // check if the content is within the rendering area.
                 if (!c || !c->getDisplay()|| !contentIsShown(c))
                     continue;
 
@@ -401,14 +401,14 @@ namespace GGUI {
     }
 
     void listView::postProcessBorders(element* A, element* B, std::vector<terminal::cell>& Parent_Buffer){
-        // We only need to calculate the childs points in which they intersect with the parent borders.
+        // We only need to calculate the contents points in which they intersect with the container borders.
         // At these intersecting points of border we will construct a bit mask that portraits the connections the middle point has.
         // With the calculated bit mask we can fetch from the 'SYMBOLS::Border_Identifiers' the right border string.
 
-        // First calculate if the childs borders even touch the parents borders.
+        // First calculate if the contents borders even touch the parents borders.
         // If not, there is no need to calculate anything.
 
-        // First calculate if the child is outside the parent.
+        // First calculate if the content is outside the container.
         if (
             B->getPosition().x() + B->getWidth() < A->getPosition().x() ||
             B->getPosition().x() > A->getPosition().x() + A->getWidth() ||
@@ -417,7 +417,7 @@ namespace GGUI {
         )
             return;
 
-        // Now calculate if the child is inside the parent.
+        // Now calculate if the content is inside the container.
         if (
             B->getPosition().x() > A->getPosition().x() &&
             B->getPosition().x() + B->getWidth() < A->getPosition().x() + A->getWidth() &&
@@ -484,16 +484,16 @@ namespace GGUI {
 
             bitMask<styledBorder::connectionTypes> Current_Masks = styledBorder::connectionTypes::NONE;
 
-            auto Is_In_Bounds = [](IVector3 index, listView* parent) {
+            auto Is_In_Bounds = [](IVector3 index, listView* container) {
                 // checks if the index is out of bounds
-                if (index.x() < 0 || index.y() < 0 || index.x() >= parent->getWidth() || index.y() >= parent->getHeight())
+                if (index.x() < 0 || index.y() < 0 || index.x() >= container->getWidth() || index.y() >= container->getHeight())
                     return false;
 
                 return true;
             };
 
-            auto From = [](IVector3 index, std::vector<terminal::cell>& Parent_Buffer, listView* Parent) {
-                return &Parent_Buffer[index.y() * Parent->getWidth() + index.x()];
+            auto From = [](IVector3 index, std::vector<terminal::cell>& Parent_Buffer, listView* Container) {
+                return &Parent_Buffer[index.y() * Container->getWidth() + index.x()];
             };
 
             // These selected coordinates can only contain something related to the borders and if the current UTF is unicode then it is an border.
@@ -640,7 +640,7 @@ namespace GGUI {
             flags ^= (stain::types::NOT_RENDERED);
         }
 
-        //This will add the child windows to the Result buffer
+        //This will add the content windows to the Result buffer
         if (flags.has(stain::types::DEEP)){
             flags ^= (stain::types::DEEP);
 
@@ -652,7 +652,7 @@ namespace GGUI {
             flags |= (stain::types::GRAPHICS);
 
             for (element* c : content){
-                // check if the child is within the rendering area.
+                // check if the content is within the rendering area.
                 if (!c || !c->getDisplay()|| !contentIsShown(c))
                     continue;
 

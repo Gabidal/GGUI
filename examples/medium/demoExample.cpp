@@ -5,9 +5,9 @@ using namespace GGUI;
 int main() 
 {
     GGUI::GGUI(
-        childs({
+        contents({
             new listView(
-                childs({
+                contents({
                     new textField(text("File") | onClick([]([[maybe_unused]] element* self){ return true; }) | enableBorder(true)),
                     new textField(text("Edit") | onClick([]([[maybe_unused]] element* self){ return true; }) | enableBorder(true)),
                     new textField(text("View") | onClick([]([[maybe_unused]] element* self){ return true; }) | enableBorder(true)),

@@ -511,7 +511,7 @@ namespace GGUI{
         enum class types : uint16_t {
             GRAPHICS            = 1 << 0,   // BG and other color related changes
             EDGE                = 1 << 1,   // Title and border changes.
-            DEEP                = 1 << 2,   // Children changes. Deep because the childs are connected via AST.
+            DEEP                = 1 << 2,   // Children changes. Deep because the contents are connected via AST.
             STRETCH             = 1 << 3,   // Width and or height changes.
             STATE               = 1 << 4,   // This is for Switches that based on their state display one symbol differently.
             MOVE                = 1 << 5,   // Enabled, to signal absolute position caching.
@@ -649,7 +649,7 @@ namespace GGUI{
     struct optionallyRelative {
         enum class types : uint8_t {
             DEFAULT,        // no further evaluation needed, just return the value
-            PERCENTAGE      // the value is a percentage of the parent attribute
+            PERCENTAGE      // the value is a percentage of the container attribute
         };
 
         constexpr optionallyRelative() = default;

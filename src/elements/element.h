@@ -53,7 +53,7 @@ namespace GGUI{
     public:
         // State machine for render pipeline only focus on changed aspects.
         stain::base flags = stain::types::FINALIZE;
-        class listView* parent = nullptr;
+        class listView* container = nullptr;
         
         element() = default;
 
@@ -111,7 +111,7 @@ namespace GGUI{
             return showBorder;
         }
 
-        // Notifies parent to refresh when display is changed.
+        // Notifies container to refresh when display is changed.
         virtual void setDisplay(bool d);
 
         bool getDisplay() const {

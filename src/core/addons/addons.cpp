@@ -112,7 +112,7 @@ namespace GGUI{
         //     // Set the name of the list view to "Inspect"
         //     name("Inspect") |
 
-        //     // enable_border(true) |     // <- will crash since the child nodes do not have borders enabled.
+        //     // enable_border(true) |     // <- will crash since the content nodes do not have borders enabled.
 
         //     // Add the error logger kidnapper:
         //     node(new element(

@@ -194,29 +194,29 @@ namespace GGUI{
         }
     
         /**
-         * @brief Returns the dest buffer and src buffer information for copying data between parent and child elements
-         * @param Parent The parent element.
-         * @param Child The child element.
+         * @brief Returns the dest buffer and src buffer information for copying data between container and content elements
+         * @param Container The container element.
+         * @param Content The content element.
          */
-        std::pair<rectangle, rectangle> getFittingArea(element* Parent, element* Child){
-            // If both dont have same border setup and parent has a border, then the child needs to be offsetted by one in every direction.
-            int borderOffset = Parent->hasBorder() != Child->hasBorder() && Parent->hasBorder() ? 1 : 0;
+        std::pair<rectangle, rectangle> getFittingArea(element* Container, element* Content){
+            // If both dont have same border setup and container has a border, then the content needs to be offsetted by one in every direction.
+            int borderOffset = Container->hasBorder() != Content->hasBorder() && Container->hasBorder() ? 1 : 0;
             
             // Absolute bounding
             rectangle bounds = {
                 {borderOffset, borderOffset},
-                {Parent->getWidth() - borderOffset, Parent->getHeight() - borderOffset}
+                {Container->getWidth() - borderOffset, Container->getHeight() - borderOffset}
             };
 
             rectangle childInfo = { TODO("Give element a direct getRectangle()")
-                Child->getPosition(),
-                {Child->getWidth(), Child->getHeight()}
+                Content->getPosition(),
+                {Content->getWidth(), Content->getHeight()}
             };
 
-            // The written output is the intersection between the child and the bounds
+            // The written output is the intersection between the content and the bounds
             rectangle dest = bounds.intersection(childInfo);
 
-            // The childs own relative buffer intersection of clipping while partially outside or completely inside the parent element
+            // The contents own relative buffer intersection of clipping while partially outside or completely inside the container element
             rectangle src = {
                 {dest.position.x() - childInfo.position.x(), dest.position.y() - childInfo.position.y()},
                 dest.size
@@ -226,21 +226,21 @@ namespace GGUI{
         }
 
         /**
-         * @brief Nests a child element into a parent element.
-         * @details This function calculates the area where the child element should be rendered within the parent element.
-         *          It takes into account the border offsets of both the parent and the child element as well as their positions.
-         *          The function then copies the contents of the child element's buffer into the parent element's buffer at the calculated position.
-         * @param Parent The parent element.
-         * @param Child The child element.
-         * @param Parent_Buffer The parent element's buffer.
-         * @param Child_Buffer The child element's buffer.
+         * @brief Nests a content element into a container element.
+         * @details This function calculates the area where the content element should be rendered within the container element.
+         *          It takes into account the border offsets of both the container and the content element as well as their positions.
+         *          The function then copies the contents of the content element's buffer into the container element's buffer at the calculated position.
+         * @param Container The container element.
+         * @param Content The content element.
+         * @param Parent_Buffer The container element's buffer.
+         * @param Child_Buffer The content element's buffer.
          */
-        void nestElement(element* parent, element* child, std::vector<terminal::cell>& Parent_Buffer, const std::vector<terminal::cell>& Child_Buffer){
-            auto [dest, src] = getFittingArea(parent, child);
+        void nestElement(element* container, element* content, std::vector<terminal::cell>& Parent_Buffer, const std::vector<terminal::cell>& Child_Buffer){
+            auto [dest, src] = getFittingArea(container, content);
 
             for (int y = 0; y < dest.size.y(); y++) {
-                int parentRowStart = (dest.position.y() + y) * parent->getWidth() + dest.position.x();
-                int childRowStart  = (src.position.y()  + y) * child->getWidth()  + src.position.x();
+                int parentRowStart = (dest.position.y() + y) * container->getWidth() + dest.position.x();
+                int childRowStart  = (src.position.y()  + y) * content->getWidth()  + src.position.x();
 
                 std::copy(
                     Child_Buffer.begin() + childRowStart,

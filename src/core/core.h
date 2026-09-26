@@ -99,9 +99,9 @@ namespace GGUI{
 
         extern void handleEscape();
 
-        std::pair<rectangle, rectangle> getFittingArea(GGUI::element* Parent, GGUI::element* Child);
+        std::pair<rectangle, rectangle> getFittingArea(GGUI::element* Container, GGUI::element* Content);
 
-        void nestElement(element* parent, element* child, std::vector<terminal::cell>& Parent_Buffer, const std::vector<terminal::cell>& Child_Buffer);
+        void nestElement(element* container, element* content, std::vector<terminal::cell>& Parent_Buffer, const std::vector<terminal::cell>& Child_Buffer);
     }
     
     extern void registerCleanupCallback(std::function<void()> Callback);

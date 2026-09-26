@@ -180,7 +180,7 @@ namespace GGUI {
         };
 
         struct renderable {
-            // Updated by element: Only fetch one parent UP, and own position +, then child repeat in Render pipeline.
+            // Updated by element: Only fetch one container UP, and own position +, then content repeat in Render pipeline.
             IVector3 absolutePositionCache;
             linearMask<terminal::textAttributeTypes, uint64_t> textAttributes = terminal::textAttributeTypes::DEFAULT;
     

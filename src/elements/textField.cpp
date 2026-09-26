@@ -148,7 +148,7 @@ namespace GGUI{
             updateAbsolutePositionCache();
         }
 
-        // Align text and add child windows to the Result buffer if the DEEP stain is detected
+        // Align text and add content windows to the Result buffer if the DEEP stain is detected
         if (flags.has(stain::types::DEEP)) {
             flags ^= (stain::types::DEEP);
 

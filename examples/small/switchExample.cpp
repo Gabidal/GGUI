@@ -11,7 +11,7 @@ int main(){
 
             node(new listView(
                 flowPriority(DIRECTION::COLUMN) |  // Vertical list
-                childs({
+                contents({
                     new checkBox(
                         text("checkbox") | onClick([](element*){ return true; })   // Enable select events like mouse click and enter
                     ),
@@ -64,7 +64,7 @@ int main(){
             // We can make an vertical list where we can select only one of the given selecttables.
             node(new listView(
                 flowPriority(DIRECTION::COLUMN) | enableBorder(true) |   // vertical list with border
-                childs({
+                contents({
                     new radioButton(
                         text("A") | 
                         singleSelect() |     // This will disable all other grouped selecttables
@@ -88,7 +88,7 @@ int main(){
     
                         // Now we have the selected box, here do what you want :)
                     }
-                    return false;   // Since this is one layer above, we need the input to be able to be passed to the inner childs.
+                    return false;   // Since this is one layer above, we need the input to be able to be passed to the inner contents.
                 })
             ))
         ))

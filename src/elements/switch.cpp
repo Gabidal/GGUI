@@ -137,10 +137,10 @@ namespace GGUI{
         if (this->isSingleSelect()){
             this->setState(true);
 
-            if (!this->parent)
+            if (!this->container)
                 return;
 
-            for (auto* c : this->parent->getElements<switchBox>())
+            for (auto* c : this->container->getElements<switchBox>())
                 if (c != this && c->isSingleSelect())
                     c->setState(false);
         }

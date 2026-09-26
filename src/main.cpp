@@ -8,9 +8,9 @@ int main(int argc, char* argv[]){
     GGUI::SETTINGS::parseCommandLineArguments(argc, argv);
 
     GGUI::GGUI(listView()
-        // childs({
+        // contents({
         //     new listView(
-        //         childs({
+        //         contents({
         //             new textField(text("File") | onClick([]([[maybe_unused]] element* self){ return true; }) | enableBorder(true)),
         //             new textField(text("Edit") | onClick([]([[maybe_unused]] element* self){ return true; }) | enableBorder(true)),
         //             new textField(text("View") | onClick([]([[maybe_unused]] element* self){ return true; }) | enableBorder(true)),

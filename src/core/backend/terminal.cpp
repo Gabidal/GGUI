@@ -47,7 +47,7 @@ namespace GGUI {
             return result;
         }
 
-        // first we go recursively inside the container and the child that contains this point.
+        // first we go recursively inside the container and the content that contains this point.
         std::pair<bool, activeStyle> outputCapture::trace(IVector2 point, element* currentElement) {
             // since overflow content inside a container only is allowed is the container is dynamic in size, otherwise overflow content is always hidden, so the lowest identity pool is always the largest. 
             if (currentElement->graphicalIdentityPool.empty() || !currentElement->graphicalIdentityPool.back().area.hits(point)) { return {false, {} }; }
@@ -63,7 +63,7 @@ namespace GGUI {
                 }
             }
 
-            // If none of the childs hit, then this current Container is the closest hit
+            // If none of the contents hit, then this current Container is the closest hit
             if (!handle.first) {      
                 for (auto& localGraphicalPool : currentElement->graphicalIdentityPool) {
                     if (localGraphicalPool.area.hits(point)) {
@@ -75,7 +75,7 @@ namespace GGUI {
                     }
                 }
 
-                // regardless of opacity there is no more data here, we need to go back to current containers parent container.
+                // regardless of opacity there is no more data here, we need to go back to current containers container container.
                 return handle;
             }
 
@@ -85,7 +85,7 @@ namespace GGUI {
             // here we now have to process the opacity.
             // Since we are currently in the >>second<< closest hit element
             // Two probable instances: 
-            //   first: the incoming handle still hovers over some other current container child reflection pool
+            //   first: the incoming handle still hovers over some other current container content reflection pool
             //   second: the incoming handle needs to be calculated via this current containers own identity pool
             // Since the second is an extension of the first instance, we can do both of them at the same time.
             
@@ -438,16 +438,16 @@ namespace GGUI {
             // We need to promote to an element to get some information
             element* owner = static_cast<element*>(this);
 
-            if (owner->parent) {
-                // Get the position of the parent
-                absolutePositionCache = owner->parent->getAbsolutePosition();
+            if (owner->container) {
+                // Get the position of the container
+                absolutePositionCache = owner->container->getAbsolutePosition();
 
-                Border_Offset = (owner->parent->hasBorder() != owner->hasBorder() && owner->parent->hasBorder()) ? 1 : 0;
+                Border_Offset = (owner->container->hasBorder() != owner->hasBorder() && owner->container->hasBorder()) ? 1 : 0;
 
                 absolutePositionCache.z() += 1;   // mainly used for the compute of rectangle priority
             }
 
-            // Add the position of the element to the position of its parent
+            // Add the position of the element to the position of its container
             absolutePositionCache += owner->getPosition() + Border_Offset;
         }
     }

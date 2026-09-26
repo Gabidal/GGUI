@@ -11,7 +11,7 @@ namespace GGUI{
      * @brief Destructor for the Terminal_Canvas class.
      * @details This destructor checks if the current Terminal_Canvas instance is part of the multi-frame list.
      *          If it is, it removes the instance from the list to properly manage resources.
-     *          It then calls the base class destructor to ensure all parent class resources are cleaned up.
+     *          It then calls the base class destructor to ensure all container class resources are cleaned up.
      */
     canvas::~canvas() {
         // Check if this Terminal_Canvas is in the multi-frame list

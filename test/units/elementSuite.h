@@ -14,12 +14,12 @@ namespace tester {
             add_test("dimensions_set", "Width/Height and STRETCH staining", test_dimensions_set);
             add_test("individual_width_height", "Independent width / height setters", test_individual_width_height);
             // add_test("position_and_absolute", "Position + absolute cache incl. border offset", test_position_and_absolute);
-            add_test("add_child_parent_relationship", "addElement establishes parent & ordering", test_add_child_parent_relationship);
-            add_test("remove_child_by_pointer", "remove(element*) deletes child entry", test_remove_child_by_pointer);
-            add_test("remove_child_by_index", "remove(index) deletes child entry", test_remove_child_by_index);
+            add_test("add_child_parent_relationship", "addElement establishes container & ordering", test_add_child_parent_relationship);
+            add_test("remove_child_by_pointer", "remove(element*) deletes content entry", test_remove_child_by_pointer);
+            add_test("remove_child_by_index", "remove(index) deletes content entry", test_remove_child_by_index);
             add_test("display_toggle_propagation", "display(false/true) cascades to children", test_display_toggle_propagation);
-            add_test("dynamic_size_allowed", "Parent grows when Allow_Dynamic_Size true", test_dynamic_size_allowed);
-            add_test("dynamic_size_disallowed", "Parent remains static when dynamic size off", test_dynamic_size_disallowed);
+            add_test("dynamic_size_allowed", "Container grows when Allow_Dynamic_Size true", test_dynamic_size_allowed);
+            add_test("dynamic_size_disallowed", "Container remains static when dynamic size off", test_dynamic_size_disallowed);
             add_test("overflow_and_wrap_flags", "allowOverflow / wrap flags", test_overflow_and_wrap_flags);
             add_test("anchor_and_flow_priority", "Anchor and flow priority setters", test_anchor_and_flow_priority);
             add_test("color_setters", "Background / Text / Border color setters", test_color_setters);
@@ -37,7 +37,7 @@ namespace tester {
         }
 
         static void test_default_construction(){
-            GGUI::element e; // root-like element (no parent)
+            GGUI::element e; // root-like element (no container)
             ASSERT_EQ(1, e.getWidth());
             ASSERT_EQ(1, e.getHeight());
             ASSERT_FLOAT_EQ(1.0f, e.getOpacity(), 0.0001f);
@@ -63,76 +63,76 @@ namespace tester {
         }
 
         // static void test_position_and_absolute(){
-        //     GGUI::element parent; parent.setDimensions(20,10);
-        //     auto child = new GGUI::element();
-        //     child->setPosition({2,3,0});
-        //     parent.addElement(child);
-        //     child->updateAbsolutePositionCache();
-        //     ASSERT_TRUE(child->getAbsolutePosition().X == (short)2);
-        //     ASSERT_TRUE(child->getAbsolutePosition().Y == (short)3);
-        //     parent.showBorder(true);
-        //     child->updateAbsolutePositionCache();
-        //     ASSERT_TRUE(child->getAbsolutePosition().X == (short)3); // +1 border offset
-        //     ASSERT_TRUE(child->getAbsolutePosition().Y == (short)4);
+        //     GGUI::element container; container.setDimensions(20,10);
+        //     auto content = new GGUI::element();
+        //     content->setPosition({2,3,0});
+        //     container.addElement(content);
+        //     content->updateAbsolutePositionCache();
+        //     ASSERT_TRUE(content->getAbsolutePosition().X == (short)2);
+        //     ASSERT_TRUE(content->getAbsolutePosition().Y == (short)3);
+        //     container.showBorder(true);
+        //     content->updateAbsolutePositionCache();
+        //     ASSERT_TRUE(content->getAbsolutePosition().X == (short)3); // +1 border offset
+        //     ASSERT_TRUE(content->getAbsolutePosition().Y == (short)4);
         // }
 
         static void test_add_child_parent_relationship(){
-            GGUI::element parent; parent.setDimensions(10,10);
-            auto child = new GGUI::element();
-            parent.addElement(child);
-            ASSERT_TRUE(child->getParent() == &parent);
-            ASSERT_EQ((size_t)1, parent.getChilds().size());
+            GGUI::element container; container.setDimensions(10,10);
+            auto content = new GGUI::element();
+            container.addElement(content);
+            ASSERT_TRUE(content->getParent() == &container);
+            ASSERT_EQ((size_t)1, container.getChilds().size());
         }
 
         static void test_remove_child_by_pointer(){
-            GGUI::element parent; parent.setDimensions(10,10);
-            auto child = new GGUI::element();
-            parent.addElement(child);
-            ASSERT_EQ((size_t)1, parent.getChilds().size());
-            bool removed = parent.remove(child); // deletes child
+            GGUI::element container; container.setDimensions(10,10);
+            auto content = new GGUI::element();
+            container.addElement(content);
+            ASSERT_EQ((size_t)1, container.getChilds().size());
+            bool removed = container.remove(content); // deletes content
             ASSERT_TRUE(removed);
-            ASSERT_EQ((size_t)0, parent.getChilds().size());
+            ASSERT_EQ((size_t)0, container.getChilds().size());
         }
 
         static void test_remove_child_by_index(){
-            GGUI::element parent; parent.setDimensions(10,10);
+            GGUI::element container; container.setDimensions(10,10);
             auto c1 = new GGUI::element();
             auto c2 = new GGUI::element();
-            parent.addElement(c1);
-            parent.addElement(c2);
-            ASSERT_EQ((size_t)2, parent.getChilds().size());
-            bool ok = parent.remove(static_cast<size_t>(0));
+            container.addElement(c1);
+            container.addElement(c2);
+            ASSERT_EQ((size_t)2, container.getChilds().size());
+            bool ok = container.remove(static_cast<size_t>(0));
             ASSERT_TRUE(ok);
-            ASSERT_EQ((size_t)1, parent.getChilds().size());
+            ASSERT_EQ((size_t)1, container.getChilds().size());
         }
 
         static void test_display_toggle_propagation(){
-            GGUI::element parent; parent.setDimensions(5,5);
-            auto child = new GGUI::element();
-            parent.addElement(child);
-            ASSERT_TRUE(child->getDisplay());
-            parent.display(false);
-            ASSERT_FALSE(parent.getDisplay());
-            ASSERT_FALSE(child->getDisplay());
-            parent.display(true);
-            ASSERT_TRUE(parent.getDisplay());
-            ASSERT_TRUE(child->getDisplay());
+            GGUI::element container; container.setDimensions(5,5);
+            auto content = new GGUI::element();
+            container.addElement(content);
+            ASSERT_TRUE(content->getDisplay());
+            container.display(false);
+            ASSERT_FALSE(container.getDisplay());
+            ASSERT_FALSE(content->getDisplay());
+            container.display(true);
+            ASSERT_TRUE(container.getDisplay());
+            ASSERT_TRUE(content->getDisplay());
         }
 
         static void test_dynamic_size_allowed(){
-            GGUI::element parent; parent.setDimensions(1,1); parent.allowDynamicSize(true);
-            auto child = new GGUI::element(); child->setDimensions(6,4);
-            parent.addElement(child);
-            ASSERT_TRUE(parent.getWidth() >= child->getWidth());
-            ASSERT_TRUE(parent.getHeight() >= child->getHeight());
+            GGUI::element container; container.setDimensions(1,1); container.allowDynamicSize(true);
+            auto content = new GGUI::element(); content->setDimensions(6,4);
+            container.addElement(content);
+            ASSERT_TRUE(container.getWidth() >= content->getWidth());
+            ASSERT_TRUE(container.getHeight() >= content->getHeight());
         }
 
         static void test_dynamic_size_disallowed(){
-            GGUI::element parent; parent.setDimensions(1,1); parent.allowDynamicSize(false);
-            auto child = new GGUI::element(); child->setDimensions(6,4);
-            parent.addElement(child);
-            ASSERT_EQ(1, parent.getWidth());
-            ASSERT_EQ(1, parent.getHeight());
+            GGUI::element container; container.setDimensions(1,1); container.allowDynamicSize(false);
+            auto content = new GGUI::element(); content->setDimensions(6,4);
+            container.addElement(content);
+            ASSERT_EQ(1, container.getWidth());
+            ASSERT_EQ(1, container.getHeight());
         }
 
         static void test_overflow_and_wrap_flags(){
@@ -206,23 +206,23 @@ namespace tester {
         }
 
         // static void test_fitting_dimensions_basic(){
-        //     GGUI::element parent; parent.setDimensions(10,5); parent.showBorder(false);
-        //     auto c = new GGUI::element(); c->setDimensions(3,2); parent.addElement(c);
-        //     auto fit = parent.getFittingDimensions(c);
-        //     ASSERT_TRUE(fit.first  <= parent.getWidth());
-        //     ASSERT_TRUE(fit.second <= parent.getHeight());
+        //     GGUI::element container; container.setDimensions(10,5); container.showBorder(false);
+        //     auto c = new GGUI::element(); c->setDimensions(3,2); container.addElement(c);
+        //     auto fit = container.getFittingDimensions(c);
+        //     ASSERT_TRUE(fit.first  <= container.getWidth());
+        //     ASSERT_TRUE(fit.second <= container.getHeight());
         // }
 
         static void test_reorder_childs_z(){
-            GGUI::element parent; parent.setDimensions(10,5);
+            GGUI::element container; container.setDimensions(10,5);
             auto a = new GGUI::element(); a->setPosition({0,0,5});
             auto b = new GGUI::element(); b->setPosition({0,0,1});
             auto c = new GGUI::element(); c->setPosition({0,0,3});
-            parent.addElement(a); parent.addElement(b); parent.addElement(c);
+            container.addElement(a); container.addElement(b); container.addElement(c);
             // After addElement calls reOrderChilds, order should be by Z ascending
-            auto& childs = parent.getChilds();
-            ASSERT_TRUE(childs[0]->getPosition().z() <= childs[1]->getPosition().z());
-            ASSERT_TRUE(childs[1]->getPosition().z() <= childs[2]->getPosition().z());
+            auto& contents = container.getChilds();
+            ASSERT_TRUE(contents[0]->getPosition().z() <= contents[1]->getPosition().z());
+            ASSERT_TRUE(contents[1]->getPosition().z() <= contents[2]->getPosition().z());
         }
 
         static void test_mouse_on_hover() {
