@@ -21,22 +21,6 @@ namespace GGUI{
 
     namespace terminal {
         class outputCapture;
-
-        struct renderable {
-            // Updated by element: Only fetch one parent UP, and own position +, then child repeat in Render pipeline.
-            IVector3 absolutePositionCache;
-    
-            std::vector<terminal::cell> cellBuffer;
-            std::vector<activeStyle> graphicalIdentityPool;
-            std::vector<const activeStyle*> graphicalReflectionPool;
-            
-            // Returns list of minimum points of the deltas.
-            std::vector<IVector2> getDeltaPoints();
-
-            void compileActiveGraphics();
-            
-            void updateAbsolutePositionCache();
-        };
     }
 
     class element : public terminal::renderable {
@@ -63,13 +47,13 @@ namespace GGUI{
         float opacity = 1.0f;
 
         RGB textColor, backgroundColor;
-        RGB borderGlyphColor, borderGlyphBackgroundColor;
+        RGB borderGlyphColor, borderBackgroundColor;
 
         styledBorder borderStyle;
     public:
         // State machine for render pipeline only focus on changed aspects.
         stain::base flags = stain::types::FINALIZE;
-        class element* parent = nullptr;
+        class listView* parent = nullptr;
         
         element() = default;
 
@@ -83,13 +67,15 @@ namespace GGUI{
 
         virtual ~element();
 
-        element* copy() const;
+        virtual element* copy() const;
 
         constexpr const std::vector<converter::output::event::action>& getEventHandlers() const {
             return handlers;
         }
 
         void addEventhandler(const converter::output::event::action& handler);
+
+        void removeEventHandler(size_t i);
 
         void processStateHandler(STATE s);
 
@@ -126,14 +112,7 @@ namespace GGUI{
         }
 
         // Notifies parent to refresh when display is changed.
-        void setDisplay(bool d) {
-            display = d;
-
-            if (parent) {
-                parent->flags |= stain::types::DEEP;
-                updateFrame();
-            }
-        }
+        virtual void setDisplay(bool d);
 
         bool getDisplay() const {
             return display;
@@ -152,8 +131,8 @@ namespace GGUI{
 
         auto getDimensions() const { return dimensions; }
 
-        auto getWidth() const { return dimensions.x(); }
-        auto getHeight() const { return dimensions.y(); }
+        auto getWidth() const { return dimensions.x().get(); }
+        auto getHeight() const { return dimensions.y().get(); }
 
         rectangle getAsRectangle() const { 
             return {
@@ -163,6 +142,8 @@ namespace GGUI{
         }
 
         void setPosition(IVector3 c) {
+            if (c == getPosition()) return;
+
             // Update the element's position in the style
             position = { c.x(), c.y(), c.z() };
             
@@ -181,7 +162,7 @@ namespace GGUI{
             updateFrame();
         }
 
-        auto getPosition() const { return position; }
+        IVector3 getPosition() const { return IVector3{position.x().get(), position.y().get(), position.z().get()}; }
 
         auto getAbsolutePosition() const { return absolutePositionCache; }
 
@@ -200,11 +181,11 @@ namespace GGUI{
         
         void setBorderColor(RGB color) { borderGlyphColor = color; }
         
-        RGB getBorderColor() const { return borderGlyphBackgroundColor; }
+        RGB getBorderGlyphColor() const { return borderBackgroundColor; }
 
-        void setBorderBackgroundColor(RGB color) { borderGlyphBackgroundColor = color; }
+        void setBorderBackgroundColor(RGB color) { borderBackgroundColor = color; }
         
-        RGB getBorderBackgroundColor() const { return borderGlyphBackgroundColor; }
+        RGB getBorderBackgroundColor() const { return borderBackgroundColor; }
         
         void setTextColor(RGB color) { textColor = color; }
 
@@ -220,7 +201,7 @@ namespace GGUI{
 
         std::string_view getName() const { return ID; }
 
-        bool hasEmptyName() { return ID.empty(); }
+        bool hasEmptyName() const { return ID.empty(); }
 
         void setName(const std::string& name);
 
@@ -241,6 +222,10 @@ namespace GGUI{
         // Sets focus on this element
         void focus();
 
+        void setFocusState(bool f);
+
+        void setHoverState(bool h); 
+
         // Add custom state handlers
         void onState(STATE s, void (*job)(element* self));
     protected:
@@ -250,9 +235,6 @@ namespace GGUI{
 
         // Applies tittle into this render output
         void renderTitle(std::vector<terminal::cell>& Result);
-
-        // Combines border glyphs where applicable
-        void postProcessBorders(element* A, element* B, std::vector<terminal::cell>& Parent_Buffer);
         
         constexpr void fullyStain(){
             // Mark the element as dirty for all possible stain types to ensure
@@ -265,6 +247,8 @@ namespace GGUI{
                 | stain::types::NOT_RENDERED
             );
         }
+
+        void evaluateDynamicAttributes();
         
         /**
          * @brief Creates a new instance of the element class.

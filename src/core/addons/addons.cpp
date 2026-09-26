@@ -71,7 +71,7 @@ namespace GGUI{
         // Check if the inspect tool is displayed
         element* Inspect_Tool = getRoot()->getElement("Inspect");
 
-        if (!Inspect_Tool || !Inspect_Tool->isDisplayed())
+        if (!Inspect_Tool || !Inspect_Tool->getDisplay())
             return false;
 
         // find the stats element
@@ -148,7 +148,7 @@ namespace GGUI{
                     }, 
                     [self](converter::output::event::base*){
                         // Toggle the inspect tool, so if it is hidden, show it and if it is shown, hide it
-                        self->display(!self->isDisplayed());
+                        self->display(!self->getDisplay());
 
                         // Return true to indicate that the event was handled
                         return true;

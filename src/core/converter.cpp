@@ -103,7 +103,7 @@ namespace GGUI {
                         bool Has_Mouse_Left_Click_Event = false;
                         bool Has_Enter_Press_Event = false;
                     
-                        if (!currentElement->isDisplayed())
+                        if (!currentElement->getDisplay())
                             continue;   // Skip eventhandlers where their host is not active
 
                         bool overlapsWithMouse = currentMouse.collides(currentElement);

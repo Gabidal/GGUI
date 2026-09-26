@@ -41,7 +41,7 @@ namespace tester {
             ASSERT_EQ(1, e.getWidth());
             ASSERT_EQ(1, e.getHeight());
             ASSERT_FLOAT_EQ(1.0f, e.getOpacity(), 0.0001f);
-            ASSERT_TRUE(e.isDisplayed());
+            ASSERT_TRUE(e.getDisplay());
             ASSERT_FALSE(e.hasBorder());
             ASSERT_TRUE(e.getParent() == nullptr);
         }
@@ -110,13 +110,13 @@ namespace tester {
             GGUI::element parent; parent.setDimensions(5,5);
             auto child = new GGUI::element();
             parent.addElement(child);
-            ASSERT_TRUE(child->isDisplayed());
+            ASSERT_TRUE(child->getDisplay());
             parent.display(false);
-            ASSERT_FALSE(parent.isDisplayed());
-            ASSERT_FALSE(child->isDisplayed());
+            ASSERT_FALSE(parent.getDisplay());
+            ASSERT_FALSE(child->getDisplay());
             parent.display(true);
-            ASSERT_TRUE(parent.isDisplayed());
-            ASSERT_TRUE(child->isDisplayed());
+            ASSERT_TRUE(parent.getDisplay());
+            ASSERT_TRUE(child->getDisplay());
         }
 
         static void test_dynamic_size_allowed(){

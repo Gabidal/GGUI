@@ -2,438 +2,624 @@
 #include "../core/core.h"
 #include "../core/utils/utils.h"
 
+#include "../core/utils/logger.h"
+
 //undefine these before algorithm.h is included
 
 #undef RGB
 #undef BOOL
 #undef NUMBER
 
-// Scroll_View constructors: -_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_
-
-/**
- * @brief Constructor for the Scroll_View class.
- * @details This constructor initializes a Scroll_View object with a reference to a List_View object.
- * @param container The List_View object to be used as the container for the Scroll_View.
- */
-GGUI::scrollView::scrollView(listView& container) : element(){
-    // Make the system into a Dynamic allowing parent.
-    pauseGGUI([&container, this](){
-        allowOverflow(true);
-        element::addElement(&container);
-    });
-}
-
-//End of user constructors.
-
-/**
- * @brief Retrieves the dimension limits of the list view.
- *
- * This function calculates and returns the dimension limits of the list view
- * based on its configuration. The behavior depends on whether overflow or 
- * dynamic sizing is allowed.
- *
- * @return GGUI::IVector3 The dimension limits of the list view:
- * - If overflow is allowed, the dimensions are unbounded and set to {INT16_MAX, INT16_MAX}.
- * - If dynamic sizing is allowed, the dimensions are calculated as the difference
- *   between the position of the last child element and the final limit.
- * - Otherwise, the dimensions are determined by the width and height of the list view.
- */
-GGUI::IVector3 GGUI::listView::getDimensionLimit(){
-    // Overflow does not have bounds, and is thus unbounded.
-    if (isOverflowAllowed()){
-        return {INT16_MAX, INT16_MAX};
-    }
-
-    if (isDynamicSizeAllowed()){
-        IVector3 Start_Address = Last_Child->getPosition();
-
-        IVector3 End_Address = getFinalLimit();
-
-        return End_Address - Start_Address;
-    }
-
-    return {getWidth(), getHeight()};
-}
-
-/**
- * @brief Adds a child element to the list view.
- * @details This function adds a child element to the list view and manages the positioning and sizing
- *          of the child element within the list view. It takes into account the list's flow direction,
- *          border offsets, and dynamic sizing capabilities.
- * @param e The child element to be added.
- */
-void GGUI::listView::addElement(element* e) {
-    pauseGGUI([this, e]() {
-        // Since 0.1.8 we need to check if the given Element is Fully initialized with Style embeddings or not.
-        if (e->getDirty().is(stain::types::FINALIZE)){
-            // Finalize flag is cleaned Style Embedding with On_Init Call.
-            // Give an early access to the parent, so that parent dependant attributes work properly.
-            e->setParent(this);
-            
-            e->embedStyles();
+namespace GGUI {
+    IVector2 listView::getDimensionLimit() const {
+        // Overflow does not have bounds, and is thus unbounded.
+        if (containerFlag.has(containerFlags::overflow)) {
+            return {INT16_MAX, INT16_MAX};
         }
 
-        // Get the maximum width and height limits for the list view.
-        IVector3 limits = getDimensionLimit();
+        if (containerFlag.has(containerFlags::dynamic)) {
+            IVector2 Start_Address = getPosition().surjection<IVector2::dimensions>();
 
-        // Calculate the border offset for the child element.
-        auto Offset = (hasBorder() - e->hasBorder()) * hasBorder();
-        auto Child_Needs_Minimum_Height_Of = e->getHeight() + Offset * 2;
-        auto Child_Needs_Minimum_Width_Of = e->getWidth() + Offset * 2;
+            IVector2 End_Address = getOuterBounds().surjection<IVector2::dimensions>();
 
-        // Check if overflow wrapping is supported.
-        if (style->Wrap.value) {
-            logger::log("Overflow wrapping is not supported!");
-            return;
+            return End_Address - Start_Address;
         }
 
-        // Determine the flow direction for the list view.
-        if (style->Flow_Priority.value == DIRECTION::ROW) {
-            // Adjust for minimum width needed when borders are present.
-            signed int Width_Modifier = e->hasBorder() && Last_Child->hasBorder();
-            if (isDynamicSizeAllowed()){
-                int16_t Proposed_Height = std::max(Child_Needs_Minimum_Height_Of, (int)getHeight());
-                int16_t Proposed_Width = std::max(Last_Child->getPosition().x() + Child_Needs_Minimum_Width_Of - Width_Modifier, (int)getWidth());
-
-                // Check if the parent allows stretching or overflow.
-                setHeight(std::min(limits.y(), Proposed_Height));
-                setWidth(std::min(limits.x(), Proposed_Width));
-                flags |= (stain::types::STRETCH);
-            }
-
-            // Set positions for the child and last child elements.
-            e->setPosition({Last_Child->getPosition().x() - Width_Modifier, e->getPosition().y()});
-            Last_Child->setPosition({Last_Child->getPosition().x() + e->getWidth() - Width_Modifier, Last_Child->getPosition().y()});
-            Last_Child->setDimensions(e->getWidth(), e->getHeight());
-        } else {
-            // Adjust for minimum height needed when borders are present.
-            signed int Height_Modifier = e->hasBorder() && Last_Child->hasBorder();
-            if (isDynamicSizeAllowed()){
-                int16_t Proposed_Width = std::max(Child_Needs_Minimum_Width_Of, (int)getWidth());
-                int16_t Proposed_Height = std::max(Last_Child->getPosition().y() + Child_Needs_Minimum_Height_Of - Height_Modifier, (int)getHeight());
-
-                // Check if the parent allows stretching or overflow.
-                setWidth(std::min(limits.x(), Proposed_Width));
-                setHeight(std::min(limits.y(), Proposed_Height));
-                flags |= (stain::types::STRETCH);
-            }
-
-            // Set positions for the child and last child elements.
-            e->setPosition({e->getPosition().x(), Last_Child->getPosition().y() - Height_Modifier});
-            Last_Child->setPosition({Last_Child->getPosition().x(), Last_Child->getPosition().y() + e->getHeight() - Height_Modifier});
-            Last_Child->setDimensions(e->getWidth(), e->getHeight());
-        }
-
-        // Set border visibility for the last child.
-        Last_Child->showBorder(e->hasBorder());
-
-        // Mark the list view as deeply dirty.
-        flags |= (stain::types::DEEP);
-
-        // Add the child element to the internal structures.
-        core::elementNames.insert({e->getNameAsRaw(), e});
-        style->Childs.push_back(e);
-    });
-}
-
-/**
- * @brief Calculates the hitboxes of all child elements of the list view.
- * @details This function is similar to the Remove(Element* c) like behaviour.
- *          It takes into account the border offsets of both the current and the next element as well as their positions.
- *          For an horizontal list, it checks if the next element's width is greater than the current element's width.
- *          For a vertical list, it checks if the next element's height is greater than the current element's height.
- *          If the next element is greater in size than the current element, it sets the maximum width/height to the next element's width/height.
- *          It finally sets the dimensions of the list view to the maximum width and height if the list view is dynamically sized and the maximum width/height is greater than the current width/height.
- * @param Starting_Offset The starting offset into the child array.
- */
-void GGUI::listView::calculateChildsHitboxes(size_t Starting_Offset){
-    // If the childs are already clean then there is nothing to do here
-    if (flags.isEmpty() || style->Childs.size() == 0)
-        return;
-
-    // Out mission is quite similar to the Remove(Element* c) like behaviour.
-    // Since there are two different flow directions we need to slice the code into 2 separate algorithms.
-    element* Current = style->Childs[Starting_Offset];
-    int Max_Width = Current->getWidth();
-    int Max_Height = Current->getHeight();
-
-    if (style->Flow_Priority.value == DIRECTION::ROW){
-
-        for (size_t i = Starting_Offset + 1; i < style->Childs.size(); i++){
-            element* Next = style->Childs[i];
-
-            // Affect minimum width needed, when current child has borders as well as the previous one.
-            int Width_Modifier = Next->hasBorder() && Current->hasBorder();
-
-            Next->setPosition({Current->getPosition().x() + Current->getWidth() - Width_Modifier, Next->getPosition().y(), Next->getPosition().z()});
-
-            if (Next->getHeight() > Max_Height)
-                Max_Height = Next->getHeight();
-
-            Current = Next;
-        }
-    }
-    else{
-        for (size_t i = Starting_Offset + 1; i < style->Childs.size(); i++){
-            element* Next = style->Childs[i];
-
-            // Affect minimum height needed, when current child has borders as well as the previous one.
-            int Height_Modifier = Next->hasBorder() && Current->hasBorder();
-
-            Next->setPosition({Next->getPosition().x(), Current->getPosition().y() + Current->getHeight() - Height_Modifier, Next->getPosition().z()});
-
-            if (Next->getWidth() > Max_Width)
-                Max_Width = Next->getWidth();
-
-            Current = Next;
-        }
+        return {getWidth(), getHeight()};
     }
 
-    if (
-        (
-        style->Width.number.getType() != types::EVALUATION_TYPE::PERCENTAGE && style->Height.number.getType() != types::EVALUATION_TYPE::PERCENTAGE
-        ) && isDynamicSizeAllowed() && Max_Height > getHeight() && Max_Width > getWidth()
-    ){
-        setDimensions(Max_Width, Max_Height);
+    IVector2 listView::getOuterBounds() const {
+        if (containerFlag.has(containerFlags::overflow)) {
+            return {INT16_MAX, INT16_MAX};
+        }
+
+        IVector2 End_Address = {getWidth(), getHeight()};
+
+        // We can check if the parent allows some flexibility.
+        if (parent && parent->containerFlag.has(containerFlags::dynamic)) {
+            End_Address = parent->getOuterBounds();
+        }
+
+        return End_Address;
     }
-}
 
-/**
- * @brief Gets the name of the list view.
- * @details This function returns the name of the list view in the format "List_View<Name>".
- * @return The name of the list view.
- */
-std::string GGUI::listView::getName() const{
-    return "listView<" + ID + ">";
-}
+    bool listView::contentIsShown(element* other) const {
+        rectangle self = {
+            getPosition(),
+            { getWidth(), getHeight() }
+        };
 
-/**
- * @brief Removes a child element from the list view.
- * @param remove The child element to be removed.
- * @return true if the element was successfully removed, false if not.
- *
- * This function removes a child element from the list view and updates the position of all elements following the removed element.
- * It also recalculates the width and height of the list view and updates the dimensions of the list view if it is dynamically sized.
- */
-bool GGUI::listView::remove(element* remove){
-    GGUI::pauseGGUI([this, remove](){
-        unsigned int Index = 0;
+        rectangle otherArea = {
+            other->getPosition(),
+            { other->getWidth(), other->getHeight() }
+        };
 
-        //first find the removable element index.
-        for (;Index < style->Childs.size() && style->Childs[Index] != remove; Index++);
+        rectangle result = self.intersection(otherArea);
+
+        if (result.empty()) return false;
+        else return true;
+    }
+
+    element* listView::copy() const {
+        // Compile time check
+        //static_assert(std::is_same<T&, decltype(*this)>::value, "T must be the same as the type of the object");
+        listView* new_element = static_cast<listView*>(element::copy());
         
-        // Check if there was no element by that ptr value.
-        if (Index == style->Childs.size()){
-            logger::log("Internal: no element with ptr value: " + remove->getName() + " was found in the list view: " + getName());
-            
-            // Removal action failed.
-            return false;
+        // copy the childs over.
+        for (unsigned int i = 0; i < this->content.size(); i++){
+            new_element->content[i] = this->content[i]->copy();
         }
 
-        // now sadly we need to branch the code into the vertical and horizontal calculations.
-        if (style->Flow_Priority.value == DIRECTION::ROW){
-            // represents the horizontal list
-            int Gap = remove->getWidth();
-            int New_Stretched_Height = 0;
+        return new_element;
+    }
 
-            // all elements after the index, need to be removed from their x position the gap value.
-            for (size_t i = Index + 1; i < style->Childs.size(); i++){
-                // You dont need to calculate the combining borders, because they have been already been calculated when they were added to the list.
-                style->Childs[i]->setPosition({style->Childs[i]->getPosition().x() - Gap, style->Childs[i]->getPosition().y()});
+    const std::vector<element*> listView::getContent() { return content; }
 
-                // because if the removed element holds the stretching feature, then it means, that we dont need to check previous elements-
-                // although there is a slight probability that some of the previous elements were exact same size.
-                if (style->Childs[i]->getHeight() > New_Stretched_Height)
-                    New_Stretched_Height = style->Childs[i]->getHeight();
-            }
+    std::vector<element*> listView::getVisibleContent() const {
+        std::vector<element*> result;
+        result.reserve(content.size());
 
-            if (isDynamicSizeAllowed()){
-                setDimensions(getWidth() - Gap, New_Stretched_Height);
-            }
-        }   
-        else{
-            // represents the vertical list
-            int Gap = remove->getHeight();
-            int New_Stretched_Width = 0;
+        for (auto* c : content) {
+            if (!c->showBorder || !contentIsShown(c))
+                    continue;
 
-            // all elements after the index, need to be removed from their y position the gap value.
-            for (size_t i = Index + 1; i < style->Childs.size(); i++){
-                // You dont need to calculate the combining borders, because they have been already been calculated when they were added to the list.
-                style->Childs[i]->setPosition({style->Childs[i]->getPosition().x(), style->Childs[i]->getPosition().y() - Gap});
-
-                // because if the removed element holds the stretching feature, then it means, that we dont need to check previous elements-
-                // although there is a slight probability that some of the previous elements were exact same size.
-                if (style->Childs[i]->getWidth() > New_Stretched_Width)
-                    New_Stretched_Width = style->Childs[i]->getWidth();
-            }
-
-            if (isDynamicSizeAllowed()){
-                setDimensions(New_Stretched_Width, getHeight() - Gap);
-            }
+            result.push_back(c);
         }
 
-        delete remove;
+        // sort result by z-priority, higher z is first
+        std::sort(result.begin(), result.end(), [](const element* a, const element* b) {
+            return a->getPosition().z() > b->getPosition().z();
+        });
 
-        // NOTE: Last_Child is NOT an ptr to the latest child added !!!
-        if (style->Childs.size() > 0){
-            element* tmp = style->Childs[style->Childs.size() - 1];
+        return result;
+    }
 
-            Last_Child->setPosition({Last_Child->getPosition().x() - tmp->getWidth(), Last_Child->getPosition().y() - tmp->getHeight()});
-
-            Last_Child->showBorder(tmp->hasBorder());
-        }
-
-        return true;
-    });
-
-    return true;
-}
-
-/**
- * @brief Adds a child element to the Scroll_View.
- * @details This function adds a child element to the Scroll_View and marks the Scroll_View as dirty with the DEEP stain.
- * @param e The child element to be added.
- */
-void GGUI::scrollView::addElement(element* e) {
-    // Mark the Scroll_View as dirty with the DEEP stain because we are adding a new child element.
-    flags |= (stain::types::DEEP);
-
-    // Add the child element to the List_View that is being used as the container.
-    getContainer()->addElement(e);
-}
-
-/**
- * @brief Enables or disables scrolling for the Scroll_View.
- * @details This function updates the scrolling capability of the Scroll_View.
- *          If scrolling is enabled, it ensures that scrolling events are registered.
- * @param allow A boolean indicating whether to enable or disable scrolling.
- */
-void GGUI::scrollView::allowScrolling(bool allow) {
-    // Check the previous scrolling state
-    bool previous = style->Allow_Scrolling.value;
+    void listView::setDisplay(bool f) {
+        pauseGGUI([this, f]() {
+            // Check if the to be displayed is true and the element wasn't already displayed.
+            if (f != display){
+                element::setDisplay(f);
     
-    // Update the scrolling state if it has changed
-    if (allow != previous) {
-        style->Allow_Scrolling = allow;
-        // No need to dirty or update frame, this feature is a non-passive change
-        // so it needs the user to do something after enabling.
-    }
+                for (auto* c : this->getContent()){
+                    c->setDisplay(f);
+                }
 
-    bool Scroll_Up_Event_Exists = false;
-    bool Scroll_Down_Event_Exists = false;
-
-    const std::vector<converter::output::event::action>& localEventHandlers = getEventHandlers();
-
-    // Check if scrolling events already exist for this Scroll_View
-    for (unsigned int i = 0; i < localEventHandlers.size(); i++) {
-        if (localEventHandlers[i].has(converter::input::key::types::SCROLL_UP))
-            Scroll_Up_Event_Exists = true;
-        else if (localEventHandlers[i].has(converter::input::key::types::SCROLL_DOWN))
-            Scroll_Down_Event_Exists = true;
-    }
-
-    // Create a scroll up event if it doesn't exist
-    if (!Scroll_Up_Event_Exists) {
-        this->on({converter::input::key::types::SCROLL_UP}, [this](converter::output::event::base*) {
-            this->scrollUp();
-            return true;
+                flags |= stain::types::DEEP;
+            }
         });
     }
 
-    // Create a scroll down event if it doesn't exist
-    if (!Scroll_Down_Event_Exists) {
-        this->on({converter::input::key::types::SCROLL_DOWN}, [this](converter::output::event::base*) {
-            this->scrollDown();
-            return true;
+    void listView::updateInnerBounds() {
+        rectangle result = { {}, {getWidth(), getHeight()} };
+
+        TODO("Add dynamic border thickness")
+        if (showBorder) {
+            result.position += {1, 1};
+            result.size -= {1, 1};
+        }
+    }
+
+    rectangle listView::getBoundLimits() {
+        rectangle result;
+
+        updateInnerBounds();
+
+        result = getInnerBounds();
+
+        // Get the bound limits from the parent container
+        if (containerFlag.has(containerFlags::dynamic) && parent) {
+            result = parent->getBoundLimits();
+        }
+
+        // overflown containers have no bound limits
+        if (containerFlag.has(containerFlags::overflow)) {
+            result = {
+                {},
+                {INT16_MAX, INT16_MAX}
+            };
+        }
+
+        return result;
+    }
+
+    void listView::add(element* e) {
+        pauseGGUI([this, e]() {
+            // Update dynamic attributes to align with this container
+            e->parent = this;
+            e->evaluateDynamicAttributes();
+
+            IVector2 growthDirection = {1, 0};  // Default to horizontal growth direction
+
+            if (containerFlag.has(containerFlags::vertical)) {
+                growthDirection = {0, 1};
+            }
+
+            TODO("Add here reverse growth direction.");
+
+            rectangle boundLimits = getBoundLimits();
+
+            rectangle remainingSpace = {
+                // Zero the non-growing direction
+                { lastAddedElementInfo.x() * growthDirection.x(), lastAddedElementInfo.y() * growthDirection.y() },
+                // Relativize the dimensions
+                { boundLimits.size.x() - lastAddedElementInfo.x(), boundLimits.size.y() - lastAddedElementInfo.y() }
+            };
+
+            // Check if the size of the incoming content can fit inside this container
+            if (e->getAsRectangle().size > remainingSpace.size) {
+                // If not
+                logger::log("Element " + std::string(e->getName()) + " cannot fit inside " + std::string(getName()) + " container. Skipping addition.");
+                return;
+            }
+
+            // Set the contents position
+            e->setPosition({
+                lastAddedElementInfo.x() * growthDirection.x(),
+                lastAddedElementInfo.y() * growthDirection.y(),
+                0
+            });
+
+            // Set the lastAddedElementInfo to point to the end of the newly added content
+            lastAddedElementInfo = {
+                e->getWidth() + e->getPosition().x(),
+                e->getHeight() + e->getPosition().y()
+            };
+
+            // Update the parents size opposite of growth direction
+            if (containerFlag.has(containerFlags::dynamic)) {
+                setDimensions({
+                    std::max(getWidth(), (short)(e->getWidth() + e->getPosition().x())),
+                    std::max(getHeight(), (short)(e->getHeight() + e->getPosition().y()))
+                });
+            }
+
+            flags |= stain::types::DEEP;
+            content.push_back(e);
         });
     }
-}
 
-/**
- * @brief Scrolls the view up by one index.
- * @details Decreases the scroll index if it is greater than zero and updates the container's position based on the growth direction.
- * Marks the view as dirty for a deep update.
- */
-void GGUI::scrollView::scrollUp() {
-    // check if the scroll is too far.
-    // We can assume that the container height/width always is at the same position as the last child, so that is the max scrollable amount.
-    // We also want to still be able to show the last child, so get the heigh of the current child height.
-    int borderOffset = hasBorder() != getContainer()->Last_Child->hasBorder() && hasBorder() ? 1 : 0;
-    int Length = 0;
+    bool listView::contentChanged() const {
+        for (const element* e : content){
+            assert(e != nullptr);
+            assert(reinterpret_cast<uintptr_t>(e) % alignof(element) == 0);
 
-    if (getContainer()->getFlowDirection() == DIRECTION::ROW)
-        Length = getContainer()->getWidth() - borderOffset * 2; // Subtract the border offset to ensure we don't scroll too far
-    else
-        Length = getContainer()->getHeight() - borderOffset * 2; // Subtract the border offset to ensure we don't scroll too far
+            assert(e->flags.has(stain::types::FINALIZE) && "Child element passthrough Finalization stage!");
 
-    if (Scroll_Index < -Length || Scroll_Index > Length)
-        return;
+            // Not counting State machine, if element is not being drawn return always false.
+            if (!e->getDisplay())
+                return false;
 
-    Scroll_Index--;
+            if (!e->flags.isEmpty())
+                return true;
 
-    listView* Container = getContainer();
+            if (dynamic_cast<const listView*>(e) && static_cast<const listView*>(e)->contentChanged())
+                return true;
+        }
 
-    IVector3 newPosition = Container->getPosition();
+        return false;
+    }
 
-    // Now also re-set the container position dependent of the growth direction.
-    if (Container->getFlowDirection() == DIRECTION::ROW)
-        newPosition.x() -= 1; // Move right by 1 unit
-    else
-        newPosition.y() += 1; // Move down by 1 unit
+    bool listView::hasTransparentContent() const {
+        // Recursively check each child element for transparency.
+        for (const element* e : content) {
+            if (!e->getDisplay())
+                continue;
 
-    Container->setPosition(newPosition);
-}
+            if (e->isTransparent())
+                return true;
 
-/**
- * @brief Scrolls the view down by one index.
- * @details Increases the scroll index by one and updates the container's position based on the growth direction.
- * Marks the view as dirty for a deep update.
- */
-void GGUI::scrollView::scrollDown() {
-    // check if the scroll is too far.
-    // We can assume that the container height/width always is at the same position as the last child, so that is the max scrollable amount.
-    // We also want to still be able to show the last child, so get the heigh of the current child height.
-    int borderOffset = hasBorder() != getContainer()->Last_Child->hasBorder() && hasBorder() ? 1 : 0;
-    int Length = 0;
+            if (dynamic_cast<const listView*>(e) && static_cast<const listView*>(e)->hasTransparentContent())
+                return true;
+        }
 
-    if (getContainer()->getFlowDirection() == DIRECTION::ROW)
-        Length = getContainer()->getWidth() - borderOffset * 2; // Subtract the border offset to ensure we don't scroll too far
-    else 
-        Length = getContainer()->getHeight() - borderOffset * 2; // Subtract the border offset to ensure we don't scroll too far
+        // No transparent content found.
+        return false;
+    }
 
-    if (Scroll_Index < -Length || Scroll_Index > Length)
-        return;
+    void listView::computeDynamicSize() {
+        // Observe the minimum required container size
+        if (containerFlag.has(containerFlags::dynamic)) {
+            rectangle required = {};
 
-    Scroll_Index++;
+            // Utils:
+            IVector2 growthDirection = containerFlag.has(containerFlags::vertical) ? IVector2{0, 1} : IVector2{1, 0};
+            IVector2 secondaryGrowthDirection = IVector2{1, 1} - growthDirection;
 
-    listView* Container = getContainer();
+            for (element* c : content) {
+                if (!c->getDisplay()) continue;
 
-    IVector3 newPosition = Container->getPosition();
+                // If the child is also a dynamic container such as a listView, then we need to process that first
+                if (dynamic_cast<listView*>(c)) static_cast<listView*>(c)->computeDynamicSize();
 
-    // Now also re-set the container position dependent of the growth direction.
-    if (Container->getFlowDirection() == DIRECTION::ROW)
-        newPosition.x() += 1; // Move right by 1 unit
-    else
-        newPosition.y() -= 1; // Move down by 1 unit
+                // Compare the required space end
+                if (c->getPosition() != required.position) {
+                    c->setPosition(required.position);
+                    required.position = c->getPosition() + c->getAsRectangle().size * growthDirection;  // The secondary direction can just stay zero
+                }
 
-    Container->setPosition(newPosition);
-}
+                if (c->getAsRectangle().size * secondaryGrowthDirection > required.size * secondaryGrowthDirection) {
+                    required.size = (
+                        c->getAsRectangle().size * secondaryGrowthDirection +   // Updates only the non growing direction
+                        required.size * growthDirection   // Preserves the growth direction dimension
+                    );
+                }
+            }
 
-/**
- * @brief Gets the name of the scroll view.
- * @details This function returns the name of the scroll view.
- * @return The name of the scroll view.
- */
-std::string GGUI::scrollView::getName() const{
-    return "scrollView<" + ID + ">";
-}
+            // compare the requirements to the current state, if vary; Then update
+            setDimensions(required.size);
+        }
 
-/**
- * @brief Removes a child element from the scroll view.
- * @details This function forwards the request to the Remove(Element* remove) function of the container.
- * @param remove The element to be removed.
- * @return true if the element was successfully removed, false if not.
- */
-bool GGUI::scrollView::remove(element* remove){
-    return getContainer()->remove(remove);
+        return;     // The rest is computed at content[i]::render::evaluateDynamicAttributes() to update their relative values to the proposed dimensions of this container.
+    }
+
+    std::vector<terminal::cell>& listView::render() {
+        // Check for Dynamic attributes
+        evaluateDynamicAttributes();
+
+        if (contentChanged()) {
+            computeDynamicSize();
+        }
+
+        //if inned children have changed without this changing, then this will trigger.
+        if (!flags.has(stain::base(stain::types::STRETCH) | stain::types::RESET)){
+            bool tmp = contentChanged();
+
+            if (!tmp && flags.isEmpty()){
+                return cellBuffer;
+            }
+            else if (tmp || hasTransparentContent()){
+                flags |= (stain::types::RESET);
+            }
+        }
+
+        // This is to tell the rendering thread that some or no changes were made to the rendering buffer.
+        if (this == getRoot() && !flags.isEmpty()){
+            thread::identicalFrame = false;
+        }
+
+        if (flags.isEmpty())
+            return cellBuffer;
+
+        if (flags.has(stain::types::MOVE)){
+            flags ^= stain::types::MOVE;
+
+            updateAbsolutePositionCache();
+        }
+
+        if (flags.has(stain::types::RESET)){
+            flags ^= (stain::types::RESET);
+
+            std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
+            
+            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP);
+        }
+
+        if (flags.has(stain::types::STRETCH)){
+            flags ^= (stain::types::STRETCH);
+            
+            cellBuffer.clear();
+            cellBuffer.resize(getWidth() * getHeight(), ' ');
+
+            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP | stain::types::NOT_RENDERED);
+        }
+
+        if (flags.has(stain::types::NOT_RENDERED)) {
+            if (onRender) onRender(this);
+
+            // Clean regardless of On_Render existing or not.
+            flags ^= (stain::types::NOT_RENDERED);
+        }
+
+        //This will add the child windows to the Result buffer
+        if (flags.has(stain::types::DEEP)){
+            flags ^= (stain::types::DEEP);
+
+            // clean reflection pool
+            graphicalReflectionPool.clear();
+            graphicalIdentityPool.clear();
+            // Resets baked graphics and reserves for content*2+2, for the incoming deep stains.
+            graphicalReflectionPool.reserve(content.size() * 2 + 2); 
+            flags |= (stain::types::GRAPHICS);
+
+            for (element* c : content){
+                // check if the child is within the rendering area.
+                if (!c || !c->getDisplay()|| !contentIsShown(c))
+                    continue;
+
+                if (c->hasBorder())
+                    flags |= stain::types::COMBINE_BORDERS;
+
+                const std::vector<terminal::cell>& tmp = c->render();
+
+                // compile graphical reflection pool
+                graphicalReflectionPool.insert(graphicalReflectionPool.end(), c->graphicalReflectionPool.begin(), c->graphicalReflectionPool.end());
+
+                core::nestElement(this, c, cellBuffer, tmp);
+            }
+        }
+
+        if (flags.has(stain::types::GRAPHICS)) {     
+            flags ^= (stain::types::GRAPHICS);
+
+            compileActiveGraphics();    // compiles identifying graphics pools
+        }
+
+        // DEEP wont trigger this if this container does not have borders
+        if (flags.has(stain::types::COMBINE_BORDERS) && hasBorder())
+            flags |= (stain::types::EDGE);
+
+        //This will add the borders if necessary and the title of the window.
+        if (flags.has(stain::types::EDGE)){
+            flags ^= (stain::types::EDGE);
+
+            flags |= stain::types::COMBINE_BORDERS;
+
+            renderBorders(cellBuffer);
+            renderTitle(cellBuffer);
+        }
+
+        // This will calculate the connecting borders.
+        if (flags.has(stain::types::COMBINE_BORDERS)){
+            flags ^= (stain::types::COMBINE_BORDERS);
+
+            for (auto A : content){
+                for (auto B : content){
+                    if (A == B)
+                        continue;
+
+                    if (!A->getDisplay() || !A->hasBorder() || !B->getDisplay() || !B->hasBorder())
+                        continue;
+
+                    postProcessBorders(A, B, cellBuffer);
+                }
+
+                postProcessBorders(this, A, cellBuffer);
+            }
+        }
+
+        return cellBuffer;
+    }
+
+    void listView::postProcessBorders(element* A, element* B, std::vector<terminal::cell>& Parent_Buffer){
+        // We only need to calculate the childs points in which they intersect with the parent borders.
+        // At these intersecting points of border we will construct a bit mask that portraits the connections the middle point has.
+        // With the calculated bit mask we can fetch from the 'SYMBOLS::Border_Identifiers' the right border string.
+
+        // First calculate if the childs borders even touch the parents borders.
+        // If not, there is no need to calculate anything.
+
+        // First calculate if the child is outside the parent.
+        if (
+            B->getPosition().x() + B->getWidth() < A->getPosition().x() ||
+            B->getPosition().x() > A->getPosition().x() + A->getWidth() ||
+            B->getPosition().y() + B->getHeight() < A->getPosition().y() ||
+            B->getPosition().y() > A->getPosition().y() + A->getHeight()
+        )
+            return;
+
+        // Now calculate if the child is inside the parent.
+        if (
+            B->getPosition().x() > A->getPosition().x() &&
+            B->getPosition().x() + B->getWidth() < A->getPosition().x() + A->getWidth() &&
+            B->getPosition().y() > A->getPosition().y() &&
+            B->getPosition().y() + B->getHeight() < A->getPosition().y() + A->getHeight()
+        )
+            return;
+
+        // Now that we are here it means the both boxes interlace each other.
+        // We will calculate the hitting points by drawing segments from corner to corner and then comparing one segments x to other segments y, and so forth.
+
+        // two nested loops rotating the x and y usages.
+        // store the line x,y into a array for the nested loops to access.
+        std::vector<int> Vertical_Line_X_Coordinates = {
+            
+            B->getPosition().x(),
+            A->getPosition().x(),
+            B->getPosition().x() + B->getWidth() - 1,
+            A->getPosition().x() + A->getWidth() - 1,
+
+                    
+            // A->getPosition().X,
+            // B->getPosition().X,
+            // A->getPosition().X + A->Width - 1,
+            // B->getPosition().X + B->Width - 1
+
+        };
+
+        std::vector<int> Horizontal_Line_Y_Coordinates = {
+            
+            A->getPosition().y(),
+            B->getPosition().y() + B->getHeight() - 1,
+            A->getPosition().y(),
+            B->getPosition().y() + B->getHeight() - 1,
+
+            // B->Position.Y,
+            // A->Position.Y + A->Height - 1,
+            // B->Position.Y,
+            // A->Position.Y + A->Height - 1,
+
+        };
+
+        std::vector<IVector3> Crossing_Indicies;
+
+        // Go through singular box
+        for (size_t Box_Index = 0; Box_Index < Horizontal_Line_Y_Coordinates.size(); Box_Index++){
+            // Now just pair the indicies from the two lists.
+            Crossing_Indicies.push_back(
+                // First pair
+                IVector3(
+                    Vertical_Line_X_Coordinates[Box_Index],
+                    Horizontal_Line_Y_Coordinates[Box_Index]
+                )
+            );
+        }
+
+        // Now that we have the crossing points we can start analyzing the ways they connect to construct the bit masks.
+        for (auto c : Crossing_Indicies){
+
+            IVector3 Above = { c.x(), c.y() - 1 };
+            IVector3 Below = { c.x(), c.y() + 1 };
+            IVector3 Left = { c.x() - 1, c.y() };
+            IVector3 Right = { c.x() + 1, c.y() };
+
+            bitMask<styledBorder::connectionTypes> Current_Masks = styledBorder::connectionTypes::NONE;
+
+            auto Is_In_Bounds = [](IVector3 index, listView* parent) {
+                // checks if the index is out of bounds
+                if (index.x() < 0 || index.y() < 0 || index.x() >= parent->getWidth() || index.y() >= parent->getHeight())
+                    return false;
+
+                return true;
+            };
+
+            auto From = [](IVector3 index, std::vector<terminal::cell>& Parent_Buffer, listView* Parent) {
+                return &Parent_Buffer[index.y() * Parent->getWidth() + index.x()];
+            };
+
+            // These selected coordinates can only contain something related to the borders and if the current UTF is unicode then it is an border.
+            if (Is_In_Bounds(Above, this)){
+                // Since the border above can be already processed we need to check all possible border variations.
+                bitMask<styledBorder::connectionTypes> borderAbove = A->getCustomBorderStyle().getBorderType(From(Above, Parent_Buffer, this)->getGlyphs()) | 
+                                                         B->getCustomBorderStyle().getBorderType(From(Above, Parent_Buffer, this)->getGlyphs());
+                
+                if (borderAbove != styledBorder::connectionTypes::NONE)
+                    Current_Masks |= styledBorder::connectionTypes::UP;
+            }
+
+            if (Is_In_Bounds(Below, this)){
+                // Since the border below can be already processed we need to check all possible border variations.
+                bitMask<styledBorder::connectionTypes> borderBelow = A->getCustomBorderStyle().getBorderType(From(Below, Parent_Buffer, this)->getGlyphs()) | 
+                                                         B->getCustomBorderStyle().getBorderType(From(Below, Parent_Buffer, this)->getGlyphs());
+                
+                if (borderBelow != styledBorder::connectionTypes::NONE)
+                    Current_Masks |= styledBorder::connectionTypes::DOWN;
+            }
+
+            if (Is_In_Bounds(Left, this)){
+                // Since the border left can be already processed we need to check all possible border variations.
+                bitMask<styledBorder::connectionTypes> borderLeft = A->getCustomBorderStyle().getBorderType(From(Left, Parent_Buffer, this)->getGlyphs()) | 
+                                                        B->getCustomBorderStyle().getBorderType(From(Left, Parent_Buffer, this)->getGlyphs());
+                
+                if (borderLeft != styledBorder::connectionTypes::NONE)
+                    Current_Masks |= styledBorder::connectionTypes::LEFT;
+            }
+
+            if (Is_In_Bounds(Right, this)){
+                // Since the border right can be already processed we need to check all possible border variations.
+                bitMask<styledBorder::connectionTypes> borderRight = A->getCustomBorderStyle().getBorderType(From(Right, Parent_Buffer, this)->getGlyphs()) | 
+                                                         B->getCustomBorderStyle().getBorderType(From(Right, Parent_Buffer, this)->getGlyphs());
+                
+                if (borderRight != styledBorder::connectionTypes::NONE)
+                    Current_Masks |= styledBorder::connectionTypes::RIGHT;
+            }
+
+            std::string_view finalBorder = A->borderStyle.getBorder(Current_Masks);
+
+            if (finalBorder.empty()){
+                continue;
+            }
+
+            *From(c, Parent_Buffer, this) = finalBorder;
+        }
+    }
+
+    std::string listView::getTypedName() const {
+        return "listView<" + ID + ">";
+    }
+
+    bool listView::detach(element* detachable) {
+        bool result;
+        pauseGGUI([this, detachable, &result]() {
+            unsigned int Index = 0;
+
+            //first find the detachable element index.
+            for (;Index < content.size() && content[Index] != detachable; Index++);
+            
+            // Check if there was no element by that ptr value.
+            if (Index == content.size()){
+                logger::log("Internal: no element with ptr value: " + detachable->getTypedName() + " was found in the list view: " + getTypedName());
+                
+                // Removal action failed.
+                result = false;
+                return;
+            }
+
+            content.erase(content.begin() + Index);
+
+            result = true;
+        });
+
+        return result;
+    }
+
+    bool listView::remove(element* removable) {
+        bool result = detach(removable);
+
+        // Only remove this element if it truly existed in the list view
+        if (result) delete removable;
+
+        return result;
+    }
+
+    void scrollView::setScrolling(bool allow) {
+        bool scrollingEventsExists = false;
+        size_t scrollUpEventHandlerIndex = 0;
+        size_t scrollDownEventHandlerIndex = 0;
+
+        const std::vector<converter::output::event::action>& localEventHandlers = getEventHandlers();
+
+        // Check if scrolling events already exist for this ScrollView
+        for (unsigned int i = 0; i < localEventHandlers.size(); i++) {
+            if (localEventHandlers[i].has(converter::input::key::types::SCROLL_UP)) {
+                scrollUpEventHandlerIndex = i;
+                scrollingEventsExists = true;
+            }
+            else if (localEventHandlers[i].has(converter::input::key::types::SCROLL_DOWN)) {
+                scrollDownEventHandlerIndex = i;
+                scrollingEventsExists = true;
+            }
+        }
+
+        // If scrolling events dont exist but we allow to, then create them:
+        if (!scrollingEventsExists == allow) {
+            this->on({converter::input::key::types::SCROLL_UP}, [this](converter::output::event::base*) {
+                this->scrollUp();
+                return true;
+            });
+
+            this->on({converter::input::key::types::SCROLL_DOWN}, [this](converter::output::event::base*) {
+                this->scrollDown();
+                return true;
+            });
+        } else if (scrollingEventsExists == !allow) {   // If scrolling events exist, but we dont allow, then:
+            removeEventHandler(std::max(scrollUpEventHandlerIndex, scrollDownEventHandlerIndex));   // remove the later one so the prior ones index does not get shifted
+            removeEventHandler(std::min(scrollUpEventHandlerIndex, scrollDownEventHandlerIndex));   // remove the prior one
+        }
+
+    }
+
+    std::string scrollView::getTypedName() const {
+        return "scrollView<" + ID + ">";
+    }
+
 }

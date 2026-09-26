@@ -103,7 +103,7 @@ namespace GGUI {
             size_t getIndexOf(IVector2) const;
         protected:
             // Ray-tracing inspired SGR baker
-            std::pair<bool, activeStyle> trace(IVector2 point, element* currentContainer);
+            std::pair<bool, activeStyle> trace(IVector2 point, element* currentElement);
         public:
             // ===                  ===
             
@@ -177,6 +177,23 @@ namespace GGUI {
 
             // Checks for terminal extensions and enables them if available.
             void enableExtensions();
+        };
+
+        struct renderable {
+            // Updated by element: Only fetch one parent UP, and own position +, then child repeat in Render pipeline.
+            IVector3 absolutePositionCache;
+            linearMask<terminal::textAttributeTypes, uint64_t> textAttributes = terminal::textAttributeTypes::DEFAULT;
+    
+            std::vector<terminal::cell> cellBuffer;
+            std::vector<activeStyle> graphicalIdentityPool;
+            std::vector<const activeStyle*> graphicalReflectionPool;
+            
+            // Returns list of minimum points of the deltas.
+            std::vector<IVector2> getDeltaPoints();
+
+            void compileActiveGraphics();
+            
+            void updateAbsolutePositionCache();
         };
 
         // Read from this to get current device states of the terminal peripherals.

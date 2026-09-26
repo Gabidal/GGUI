@@ -1,5 +1,8 @@
 #include "terminal.h"
 #include "../../elements/element.h"
+#include "../../elements/listView.h"
+
+#include "../utils/logger.h"
 
 /**
  * Cross platform functions and containers are held here:
@@ -45,22 +48,24 @@ namespace GGUI {
         }
 
         // first we go recursively inside the container and the child that contains this point.
-        std::pair<bool, activeStyle> outputCapture::trace(IVector2 point, element* currentContainer) {
+        std::pair<bool, activeStyle> outputCapture::trace(IVector2 point, element* currentElement) {
             // since overflow content inside a container only is allowed is the container is dynamic in size, otherwise overflow content is always hidden, so the lowest identity pool is always the largest. 
-            if (currentContainer->graphicalIdentityPool.empty() || !currentContainer->graphicalIdentityPool.back().area.hits(point)) { return {false, {} }; }
+            if (currentElement->graphicalIdentityPool.empty() || !currentElement->graphicalIdentityPool.back().area.hits(point)) { return {false, {} }; }
 
             std::pair<bool, activeStyle> handle = {false, {} };
             
-            // now check if any of the childs inside this area is closer via hit
-            for (auto* child : currentContainer->getVisibleChilds()) {  // should return via z-priority
-                handle = trace(point, child);   // this should return the closest hit.
+            // now check if this element is a container and if it contains a closer matching element inside it.
+            if (dynamic_cast<listView*>(currentElement)) {
+                for (auto* content : static_cast<listView*>(currentElement)->getVisibleContent()) {  // should return via z-priority
+                    handle = trace(point, content);   // this should return the closest hit.
 
-                if (handle.first) break;    // since z-priority the first match should be the best one.
+                    if (handle.first) break;    // since z-priority the first match should be the best one.
+                }
             }
 
             // If none of the childs hit, then this current Container is the closest hit
             if (!handle.first) {      
-                for (auto& localGraphicalPool : currentContainer->graphicalIdentityPool) {
+                for (auto& localGraphicalPool : currentElement->graphicalIdentityPool) {
                     if (localGraphicalPool.area.hits(point)) {
                         handle.second = localGraphicalPool;    // this is the closest hit.
                         handle.first = true;
@@ -87,21 +92,21 @@ namespace GGUI {
             size_t start = 0;
 
             // First find the index of the handle
-            for (; start < currentContainer->graphicalReflectionPool.size(); start++) {
-                const activeStyle* current = currentContainer->graphicalReflectionPool[start];
+            for (; start < currentElement->graphicalReflectionPool.size(); start++) {
+                const activeStyle* current = currentElement->graphicalReflectionPool[start];
                 if (current->origin == handle.second.origin && current->area.hits(point)) break;    // we found the handle, now we can start processing from this index onwards.
             }
             
             // skip styles from the same origin and find the layer below
             for (; 
-                start < currentContainer->graphicalReflectionPool.size() && 
-                currentContainer->graphicalReflectionPool[start]->origin == handle.second.origin
+                start < currentElement->graphicalReflectionPool.size() && 
+                currentElement->graphicalReflectionPool[start]->origin == handle.second.origin
                 ; start++
             );
 
             // now that we have the start index, we can start iterating from that point onwards and every reflected style that hits should contribute to the color via the opacity compute.
-            for (; start < currentContainer->graphicalReflectionPool.size(); start++) {
-                auto* reflectedStyle = currentContainer->graphicalReflectionPool[start];
+            for (; start < currentElement->graphicalReflectionPool.size(); start++) {
+                auto* reflectedStyle = currentElement->graphicalReflectionPool[start];
 
                 if (reflectedStyle->area.hits(point)) {
                     handle.second = handle.second.computeColor(reflectedStyle);
@@ -339,6 +344,111 @@ namespace GGUI {
         
             // Inform waiters that the polled data has been received
             terminal::currentStates->transmission.informParsedInput();
+        }
+
+        std::vector<IVector2> renderable::getDeltaPoints() {
+            std::vector<IVector2> result;
+            // Rough heuristic to prevent constant reallocations
+            result.reserve(graphicalReflectionPool.size() * 50);    // multiply by the probable vertical length
+
+            for (const auto* reflection : graphicalReflectionPool) {
+                // no need to skip hidden since the reflection pool already filters them out.
+
+                const std::vector<IVector2>& tmp = reflection->area.getVerticalFaces();
+
+                // blind add
+                result.insert(result.end(), tmp.begin(), tmp.end());
+            }
+
+            // sort the points
+            std::sort(result.begin(), result.end(), [](const IVector2& a, const IVector2& b) {
+                return std::tie(a.y(), a.x()) < std::tie(b.y(), b.x());
+            });
+
+            // remove duplicates
+            result.erase(
+                std::unique(result.begin(), result.end()),
+                result.end()
+            );
+
+            // account only hits that are inside the dom area
+            result.erase(
+                std::remove_if(result.begin(), result.end(), [this](const IVector2& point) {
+                    return graphicalIdentityPool.back().area.hits(point) == false;
+                }),
+                result.end()
+            );
+
+            return result;
+        }
+
+        void renderable::compileActiveGraphics() {
+            graphicalIdentityPool.reserve(2);
+
+            // We need to promote to an element to get some information
+            element* owner = static_cast<element*>(this);
+
+            RGB textColor = owner->getTextColor();
+            RGB backgroundColor = owner->getBackgroundColor();
+
+            int borderOffset = owner->hasBorder();
+
+            // Add the inner area
+            graphicalIdentityPool.push_back({
+                {   // rectangle area
+                    absolutePositionCache + IVector3{borderOffset, borderOffset, 0},
+                    {owner->getWidth() - borderOffset*2, owner->getHeight() - borderOffset*2}
+                },
+                textColor, backgroundColor,
+                owner->getOpacity(),
+                textAttributes,
+                owner
+            });
+
+            // Add the border area; To keep z-priority, so largest view is last
+            if (owner->hasBorder()) {     TODO("This seems very inefficient!")
+                RGB borderColor = owner->getBorderGlyphColor();
+                RGB borderBackgroundColor = owner->getBorderBackgroundColor();
+
+                TODO("Add here the border width into the offset calculation")
+
+                graphicalIdentityPool.push_back({
+                    {   // rectangle area
+                        absolutePositionCache,
+                        {owner->getWidth(), owner->getHeight()}
+                    },
+                    borderColor, borderBackgroundColor,
+                    owner->getOpacity(),
+                    textAttributes,
+                    owner
+                });
+            }
+
+            std::transform(
+                graphicalIdentityPool.begin(), graphicalIdentityPool.end(),
+                std::back_inserter(graphicalReflectionPool),
+                [](activeStyle& as) { return &as; }
+            );
+        }
+        
+        void renderable::updateAbsolutePositionCache() {
+            absolutePositionCache = {0, 0, 0};
+            int Border_Offset = 0;
+            
+            // We need to promote to an element to get some information
+            element* owner = static_cast<element*>(this);
+
+            if (owner->parent) {
+                // Get the position of the parent
+                absolutePositionCache = owner->parent->getAbsolutePosition();
+
+                Border_Offset = (owner->parent->hasBorder() != owner->hasBorder() && owner->parent->hasBorder()) ? 1 : 0;
+
+                absolutePositionCache.z() += 1;   // mainly used for the compute of rectangle priority
+            }
+
+            // Add the position of the element to the position of its parent
+            absolutePositionCache += owner->getPosition() + Border_Offset;
         }
     }
 }

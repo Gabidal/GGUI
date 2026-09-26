@@ -5,39 +5,21 @@
 
 namespace GGUI{
 
-    textField::textField(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct) : element(s, Embed_Styles_On_Construct){
-
-        // Since Styling Height and Width are defaulted to 1, we can use this one row to reserve for one line.
-        textLineCache.reserve(getHeight());
-
-        if (getWidth() == 1 && getHeight() == 1){
-            allowDynamicSize(true);
-        }
-
-        // Update the text cache list by newlines, and if no found then set the Text as the zeroth index.
-        if (Embed_Styles_On_Construct)
-            updateTextCache();
-    }
-
-    /**
-     * @brief Updates the text cache of the text field when the text field has a deep stain.
-     * @details This function is called when the text field has a deep stain, and it will update the text cache of the text field. The text cache is a list of compact strings, where each compact string is a line of text. The text cache is used to store the text of the text field, and it is used to determine the size of the text field. The text cache is updated by splitting the text into lines based on the newline character, and then adding each line to the text cache. The text cache is also updated to remove any empty lines at the end of the text cache.
-     */
     void textField::updateTextCache(){
         textLineCache.clear();
-        unsigned int borderOffset = hasBorder() ? 2 : 0;
-        unsigned int innerWidth = getWidth() - borderOffset;
+        size_t borderOffset = hasBorder() ? 2 : 0;
+        size_t innerWidth = getWidth() - borderOffset;
 
         // NOTE: This can be potentially removed.
         // This happens when text("...") is given with percentage dimensions, leaving width as zero.
         // The textField::render() will take care of this if percentage is used.
-        if (innerWidth == 0 && style->Width.number.getType() == types::EVALUATION_TYPE::PERCENTAGE){
+        if (innerWidth == 0 && getDimensions().x().isRelative()){
             return;
         }
 
         // Will determine the text cache list by newlines, and if no found then set the Text as the zeroth index.
         line currentLine(0, 0);
-        unsigned int longestLine = 0;
+        size_t longestLine = 0;
 
         // This is for the remaining liners to determine if they can append into the previous line or not.
         enum class lineReason {
@@ -60,7 +42,7 @@ namespace GGUI{
             }
             
             // This is for the word wrapping to beautifully end at when word end and not abruptly
-            if (text[i] == ' ' && !isOverflowAllowed()){
+            if (text[i] == ' '){
                 // Check if the current line length added one more word would go over the Width
                 // For this we first need to know how long is this next word if there is any
                 size_t nextSpace = text.find_first_of(' ', i + 1);
@@ -94,10 +76,7 @@ namespace GGUI{
             // Add the remaining liners if: There want any previous lines OR the last line exceeds the width with the current line OR the previous line ended with a newline.
             if (
                 textLineCache.size() == 0 ||
-                (
-                    Last_Line_Exceeds_Width_With_Current_Line &&
-                    !style->Allow_Dynamic_Size.value
-                ) ||
+                Last_Line_Exceeds_Width_With_Current_Line ||
                 previousLineReason == lineReason::NEWLINE
             ){
                 // If not then add the current line to the Text_Cache
@@ -111,12 +90,11 @@ namespace GGUI{
             longestLine = std::max(longestLine, currentLine.getSize());
         }
 
-        // Now we can check if Dynamic size is enabled, if so then resize textField by the new sizes
-        if (isDynamicSizeAllowed()){
-            // Set the new size
-            setWidth(std::max((size_t)longestLine + borderOffset, (size_t)getWidth()));
-            setHeight(std::max(textLineCache.size() + borderOffset, (size_t)getHeight()));
-        }
+        // Since 0.1.9.5 textFields are always dynamic containers
+        setDimensions({
+            std::max(longestLine + borderOffset, (size_t)getWidth()),
+            std::max(textLineCache.size() + borderOffset, (size_t)getHeight())
+        });
     }
 
     /**
@@ -129,18 +107,7 @@ namespace GGUI{
         // Get reference to the render buffer
         std::vector<terminal::cell>& Result = cellBuffer;
 
-        // Check for Dynamic attributes
-        if(style->evaluateDynamicDimensions(this))
-            flags |= (stain::types::STRETCH);
-
-        if (style->evaluateDynamicPosition(this))
-            flags |= (stain::types::MOVE);
-
-        if (style->evaluateDynamicGraphics(this))
-            flags |= (stain::types::GRAPHICS);
-
-        if (style->evaluateDynamicBorder(this))
-            flags |= (stain::types::EDGE);
+        evaluateDynamicAttributes();
 
         // If the text field is clean, return the current render buffer
         if (flags.isEmpty())
@@ -190,11 +157,11 @@ namespace GGUI{
             graphicalIdentityPool.clear();
             flags |= (stain::types::GRAPHICS);
 
-            if (style->Align.value == ANCHOR::LEFT)
+            if (alignment == alignments::LEFT)
                 alignTextLeft(Result);
-            else if (style->Align.value == ANCHOR::RIGHT)
+            else if (alignment == alignments::RIGHT)
                 alignTextRight(Result);
-            else if (style->Align.value == ANCHOR::CENTER)
+            else if (alignment == alignments::CENTER)
                 alignTextCenter(Result);
         }
 
@@ -222,8 +189,9 @@ namespace GGUI{
      * @details This function first stops the GGUI engine, then sets the text with a space character added to the beginning, and finally updates the text field's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
      * @param text The new text for the text field.
      */
-    void textField::setText(std::string_view newText){
+    void textField::setText(std::string& newText){
         text = newText;
+
         // We don't want to accidentally start re-writing into the name when streaming input text.
         if (hasEmptyName())
             setName(text);
@@ -338,7 +306,7 @@ namespace GGUI{
         addEventhandler(converter::output::event::action(
             {converter::input::key::types::ALL_LETTERS},
             [this, Then](converter::output::event::base*) { TODO("Going through all pressed keys seems very inefficient!")
-                if (focused) {
+                if (core::focusedOn == this) {
                     // go through all enabled keyboards between space and delete and check what letter was turned on
                     char letter = '\0';
 
@@ -363,13 +331,13 @@ namespace GGUI{
                 //action failed.
                 return false;
             },
-            getName() + "::input::keypress"
+            getTypedName() + "::input::keypress"
         ));
 
         addEventhandler(converter::output::event::action(
             {converter::input::key::types::ENTER},
             [this, Then](converter::output::event::base*) {
-                if (focused && core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ENTER].state) {
+                if (core::focusedOn == this && core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ENTER].state) {
                     //First call the function with the user's input
                     Then(this, '\n');
                     updateFrame();
@@ -379,13 +347,13 @@ namespace GGUI{
                 //action failed.
                 return false;
             },
-            getName() + "::input::enter"
+            getTypedName() + "::input::enter"
         ));
 
         addEventhandler(converter::output::event::action(
             {converter::input::key::types::BACKSPACE},
             [this](converter::output::event::base*) {
-                if (focused && core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::BACKSPACE].state) {
+                if (core::focusedOn == this && core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::BACKSPACE].state) {
                     //If the text field is empty, there is nothing to do
                     if (text.size() > 0) {
                         text.pop_back();
@@ -401,7 +369,7 @@ namespace GGUI{
                 //action failed.
                 return false;
             },
-            getName() + "::input::backspace"
+            getTypedName() + "::input::backspace"
         ));
     }
 }

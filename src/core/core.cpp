@@ -7,6 +7,7 @@
 #include "backend/terminal.h"
 
 #include "../elements/canvas.h"
+#include "../elements/listView.h"
 
 #include "thread.h"
 
@@ -45,24 +46,19 @@ namespace GGUI{
 
         std::unordered_map<std::string_view, element*> elementNames;
 
-        element* focusedOn = nullptr;
-        element* hoveredOn = nullptr;
+        selectable focusedOn;
+        selectable hoveredOn;
 
         std::unordered_map<canvas*, bool> multiFrameCanvas;
 
         void* Stack_Start_Address = 0;
         void* Heap_Start_Address = 0;
 
-        element* main = nullptr;
+        listView* main = nullptr;
 
         converter::input::base*  inputManager;
         converter::output::base* inputConverter; 
 
-        /**
-         * @brief Temporary function to return the current date and time in a string.
-         * @return A string of the current date and time in the format "DD.MM.YYYY: HH.MM.SS"
-         * @note This function will be replaced when the Date_Element is implemented.
-         */
         std::string now(){
             // This function takes the current time and returns a string of the time.
             std::time_t now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -84,11 +80,6 @@ namespace GGUI{
             thread::concurrency::condition.notify_all();
         }
 
-        /**
-         * @brief This function is a helper for the smart memory system to recall which tasks should be prolonged, and which should be deleted.
-         * @details This function is a lambda function that is used by the thread::concurrency::Guard class to prolong or delete memories in the smart memory system.
-         *          It takes a pointer to a vector of Memory objects and prolongs or deletes the memories in the vector based on the time difference between the current time and the memory's start time.
-         */
         void recallMemories(){
             remember([](std::vector<converter::output::event::memory>& rememberable){
                 std::chrono::steady_clock::time_point currentTime = std::chrono::steady_clock::now();
@@ -149,153 +140,6 @@ namespace GGUI{
         }
 
         /**
-         * @brief Recursively applies or removes focus on an element and its children.
-         * @details This function checks if the current element is an event handler.
-         *          If not, it sets the focus state on the element and recurses on its children.
-         *          Focus is only applied if the element's current focus state differs from the desired state.
-         * 
-         * @param current The current element to apply or remove focus.
-         * @param Focus The desired focus state.
-         */
-        void Recursively_Apply_Focus(element* current, bool Focus){
-            
-            // Prior function calls would have set this into the correct Focus state.
-            if (current->isFocused() != Focus) {    // if not, then this means this is the child of an Focus setted element.
-                if (!current->getEventHandlers().empty())
-                    current->setFocus(Focus);
-            }
-
-            // Recurse on all child elements
-            for (auto c : current->getChilds()){
-                Recursively_Apply_Focus(c, Focus);
-            }
-        }
-
-        /**
-         * @brief Recursively applies or removes hover state on an element and its children.
-         * @details This function checks if the current element is an event handler.
-         *          If not, it sets the hover state on the element and recurses on its children.
-         *          Hover is only applied if the element's current hover state differs from the desired state.
-         * 
-         * @param current The current element to apply or remove hover.
-         * @param Hover The desired hover state.
-         */
-        void Recursively_Apply_Hover(element* current, bool Hover){
-
-            // Prior function calls would have set this into the correct hover state.
-            if (current->isHovered() != Hover) {    // if not, then this means this is the child of an hover setted element.
-
-                if (!current->getEventHandlers().empty())
-                    current->setHoverState(Hover);
-            }
-
-            // Recurse on all child elements
-            for (auto c : current->getChilds()){
-                Recursively_Apply_Hover(c, Hover);
-            }
-        }
-
-        /**
-         * @brief Removes focus from the currently focused element and its children.
-         * @details This function checks if there is a currently focused element.
-         *          If there is, it sets the focus state on the element and its children to false.
-         *          Focus is only removed if the element's current focus state differs from the desired state.
-         */
-        void unFocusElement(){
-            if (!focusedOn)
-                return;
-
-            focusedOn->setFocus(false);
-
-            // Recursively remove focus from all child elements
-            Recursively_Apply_Focus(focusedOn, false);
-
-            focusedOn = nullptr;
-        }
-
-        /**
-         * @brief Removes the hover state from the currently hovered element and its children.
-         * @details This function checks if there is a currently hovered element.
-         *          If there is, it sets the hover state on the element and its children to false.
-         *          Hover is only removed if the element's current hover state differs from the desired state.
-         */
-        void unHoverElement(){
-            if (!hoveredOn)
-                return;
-
-            // Set the hover state to false on the currently hovered element
-            hoveredOn->setHoverState(false);
-
-            // Recursively remove the hover state from all child elements
-            Recursively_Apply_Hover(hoveredOn, false);
-
-            // Set the hovered element to nullptr to indicate there is no currently hovered element
-            hoveredOn = nullptr;
-        }
-
-        /**
-         * @brief Updates the currently focused element to a new candidate.
-         * @details This function checks if the new candidate is the same as the current focused element.
-         *          If not, it removes the focus from the current element and all its children.
-         *          Then, it sets the focus on the new candidate element and all its children.
-         * @param new_candidate The new element to focus on.
-         */
-        void updateFocusedElement(element* new_candidate){
-            if (focusedOn == new_candidate || new_candidate == main)
-                return;
-
-            if (!new_candidate) return; // For total unselection, use unFocusElement()
-
-            // Unfocus the previous focused element and its children
-            if (focusedOn){
-                unFocusElement();
-            }
-
-            // Set the focus on the new element and all its children
-            focusedOn = new_candidate;
-
-            // Update mouse location to match with keyboard given states.
-            currentMouse.position = focusedOn->getAbsolutePosition().surjection<IVector2::dimensions>();
-
-            // Set the focus state on the new element to true
-            focusedOn->setFocus(true);
-            
-            // Recursively set the focus state on all child elements to true
-            Recursively_Apply_Focus(focusedOn, true);
-        }
-
-        /**
-         * @brief Updates the currently hovered element to a new candidate.
-         * @details This function checks if the new candidate is the same as the current hovered element.
-         *          If not, it removes the hover state from the current element and all its children.
-         *          Then, it sets the hover state on the new candidate element and all its children.
-         * @param new_candidate The new element to hover on.
-         */
-        void updateHoveredElement(element* new_candidate){
-            if (hoveredOn == new_candidate || new_candidate == main)
-                return;
-
-            if (!new_candidate) return; // For total unselection, use unHoverElement()
-
-            // Remove the hover state from the previous hovered element and its children
-            if (hoveredOn){
-                unHoverElement();
-            }
-
-            // Set the hover state on the new element and all its children
-            hoveredOn = new_candidate;
-
-            // Update mouse location to match with keyboard given states.
-            currentMouse.position = hoveredOn->getAbsolutePosition().surjection<IVector2::dimensions>();
-
-            // Set the hover state on the new element to true
-            hoveredOn->setHoverState(true);
-
-            // Recursively set the hover state on all child elements to true
-            Recursively_Apply_Hover(hoveredOn, true);
-        }
-
-        /**
          * @brief Initializes the GGUI system and returns the main window.
          * 
          * @return The main window of the GGUI system.
@@ -314,10 +158,8 @@ namespace GGUI{
             // link the input poller pairs
             converter::link(inputManager, inputConverter);
 
-            main = new element(
-                name("main"), 
-                true
-            );
+            main = new listView();
+            main->setName("main");
 
             terminal::init(inputManager);   // connects with hardware I/O and resets terminal state machine
 
@@ -433,7 +275,7 @@ namespace GGUI{
         thread::concurrency::condition.wait(lock, [&](){ return thread::concurrency::requestTermination; });
     }
 
-    element* getRoot() {
+    listView* getRoot() {
         return core::main;
     }
     
@@ -549,12 +391,12 @@ namespace GGUI{
      * @param DOM The elements to add to the root window.
      * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
      */
-    void GGUI(STYLING_INTERNAL::styleBase& App, unsigned long long Sleep_For){
+    void GGUI(listView& App, unsigned long long Sleep_For){
         pauseGGUI([&App](){
             core::init();
 
             // Since the App is basically an AST Styling, we first add it to the already constructed main with its width and height set to the terminal sizes.
-            getRoot()->addStyling(App);
+            getRoot()->add(App);
             
             // Now we can safely insert addons while taking into notion user configured borders and other factors which may impact the usable width.
             initAddons();
@@ -571,26 +413,7 @@ namespace GGUI{
         std::this_thread::sleep_for(std::chrono::milliseconds(Sleep_For));
     }
 
-    /**
-     * @brief Calls the GGUI function with the provided style and sleep duration.
-     *
-     * This function forwards the given style object and sleep duration to another
-     * overload of the GGUI function. It is typically used to initialize or update
-     * the graphical user interface with specific styling and timing parameters.
-     *
-     * @param App An rvalue reference to a style_base object representing the application's style.
-     * @param Sleep_For The duration, in microseconds, for which the function should sleep or delay execution.
-     */
-    void GGUI(STYLING_INTERNAL::styleBase&& App, unsigned long long Sleep_For) { GGUI(App, Sleep_For); }
-
-    /**
-     * @brief Retrieves an element by name.
-     * @details This function takes a string argument representing the name of the element
-     *          and returns a pointer to the element if it exists in the global Element_Names map.
-     * @param name The name of the element to retrieve.
-     * @return A pointer to the element if it exists; otherwise, nullptr.
-     */
-    element* getElement(std::string name){
+    element* getElement(std::string_view name){
         element* Result = nullptr;
 
         // Check if the element is in the global Element_Names map.

@@ -257,6 +257,10 @@ namespace GGUI{
                 IVector2(x2 - x1, y2 - y1)
             );
         }
+
+        constexpr size_t getRelativePointLocationAsIndex(IVector2 point) {
+            return (point.x() - left()) + (point.y() - top()) * size.x();
+        }
     };
 
     template<typename enumType, typename containerType = std::underlying_type_t<enumType>>
@@ -683,7 +687,7 @@ namespace GGUI{
 
         constexpr T get() const { return data; }
 
-        constexpr types getType() const { return evaluationType; }
+        constexpr bool isRelative() const { return evaluationType == types::PERCENTAGE; }
 
         template<typename P>
         requires (std::is_same_v<P, T> || std::is_integral_v<P>)

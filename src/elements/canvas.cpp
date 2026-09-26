@@ -30,9 +30,8 @@ namespace GGUI{
      * @param sprite The sprite to be placed.
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
-    void canvas::set(unsigned int x, unsigned int y, animationSprite& sprite, bool Flush){
-        unsigned int innerWidth = getWidth() - hasBorder()*2;
-        unsigned int Location = x + y * innerWidth; // Determine the buffer index for the sprite.
+    void canvas::set(IVector2 point, animationSprite& sprite, bool Flush) {
+        size_t Location = getInnerBounds().getRelativePointLocationAsIndex(point);
 
         // Check for multi-frame support and update the management map if needed.
         if (!isMultiFrame() && sprite.frames.size() > 1 && core::multiFrameCanvas.find(this) == core::multiFrameCanvas.end()){
@@ -57,9 +56,8 @@ namespace GGUI{
      * @param sprite The sprite to be placed.
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
-    void canvas::set(unsigned int x, unsigned int y, animationSprite&& sprite, bool Flush){
-        unsigned int innerWidth = getWidth() - hasBorder()*2;
-        unsigned int Location = x + y * innerWidth; // Determine the buffer index for the sprite.
+    void canvas::set(IVector2 point, animationSprite&& sprite, bool Flush){
+        size_t Location = getInnerBounds().getRelativePointLocationAsIndex(point);
 
         // Check for multi-frame support and update the management map if needed.
         if (!isMultiFrame() && sprite.frames.size() > 1 && core::multiFrameCanvas.find(this) == core::multiFrameCanvas.end()){
@@ -84,9 +82,8 @@ namespace GGUI{
      * @param sprite The UTF sprite to be placed.
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
-    void canvas::set(unsigned int x, unsigned int y, const sprite& sprite, bool Flush){
-        unsigned int innerWidth = getWidth() - hasBorder()*2;
-        unsigned int Location = x + y * innerWidth; // Determine the buffer index for the sprite.
+    void canvas::set(IVector2 point, const sprite& sprite, bool Flush){
+        size_t Location = getInnerBounds().getRelativePointLocationAsIndex(point);
         
         buffer[Location].frames.push_back(sprite); // Add the sprite to the buffer at the calculated location.
 
@@ -125,36 +122,24 @@ namespace GGUI{
     std::vector<terminal::cell>& canvas::render() {
         std::vector<terminal::cell>& Result = cellBuffer;
 
-        // Check for Dynamic attributes
-        if(style->evaluateDynamicDimensions(this))
-            flags |= (stain::types::STRETCH);
+        evaluateDynamicAttributes();
 
-        if (style->evaluateDynamicPosition(this))
-            flags |= (stain::types::MOVE);
-
-        if (style->evaluateDynamicGraphics(this))
-            flags |= (stain::types::GRAPHICS);
-
-        if (style->evaluateDynamicBorder(this))
-            flags |= (stain::types::EDGE);
-
-        // Since canvas does not utilize DEEP flag, we can just clean it away
-        if (flags.has(stain::types::DEEP))
-            flags ^= (stain::types::DEEP);
+        // NULLOP
+        flags ^= (stain::types::DEEP);
+        flags ^= stain::types::COMBINE_BORDERS;
 
         if (flags.isEmpty())
             return Result;
-
-        unsigned int fittingWidth = getWidth() - hasBorder()*2;
-        unsigned int fittingHeight = getHeight() - hasBorder()*2;
         
+        rectangle innerBounds = getInnerBounds();
+
         if (flags.has(stain::types::STRETCH)) {
             Result.clear();
             Result.resize(getWidth() * getHeight(), ' ');
 
             // Also clear and resize the sprite buffer.
             buffer.clear();
-            buffer.resize(fittingWidth * fittingHeight);
+            buffer.resize(innerBounds.size.x() * innerBounds.size.y());
 
             flags ^= (stain::types::STRETCH);
 
@@ -173,9 +158,9 @@ namespace GGUI{
 
             // now we need to call again the on_draw to correctly cast the correct sprites to their each respective buffer point.
             if (On_Draw != 0) {
-                for (unsigned int y = 0; y < fittingHeight; y++) {
-                    for (unsigned int x = 0; x < fittingWidth; x++) {
-                        set(x, y, On_Draw(x, y), false);
+                for (int y = innerBounds.top(); y < innerBounds.bottom(); y++) {
+                    for (int x = innerBounds.left(); x < innerBounds.right(); x++) {
+                        set({x, y}, On_Draw({x, y}), false);
                     }
                 }
             }

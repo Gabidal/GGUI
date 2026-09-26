@@ -5,302 +5,175 @@
 
 namespace GGUI{
     class listView : public element {
-    protected:
-        //We can always assume that the list starts from the upper left corner, right?
-        element* Last_Child = new element(position(0, 0) | width(0) | height(0));
+        enum class containerFlags : uint8_t {
+            __min       = 0,
+            DEFAULT     = __min,
+            
+            dynamic     = 1,
+            overflow    = 2,
+            vertical    = 3,        // when off, horizontal by default
+        
+            __max
+        };
+
+        IVector2 lastAddedElementInfo = {};
+        std::vector<element*> content;
+
+        rectangle innerBounds;  // Cached inner bounds from border offset and margins
     public:
+        linearMask<containerFlags> containerFlag;
 
-        /**
-         * @brief Default constructor for List_View.
-         * 
-         * This constructor calls the default constructor of Element and sets the Allow_Dynamic_Size property to true.
-         */
-        listView() : element(){ allowDynamicSize(true); }
+        listView() = default;
 
-        /**
-         * @brief Constructor for List_View.
-         * 
-         * This constructor calls the Element constructor with the given style and then sets the Allow_Dynamic_Size property to true.
-         * This is so that the list view can automatically resize itself based on the elements it contains.
-         * 
-         * @param s The style for the list view.
-         */
-        listView(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct){ allowDynamicSize(true); }
-        listView(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : listView(s, Embed_Styles_On_Construct){}
+        void add(element* e);
 
-        /**
-         * @brief Destructor for the List_View class.
-         *
-         * This destructor is responsible for properly deallocating all the memory
-         * allocated by the List_View object, including its child elements.
-         */
-        ~listView() override {
-            // Delete all child elements to avoid memory leaks.
-            for (element* e : style->Childs) {
-                delete e;
+        template<typename T>
+        void add(T& e) {
+            add(e.copy());
+        }
+        
+        std::string getTypedName() const override;
+
+        bool remove(element* e);
+
+        bool remove(size_t i) {
+            if (i >= content.size())
+                return false;
+
+            return remove(content[i]);
+        }
+
+        bool detach(element* e);
+
+        bool isVertical() const {
+            return containerFlag.has(containerFlags::vertical);
+        }
+
+        bool isHorizontal() const {
+            return !containerFlag.has(containerFlags::vertical);
+        }
+
+        void makeHorizontal() {
+            if (containerFlag.has(containerFlags::vertical)) {
+                containerFlag.set(containerFlags::vertical, false);
+
+                updateFrame();
             }
         }
 
-        //End of user constructors.
-
-        /**
-         * @brief Adds a child element to the list view.
-         * @details This function adds a child element to the list view and manages the positioning and sizing
-         *          of the child element within the list view. It takes into account the list's flow direction,
-         *          border offsets, and dynamic sizing capabilities.
-         * @param e The child element to be added.
-         */
-        void addElement(element* e) override;
-        
-        /**
-         * @brief Gets the name of the list view.
-         * @details This function returns the name of the list view in the format "List_View<Name>".
-         * @return The name of the list view.
-         */
-        std::string getName() const override;
-
-        /**
-         * @brief Removes a child element from the list view.
-         * @param remove The child element to be removed.
-         * @return true if the element was successfully removed, false if not.
-         *
-         * This function removes a child element from the list view and updates the position of all elements following the removed element.
-         * It also recalculates the width and height of the list view and updates the dimensions of the list view if it is dynamically sized.
-         */
-        bool remove(element* e) override;
-
-        /**
-         * @brief Sets the flow direction of the list view.
-         * @details This function sets the flow priority of the list view to the specified direction.
-         *          The flow direction determines how the child elements are arranged within the list view.
-         * @param gd The direction to set as the flow priority.
-         */
-        void setFlowDirection(DIRECTION gd){
-            style->Flow_Priority = gd;
+        void makeVertical() {
+            if (!containerFlag.has(containerFlags::vertical)) {
+                containerFlag.set(containerFlags::vertical, true);
+            
+                updateFrame();
+            }
         }
 
-        /**
-         * @brief Gets the current flow direction of the list view.
-         * @details This function returns the current flow direction of the list view.
-         * @return The flow direction of the list view.
-         */
-        DIRECTION getFlowDirection(){
-            return style->Flow_Priority.value;
-        }
-
-        /**
-         * @brief Gets a child element from the list view by its index.
-         * @details This function returns a pointer to the child element at the specified index.
-         *          The index is checked to be within the range of the child array.
-         * @param index The index of the child element to retrieve.
-         * @return The child element at the specified index, or nullptr if the index is out of range.
-         */
-        template<typename  T>
+        template<typename T>
         T* get(int index){
-            if (index > (signed)style->Childs.size() - 1)
+            if (index > (signed)content.size() - 1)
                 return nullptr;
 
             if (index < 0)
-                index = (signed)style->Childs.size() + index - 1;
+                index = (signed)content.size() + index - 1;
 
-            return (T*)this->style->Childs[index];
+            return (T*)this->content[index];
         }
 
+        template<typename T>
+        T* getElement(std::string_view Name) const {
+            for (auto* c : content){
+                if (c->getName() == Name)
+                    return c;
 
+                if (dynamic_cast<const listView*>(c)) {
+                    element* tmp = static_cast<listView*>(c)->getElement<T>(Name);
+                    
+                    if (tmp) return tmp;
+                }
+            }
+
+            return nullptr;
+        }
+
+        template<typename T>
+        std::vector<T*> getElements() const {
+            std::vector<T*> Result;
+
+            for (auto* c : content){
+                if (dynamic_cast<T*>(c))
+                    Result.push_back(static_cast<T*>(c));
+
+                if (dynamic_cast<const listView*>(c)) {
+                    auto tmp = static_cast<listView*>(c)->getElements<T>();
+                    
+                    Result.insert(Result.end(), tmp.begin(), tmp.end());
+                }
+            }
+
+            return Result;
+        }
+
+        std::vector<element*> getVisibleContent() const;
+
+        const std::vector<element*> getContent();
+
+        void setDisplay(bool d) override;
+
+        bool contentIsShown(element* other) const;
+
+        // Expect [innerBounds.position, innerBounds.dimensions]
+        rectangle getInnerBounds() const { return innerBounds; }
+
+        element* copy() const override;
     protected:
-        /**
-         * @brief Creates a deep copy of the List_View object.
-         * @details This function creates a new List_View object and copies all the data from the current List_View object to the new one.
-         * @return A pointer to the new List_View object.
-         */
         element* createInstance() const override {
             return new listView();
         }
 
-        /**
-         * @brief Calculates the hitboxes of all child elements of the list view.
-         * @details This function is similar to the Remove(Element* c) like behaviour.
-         *          It takes into account the border offsets of both the current and the next element as well as their positions.
-         *          For an horizontal list, it checks if the next element's width is greater than the current element's width.
-         *          For a vertical list, it checks if the next element's height is greater than the current element's height.
-         *          If the next element is greater in size than the current element, it sets the maximum width/height to the next element's width/height.
-         *          It finally sets the dimensions of the list view to the maximum width and height if the list view is dynamically sized and the maximum width/height is greater than the current width/height.
-         * @param Starting_Offset The starting offset into the child array.
-         */
-        void calculateChildsHitboxes(size_t Starting_Offset = 0) override;
+        // Combines border glyphs where applicable
+        void postProcessBorders(element* A, element* B, std::vector<terminal::cell>& Parent_Buffer);
 
-        /**
-         * @brief Retrieves the dimension limits of the list view.
-         *
-         * This function calculates and returns the dimension limits of the list view
-         * based on its configuration. The behavior depends on whether overflow or 
-         * dynamic sizing is allowed.
-         *
-         * @return GGUI::IVector3 The dimension limits of the list view:
-         * - If overflow is allowed, the dimensions are unbounded and set to {INT16_MAX, INT16_MAX}.
-         * - If dynamic sizing is allowed, the dimensions are calculated as the difference
-         *   between the position of the last child element and the final limit.
-         * - Otherwise, the dimensions are determined by the width and height of the list view.
-         */
-        IVector3 getDimensionLimit();
+        IVector2 getDimensionLimit() const; TODO("Deprecate")
+
+        IVector2 getOuterBounds() const;    TODO("Deprecate")
+
+        void updateInnerBounds();
+
+        rectangle getBoundLimits();
+
+        void computeDynamicSize();
+
+        bool contentChanged() const;
+
+        bool hasTransparentContent() const;
+
+        std::vector<terminal::cell>& render() override;
 
         // Give access to Last_Child
         friend class scrollView;
     };
 
-    class scrollView : public element{
+    class scrollView : public listView {
     protected:
-        int Scroll_Index = 0;  // Render based on the offset of the scroll_index by flow direction.
+        int scrollIndex = 0;  // Render based on the offset of the scrollIndex by flow direction.
     public:
 
-        /**
-         * @brief Default constructor for the scrollView class.
-         * 
-         * This constructor initializes a scrollView object by calling the base class
-         * element's default constructor.
-         */
-        scrollView() : element() { allowOverflow(true); }
+        scrollView() : listView() { containerFlag.add(containerFlags::overflow); }
 
-        /**
-         * @brief Constructor for the Scroll_View class.
-         * @details This constructor initializes a Scroll_View object with the specified styling.
-         * @param s The styling to be applied to the Scroll_View.
-         * @param Embed_Styles_On_Construct If true, the styling will be embedded into the Scroll_View's style. Only use if you know what you're doing!!!
-         */
-        scrollView(STYLING_INTERNAL::styleBase& s, bool Embed_Styles_On_Construct = false) : element(s, Embed_Styles_On_Construct) { allowOverflow(true); }
-        scrollView(STYLING_INTERNAL::styleBase&& s, bool Embed_Styles_On_Construct = false) : scrollView(s, Embed_Styles_On_Construct){}
+        void scrollUp() { scrollIndex++; };
 
-        /**
-         * @brief Constructor for the Scroll_View class.
-         * @details This constructor initializes a Scroll_View object with a reference to a List_View object.
-         * @param container The List_View object to be used as the container for the Scroll_View.
-         */
-        scrollView(listView& container);
+        void scrollDown() { scrollIndex--; };
 
-        /**
-         * @brief Adds a child element to the Scroll_View.
-         * @details This function adds a child element to the Scroll_View and marks the Scroll_View as dirty with the DEEP stain.
-         * @param e The child element to be added.
-         */
-        void addElement(element* e) override;
+        void setScrolling(bool allow);
 
-        /**
-         * @brief Enables or disables scrolling for the Scroll_View.
-         * @details This function updates the scrolling capability of the Scroll_View.
-         *          If scrolling is enabled, it ensures that scrolling events are registered.
-         * @param allow A boolean indicating whether to enable or disable scrolling.
-         */
-        void allowScrolling(bool allow);
-    
-        /**
-         * @brief Checks if the scrolling is enabled for the Scroll_View.
-         * @details This function checks the value of the Allow_Scrolling property of the Scroll_View's styling.
-         * @return A boolean indicating whether the scrolling is enabled for the Scroll_View.
-         */
-        bool isScrollingEnabled(){
-            return style->Allow_Scrolling.value;
-        }
-
-        /**
-         * @brief Scrolls the view up by one index.
-         * @details Decreases the scroll index if it is greater than zero and updates the container's position based on the growth direction.
-         * Marks the view as dirty for a deep update.
-         */
-        void scrollUp() override;
-
-        /**
-         * @brief Scrolls the view down by one index.
-         * @details Increases the scroll index by one and updates the container's position based on the growth direction.
-         * Marks the view as dirty for a deep update.
-         */
-        void scrollDown() override;
-
-        /**
-         * @brief Removes a child element from the scroll view.
-         * @details This function forwards the request to the Remove(Element* remove) function of the container.
-         * @param remove The element to be removed.
-         * @return true if the element was successfully removed, false if not.
-         */
-        bool remove(element* e) override;
-
-        /**
-         * @brief Gets the name of the scroll view.
-         * @details This function returns the name of the scroll view.
-         * @return The name of the scroll view.
-         */
-        std::string getName() const override;
-
-        /**
-         * @brief Sets the growth direction of the scroll view.
-         * @details This function forwards the request to the Set_Flow_Direction(DIRECTION gd) function of the container.
-         * @param gd The direction value to set as the growth direction.
-         */
-        void setGrowthDirection(DIRECTION gd){
-            ((listView*)style->Childs[0])->setFlowDirection(gd);
-        }
-
-        /**
-         * @brief Gets the current growth direction of the scroll view.
-         * @details This function retrieves the current growth direction of the scroll view.
-         * @return The current growth direction of the scroll view.
-         */
-        DIRECTION getGrowthDirection(){
-            return ((listView*)style->Childs[0])->getFlowDirection();
-        }
-
-        /**
-         * @brief Gets a child element from the scroll view by its index.
-         * @details This function forwards the request to the Get(int index) function of the container.
-         * @param index The index of the child element to retrieve.
-         * @return The child element at the specified index, or nullptr if the index is out of range.
-         */
-        template<typename  T>
-        T* get(int index){
-            return ((listView*)style->Childs[0])->get<T>(index);
-        }
-
-        /**
-         * @brief Retrieves the child elements of the current element.
-         * 
-         * This function overrides the base class method to return a reference
-         * to the vector of child elements managed by the container associated
-         * with this element.
-         * 
-         * @return A reference to a vector of pointers to the child elements.
-         */
-        std::vector<element*>& getChilds() override {
-            return getContainer()->getChilds();
-        }
-
+        std::string getTypedName() const override;
     protected:
-        /**
-         * @brief Safely moves the current element to a new scrollView element.
-         * 
-         * This function overrides the createInstance method from the base class and 
-         * creates a new instance of the scrollView element.
-         * 
-         * @return A pointer to the newly created scrollView element.
-         */
+
+        std::vector<terminal::cell>& render() override;
+    
         element* createInstance() const override {
             return new scrollView();
-        }
-
-        /**
-         * @brief Gets the container of the scroll view.
-         * @details This function retrieves the container of the scroll view, which is a List_View.
-         * @return The container of the scroll view.
-         */
-        listView* getContainer(){
-            // If the container has not been yet initialized, do so.
-            if (element::getChilds().size() == 0){
-                allowOverflow(true);
-                element::addElement(new listView(
-                    name((getName() + "::container").c_str()) | 
-                    flowPriority(element::getFlowPriority())
-                ));
-            }
-
-            return (listView*)style->Childs[0];
         }
     };
 }
