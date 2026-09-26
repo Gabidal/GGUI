@@ -79,7 +79,7 @@ namespace GGUI{
 
         void processStateHandler(STATE s);
 
-        void setOpacity(float Opacity) {
+        element* setOpacity(float Opacity) {
             // Only allow 0.0 - 1.0
             assert(Opacity >= 0.0f && Opacity <= 1.0f && "Opacity must be between 0.0 and 1.0");
 
@@ -88,6 +88,8 @@ namespace GGUI{
             flags |= stain::types::RESET;
 
             updateFrame();
+
+            return this;
         }
 
         float getOpacity() const {
@@ -98,13 +100,15 @@ namespace GGUI{
             return opacity < 1.0f;
         }
 
-        void setBorder(bool b) {
+        element* setBorder(bool b) {
             if (b != showBorder) {
                 flags |= stain::types::EDGE;
             }
 
             showBorder = b;
             updateFrame();
+
+            return this;
         }
 
         bool hasBorder() const {
@@ -112,21 +116,23 @@ namespace GGUI{
         }
 
         // Notifies container to refresh when display is changed.
-        virtual void setDisplay(bool d);
+        element* setDisplay(bool d);
 
         bool getDisplay() const {
             return display;
         }
 
-        void setDimensions(relativeNVector<int16_t, 2> dim) {
+        element* setDimensions(relativeNVector<int16_t, 2> dim) {
             if (dim != dimensions) {
-                return;
+                return this;
             }
 
             dimensions = dim;
 
             flags |= stain::types::STRETCH;
             updateFrame();
+
+            return this;
         }
 
         auto getDimensions() const { return dimensions; }
@@ -141,8 +147,8 @@ namespace GGUI{
             };
         }
 
-        void setPosition(IVector3 c) {
-            if (c == getPosition()) return;
+        element* setPosition(IVector3 c) {
+            if (c == getPosition()) return this;
 
             // Update the element's position in the style
             position = { c.x(), c.y(), c.z() };
@@ -152,6 +158,8 @@ namespace GGUI{
 
             // Update the frame to reflect the position change
             updateFrame();
+
+            return this;
         }
 
         void updatePosition(IVector3 v){
@@ -167,31 +175,33 @@ namespace GGUI{
         auto getAbsolutePosition() const { return absolutePositionCache; }
 
         // Allocate the string somewhere else and give it as a view
-        void setTitle(std::string_view t) {
+        element* setTitle(std::string_view t) {
             title = t;
+
+            return this;
         }
 
         std::string_view getTitle() const {
             return title;
         }
 
-        void setBackgroundColor(RGB color) { backgroundColor = color; }
+        element* setBackgroundColor(RGB color) { backgroundColor = color; return this; }
 
         RGB getBackgroundColor() const { return backgroundColor; }
         
-        void setBorderColor(RGB color) { borderGlyphColor = color; }
+        element* setBorderColor(RGB color) { borderGlyphColor = color; return this; }
         
         RGB getBorderGlyphColor() const { return borderBackgroundColor; }
 
-        void setBorderBackgroundColor(RGB color) { borderBackgroundColor = color; }
+        element* setBorderBackgroundColor(RGB color) { borderBackgroundColor = color; return this; }
         
         RGB getBorderBackgroundColor() const { return borderBackgroundColor; }
         
-        void setTextColor(RGB color) { textColor = color; }
+        element* setTextColor(RGB color) { textColor = color; return this; }
 
         RGB getTextColor() const { return textColor; }
 
-        void setCustomBorderStyle(GGUI::styledBorder style);
+        element* setCustomBorderStyle(GGUI::styledBorder style);
 
         GGUI::styledBorder getCustomBorderStyle() const { return borderStyle; }
 
@@ -203,11 +213,11 @@ namespace GGUI{
 
         bool hasEmptyName() const { return ID.empty(); }
 
-        void setName(const std::string& name);
+        element* setName(const std::string& name);
 
-        void remove();  TODO("need element::container types!")
+        void remove();
 
-        void onClick(std::function<bool(converter::output::event::base*)> action);
+        element* onClick(std::function<bool(converter::output::event::base*)> action);
 
         /**
          * @brief A function that registers a lambda to be executed when the element is interacted with in any way.
@@ -217,14 +227,14 @@ namespace GGUI{
          * @param action The lambda to be called when the element is interacted with.
          * @param GLOBAL Whether the lambda should be executed even if the element is not under the mouse.
          */
-        void on(std::initializer_list<converter::input::key::types> criteria, std::function<bool(converter::output::event::base*)> job, bool GLOBAL = false);
+        element* on(std::initializer_list<converter::input::key::types> criteria, std::function<bool(converter::output::event::base*)> job, bool GLOBAL = false);
 
         // Sets focus on this element
         void focus();
 
-        void setFocusState(bool f);
+        element* setFocusState(bool f);
 
-        void setHoverState(bool h); 
+        element* setHoverState(bool h); 
 
         // Add custom state handlers
         void onState(STATE s, void (*job)(element* self));

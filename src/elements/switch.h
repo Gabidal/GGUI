@@ -35,7 +35,7 @@ namespace GGUI{
 
         void toggle();
 
-        void setState(bool b);
+        switchBox* setState(bool b);
 
         void enableSingleSelect();
 
@@ -43,7 +43,7 @@ namespace GGUI{
 
         bool isSelected() { return State; }
 
-        void setText(std::string& text);
+        switchBox* setText(std::string& text);
 
         std::string getTypedName() const override{
             return "switchBox<" + ID + ">";
@@ -53,7 +53,7 @@ namespace GGUI{
             return State ? On : Off;
         }
 
-        void setStateString(terminal::cell off, terminal::cell on);
+        switchBox* setStateString(terminal::cell off, terminal::cell on);
 
         void DisableOthers();
     protected:

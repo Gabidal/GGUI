@@ -122,7 +122,7 @@ namespace GGUI{
 
     extern void pauseGGUI(std::function<void()> f);
 
-    extern void GGUI(listView&& App, unsigned long long Sleep_For = 0);
+    extern void GGUI(element* App, unsigned long long Sleep_For = 0);
 
     extern element* getElement(std::string_view name);
 }

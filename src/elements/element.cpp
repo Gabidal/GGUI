@@ -136,7 +136,7 @@ namespace GGUI {
         return cellBuffer;
     }
 
-    void element::setFocusState(bool f) {
+    element* element::setFocusState(bool f) {
         if (f == (core::focusedOn == this)){
             // If the focus state has changed, dirty the element and update the frame.
             flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE);
@@ -145,9 +145,11 @@ namespace GGUI {
 
             updateFrame();
         }
+
+        return this;
     }
 
-    void element::setHoverState(bool h) {
+    element* element::setHoverState(bool h) {
         if (h == (core::hoveredOn == this)){
             // If the hover state has changed, dirty the element and update the frame.
             flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE);
@@ -156,6 +158,8 @@ namespace GGUI {
 
             updateFrame();
         }
+
+        return this;
     }
 
     void element::processStateHandler(STATE s){
@@ -165,7 +169,7 @@ namespace GGUI {
         else if (s == STATE::SHOWN      && onShow)      onShow(this);
     }
 
-    void element::setDisplay(bool f) {
+    element* element::setDisplay(bool f) {
         pauseGGUI([this, f]() {
             // Check if the to be displayed is true and the element wasn't already displayed.
             if (f != display){
@@ -184,6 +188,8 @@ namespace GGUI {
                 }
             }
         });
+
+        return this;
     }
 
     void element::remove() {
@@ -321,7 +327,7 @@ namespace GGUI {
         }
     }
 
-    void element::setCustomBorderStyle(styledBorder Style) {
+    element* element::setCustomBorderStyle(styledBorder Style) {
         // Set the border style of the element
         borderStyle = Style;
         
@@ -330,9 +336,11 @@ namespace GGUI {
 
         // Ensure the border is visible
         setBorder(true);
+
+        return this;
     }
 
-    void element::onClick(std::function<bool(converter::output::event::base*)> job){
+    element* element::onClick(std::function<bool(converter::output::event::base*)> job){
         auto wrapper = [this, job](converter::output::event::base* e){
             // As os 0.1.8 no need to check for mouse collision with current element, since mouse collision is already checked at the eventHandler scheduler.
 
@@ -357,9 +365,11 @@ namespace GGUI {
 
         addEventhandler(mouse);
         addEventhandler(enter);
+
+        return this;
     }
 
-    void element::on(std::initializer_list<converter::input::key::types> criteria, std::function<bool(converter::output::event::base*)> job, bool GLOBAL){
+    element* element::on(std::initializer_list<converter::input::key::types> criteria, std::function<bool(converter::output::event::base*)> job, bool GLOBAL){
         addEventhandler(converter::output::event::action(
             criteria,
             [this, job, GLOBAL](converter::output::event::base* e){
@@ -372,14 +382,18 @@ namespace GGUI {
             },
             getTypedName() + "::on::"
         ));
+
+        return this;
     }
 
-    void element::setName(const std::string& Name){
+    element* element::setName(const std::string& Name){
         // Set the name of the element.
         ID = Name;
 
         // Store the element in the global Element_Names map.
         core::elementNames[ID] = this;
+
+        return this;
     }
 
     void element::focus() {

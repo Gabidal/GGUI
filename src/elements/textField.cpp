@@ -189,7 +189,7 @@ namespace GGUI{
      * @details This function first stops the GGUI engine, then sets the text with a space character added to the beginning, and finally updates the text field's dimensions to fit the new text. The text is then reset in the Render_Buffer nested buffer of the window.
      * @param text The new text for the text field.
      */
-    void textField::setText(std::string& newText){
+    textField* textField::setText(std::string& newText){
         text = newText;
 
         // We don't want to accidentally start re-writing into the name when streaming input text.
@@ -201,6 +201,8 @@ namespace GGUI{
         updateTextCache();
 
         updateFrame();
+
+        return this;
     }
 
     /**

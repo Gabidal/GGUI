@@ -3,7 +3,7 @@
 #include "../core/core.h"
 
 namespace GGUI{
-    void switchBox::setStateString(terminal::cell off, terminal::cell on) {
+    switchBox* switchBox::setStateString(terminal::cell off, terminal::cell on) {
         Off = off;
         On = on;
 
@@ -11,9 +11,11 @@ namespace GGUI{
         flags |= (stain::types::STATE);
 
         updateFrame();
+
+        return this;
     }
 
-    void switchBox::setText(std::string& text) { 
+    switchBox* switchBox::setText(std::string& text) { 
         pauseGGUI([this, &text](){
             // Mark the element as needing a deep state update
             flags |= (stain::types::DEEP);
@@ -27,6 +29,8 @@ namespace GGUI{
                 Text.getHeight() + hasBorder() * 2
             });
         });
+        
+        return this;
     }
 
     std::vector<terminal::cell>& switchBox::render(){
@@ -120,12 +124,14 @@ namespace GGUI{
         updateFrame();
     }
 
-    void switchBox::setState(bool b){
+    switchBox* switchBox::setState(bool b){
         State = b;
 
         flags |= (stain::types::STATE);
 
         updateFrame();
+        
+        return this;
     }
 
     void switchBox::enableSingleSelect(){

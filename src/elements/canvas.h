@@ -77,13 +77,13 @@ namespace GGUI{
     public:
         ~canvas() override;
 
-        void setNextAnimationFrame() { currentAnimationFrame++; }
+        canvas* setNextAnimationFrame() { currentAnimationFrame++; }
 
-        void set(IVector2 point, animationSprite& sprite, bool Flush = true);
+        canvas* set(IVector2 point, animationSprite& sprite, bool Flush = true);
 
-        void set(IVector2 point, animationSprite&& sprite, bool Flush = true);
+        canvas* set(IVector2 point, animationSprite&& sprite, bool Flush = true);
 
-        void set(IVector2 point, const sprite& sprite, bool Flush = true);
+        canvas* set(IVector2 point, const sprite& sprite, bool Flush = true);
         
         void flush(bool Force_Flush = false);
 
@@ -94,8 +94,9 @@ namespace GGUI{
             return "canvas<" + ID + ">";
         }
 
-        void setOnDraw(GGUI::animationSprite (*on_draw)(IVector2 point)){
+        canvas* setOnDraw(GGUI::animationSprite (*on_draw)(IVector2 point)){
             this->On_Draw = on_draw;
+            return this;
         }
 
     protected:

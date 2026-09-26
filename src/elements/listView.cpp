@@ -94,7 +94,7 @@ namespace GGUI {
         return result;
     }
 
-    void listView::setDisplay(bool f) {
+    listView* listView::setDisplay(bool f) {
         pauseGGUI([this, f]() {
             // Check if the to be displayed is true and the element wasn't already displayed.
             if (f != display){
@@ -107,6 +107,8 @@ namespace GGUI {
                 flags |= stain::types::DEEP;
             }
         });
+
+        return this;
     }
 
     void listView::updateInnerBounds() {
@@ -142,7 +144,7 @@ namespace GGUI {
         return result;
     }
 
-    void listView::add(element* e) {
+    listView* listView::add(element* e) {
         pauseGGUI([this, e]() {
             // Update dynamic attributes to align with this container
             e->container = this;
@@ -196,6 +198,8 @@ namespace GGUI {
             flags |= stain::types::DEEP;
             content.push_back(e);
         });
+
+        return this;
     }
 
     bool listView::contentChanged() const {
@@ -710,7 +714,7 @@ namespace GGUI {
         return cellBuffer;
     }
 
-    void scrollView::setScrolling(bool allow) {
+    scrollView* scrollView::setScrolling(bool allow) {
         bool scrollingEventsExists = false;
         size_t scrollUpEventHandlerIndex = 0;
         size_t scrollDownEventHandlerIndex = 0;
@@ -745,6 +749,7 @@ namespace GGUI {
             removeEventHandler(std::min(scrollUpEventHandlerIndex, scrollDownEventHandlerIndex));   // remove the prior one
         }
 
+        return this;
     }
 
     std::string scrollView::getTypedName() const {

@@ -391,7 +391,7 @@ namespace GGUI{
      * @param DOM The elements to add to the root window.
      * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
      */
-    void GGUI(listView&& App, unsigned long long Sleep_For){
+    void GGUI(element* App, unsigned long long Sleep_For){
         pauseGGUI([&App](){
             core::init();
 

@@ -40,21 +40,21 @@ namespace GGUI{
 
             Bar() = default;
 
-            void setHeadCharacter(terminal::cell cs) { Head = cs; }
-            void setBodyCharacter(terminal::cell cs) { Body = cs; }
-            void setTailCharacter(terminal::cell cs) { Tail = cs; }
-            void setEmptyCharacter(terminal::cell cs) { Empty = cs; }
+            Bar* setHeadCharacter(terminal::cell cs) { Head = cs; return this; }
+            Bar* setBodyCharacter(terminal::cell cs) { Body = cs; return this; }
+            Bar* setTailCharacter(terminal::cell cs) { Tail = cs; return this; }
+            Bar* setEmptyCharacter(terminal::cell cs) { Empty = cs; return this; }
 
-            void setHeadColor(RGB color) { Head_Color = color; }
-            void setBodyColor(RGB color) { Body_Color = color; }
-            void setTailColor(RGB color) { Tail_Color = color; }
-            void setEmptyColor(RGB color) { Empty_Color = color; }
+            Bar* setHeadColor(RGB color) { Head_Color = color; return this; }
+            Bar* setBodyColor(RGB color) { Body_Color = color; return this; }
+            Bar* setTailColor(RGB color) { Tail_Color = color; return this; }
+            Bar* setEmptyColor(RGB color) { Empty_Color = color; return this; }
 
             unsigned int getIndexofHead() const { return floor(Progress * (getWidth() - hasBorder() * 2)); }
 
             void colorBar();
 
-            void setProgress(float New_Progress);
+            Bar* setProgress(float New_Progress);
             
             float getProgress() const { return Progress; }
 

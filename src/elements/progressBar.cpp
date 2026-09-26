@@ -3,7 +3,6 @@
 
 #include "../core/utils/logger.h"
 
-#include <string>
 #include <math.h>
 #include <algorithm>
 
@@ -137,12 +136,12 @@ namespace GGUI{
             return Result;
         }
 
-        void Bar::setProgress(float New_Progress) {
+        Bar* Bar::setProgress(float New_Progress) {
             // Check if the new progress value exceeds the maximum limit
             if (New_Progress > 1.0f) {
                 // Report a percentage overflow warning
                 logger::log(getTypedName() + " got a percentage overflow!");
-                return;
+                return this;
             }
 
             // Update the progress value
@@ -153,6 +152,8 @@ namespace GGUI{
 
             // Trigger a frame update to re-render the progress bar
             updateFrame();
+
+            return this;
         }
 
         void Bar::updateProgress(float add){

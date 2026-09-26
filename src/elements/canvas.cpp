@@ -30,7 +30,7 @@ namespace GGUI{
      * @param sprite The sprite to be placed.
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
-    void canvas::set(IVector2 point, animationSprite& sprite, bool Flush) {
+    canvas* canvas::set(IVector2 point, animationSprite& sprite, bool Flush) {
         size_t Location = getInnerBounds().getRelativePointLocationAsIndex(point);
 
         // Check for multi-frame support and update the management map if needed.
@@ -45,6 +45,8 @@ namespace GGUI{
 
         if (Flush)
             updateFrame(); // Update the frame if Flush is true.
+
+        return this;
     }
 
     /**
@@ -56,7 +58,7 @@ namespace GGUI{
      * @param sprite The sprite to be placed.
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
-    void canvas::set(IVector2 point, animationSprite&& sprite, bool Flush){
+    canvas* canvas::set(IVector2 point, animationSprite&& sprite, bool Flush){
         size_t Location = getInnerBounds().getRelativePointLocationAsIndex(point);
 
         // Check for multi-frame support and update the management map if needed.
@@ -71,6 +73,8 @@ namespace GGUI{
 
         if (Flush)
             updateFrame(); // Update the frame if Flush is true.
+        
+        return this;
     }
 
     /**
@@ -82,7 +86,7 @@ namespace GGUI{
      * @param sprite The UTF sprite to be placed.
      * @param Flush Whether or not to call Update_Frame() after setting the sprite.
      */
-    void canvas::set(IVector2 point, const sprite& sprite, bool Flush){
+    canvas* canvas::set(IVector2 point, const sprite& sprite, bool Flush){
         size_t Location = getInnerBounds().getRelativePointLocationAsIndex(point);
         
         buffer[Location].frames.push_back(sprite); // Add the sprite to the buffer at the calculated location.
@@ -96,6 +100,8 @@ namespace GGUI{
 
         if (Flush)
             updateFrame(); // Update the frame if Flush is true.
+        
+        return this;
     }
 
     /**

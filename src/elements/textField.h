@@ -26,11 +26,13 @@ namespace GGUI{
 
         void updateTextCache();
     public:
-        textField() = default;
+        textField(std::string&& Text = "") : element() {
+            setText(Text);
+        }
 
         ~textField() override = default;
 
-        void setText(std::string& text);
+        textField* setText(std::string& text);
 
         std::string_view getText() {
             return text;

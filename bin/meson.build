@@ -54,6 +54,8 @@ lib_sources = [
   '../src/core/backend/terminal.cpp',
   '../src/core/backend/linux.cpp',
   '../src/core/backend/win.cpp',
+
+  '../src/main.cpp',
 ]
 
 # Compiler handle
@@ -235,7 +237,6 @@ native_archive_directory = include_directories('..', 'export')
 executable(
   'ggui',
   [
-  '../src/main.cpp',
     generate_header,
   ],
   include_directories: native_archive_directory,

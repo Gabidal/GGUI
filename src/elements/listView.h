@@ -23,13 +23,18 @@ namespace GGUI{
     public:
         linearMask<containerFlags> containerFlag;
 
-        listView() = default;
+        template<typename... elements>
+        listView(elements*... e) : element() {
+            (add(e), ...);
+        }
 
-        void add(element* e);
+        listView* add(element* e);
 
         template<typename T>
-        void add(T& e) {
+        listView* add(T& e) {
             add(e.copy());
+
+            return this;
         }
         
         std::string getTypedName() const override;
@@ -53,20 +58,24 @@ namespace GGUI{
             return !containerFlag.has(containerFlags::vertical);
         }
 
-        void makeHorizontal() {
+        listView* setHorizontal() {
             if (containerFlag.has(containerFlags::vertical)) {
                 containerFlag.set(containerFlags::vertical, false);
 
                 updateFrame();
             }
+
+            return this;
         }
 
-        void makeVertical() {
+        listView* setVertical() {
             if (!containerFlag.has(containerFlags::vertical)) {
                 containerFlag.set(containerFlags::vertical, true);
             
                 updateFrame();
             }
+
+            return this;
         }
 
         template<typename T>
@@ -118,7 +127,7 @@ namespace GGUI{
 
         const std::vector<element*> getContent();
 
-        void setDisplay(bool d) override;
+        listView* setDisplay(bool d);
 
         bool contentIsShown(element* other) const;
 
@@ -165,7 +174,7 @@ namespace GGUI{
 
         void scrollDown() { scrollIndex--; };
 
-        void setScrolling(bool allow);
+        scrollView* setScrolling(bool allow);
 
         std::string getTypedName() const override;
     protected:
