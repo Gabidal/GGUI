@@ -160,6 +160,7 @@ namespace GGUI{
 
             main = new listView();
             main->setName("main");
+            main->setOverflow(true);
 
             terminal::init(inputManager);   // connects with hardware I/O and resets terminal state machine
 
@@ -249,6 +250,29 @@ namespace GGUI{
                 );
             }
         }
+    }
+
+    
+    gguiHandle::gguiHandle() {
+        core::init();
+        
+        if (SETTINGS::enableDRM) {
+            DRM::retryDRMConnect();
+        }
+        
+        // Now we can safely insert addons while taking into notion user configured borders and other factors which may impact the usable width.
+        initAddons();
+        
+        // We need to call the Mains own on_init manually, since it was already called once in the initGGUI();
+        getRoot()->processStateHandler(STATE::INIT);
+    }
+
+    gguiHandle::~gguiHandle() {
+        core::deinit();
+    }
+
+    void gguiHandle::setContent(element* App) {
+        getRoot()->add(App);
     }
 
     /**
@@ -383,34 +407,6 @@ namespace GGUI{
 
         // Resume the render thread with the previous render status.
         resumeGGUI();
-    }
-
-    /**
-     * @brief Use GGUI in a simple way.
-     * @details This is a simple way to use GGUI. It will pause all other GGUI internal threads, initialize GGUI, add all the elements to the root window, sleep for the given amount of milliseconds, and then exit GGUI.
-     * @param DOM The elements to add to the root window.
-     * @param Sleep_For The amount of milliseconds to sleep after calling the given function.
-     */
-    void GGUI(element* App, unsigned long long Sleep_For){
-        pauseGGUI([&App](){
-            core::init();
-
-            // Since the App is basically an AST Styling, we first add it to the already constructed main with its width and height set to the terminal sizes.
-            getRoot()->add(App);
-            
-            // Now we can safely insert addons while taking into notion user configured borders and other factors which may impact the usable width.
-            initAddons();
-
-            if (SETTINGS::enableDRM) {
-                DRM::retryDRMConnect();
-            }
-        });
-        
-        // We need to call the Mains own on_init manually, since it was already called once in the initGGUI();
-        getRoot()->processStateHandler(STATE::INIT);
-
-        // Sleep for the given amount of milliseconds.
-        std::this_thread::sleep_for(std::chrono::milliseconds(Sleep_For));
     }
 
     element* getElement(std::string_view name){

@@ -122,7 +122,12 @@ namespace GGUI{
 
     extern void pauseGGUI(std::function<void()> f);
 
-    extern void GGUI(element* App, unsigned long long Sleep_For = 0);
+    struct gguiHandle {
+        gguiHandle();
+        ~gguiHandle();
+
+        void setContent(element*);
+    };
 
     extern element* getElement(std::string_view name);
 }

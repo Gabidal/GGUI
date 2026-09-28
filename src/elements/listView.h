@@ -20,8 +20,8 @@ namespace GGUI{
         std::vector<element*> content;
 
         rectangle innerBounds;  // Cached inner bounds from border offset and margins
+        linearMask<containerFlags> containerFlag = containerFlags::dynamic;
     public:
-        linearMask<containerFlags> containerFlag;
 
         template<typename... elements>
         listView(elements*... e) : element() {
@@ -74,6 +74,20 @@ namespace GGUI{
             
                 updateFrame();
             }
+
+            return this;
+        }
+
+        listView* setOverflow(bool yes) {
+            containerFlag.set(containerFlags::dynamic, !yes);
+            containerFlag.set(containerFlags::overflow, yes);
+
+            return this;
+        }
+
+        listView* setDynamic(bool yes) {
+            containerFlag.set(containerFlags::dynamic, yes);
+            containerFlag.set(containerFlags::overflow, !yes);
 
             return this;
         }

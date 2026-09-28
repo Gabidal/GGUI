@@ -218,7 +218,7 @@ namespace GGUI{
             int end = bottom();
 
             std::vector<IVector2> result;
-            result.resize((end - start) * 2); // left + right
+            result.resize(std::abs(end - start) * 2); // left + right
 
             for (int y = start; y < end; ++y) {
                 result[(y - start) * 2]     = IVector2(left(), y);

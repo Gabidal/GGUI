@@ -168,7 +168,8 @@ namespace GGUI {
             };
 
             // Check if the size of the incoming content can fit inside this container
-            if (e->getAsRectangle().size > remainingSpace.size) {
+            // Skip this if empty, in case when this is called while chaining constructors
+            if (container && e->getAsRectangle().size > remainingSpace.size) {
                 // If not
                 logger::log("Element " + std::string(e->getName()) + " cannot fit inside " + std::string(getName()) + " container. Skipping addition.");
                 return;
@@ -207,7 +208,7 @@ namespace GGUI {
             assert(e != nullptr);
             assert(reinterpret_cast<uintptr_t>(e) % alignof(element) == 0);
 
-            assert(e->flags.has(stain::types::FINALIZE) && "Content element passthrough Finalization stage!");
+            assert(!e->flags.has(stain::types::FINALIZE) && "Content element passthrough Finalization stage!");
 
             // Not counting State machine, if element is not being drawn return always false.
             if (!e->getDisplay())
@@ -249,6 +250,10 @@ namespace GGUI {
             IVector2 growthDirection = containerFlag.has(containerFlags::vertical) ? IVector2{0, 1} : IVector2{1, 0};
             IVector2 secondaryGrowthDirection = IVector2{1, 1} - growthDirection;
 
+            auto componentWiseMultiplication = [](IVector2 a, IVector2 b) -> IVector2 {
+                return { a.x() * b.x(), a.y() * b.y() };
+            };
+
             for (element* c : content) {
                 if (!c->getDisplay()) continue;
 
@@ -258,19 +263,23 @@ namespace GGUI {
                 // Compare the required space end
                 if (c->getPosition() != required.position) {
                     c->setPosition(required.position);
-                    required.position = c->getPosition() + c->getAsRectangle().size * growthDirection;  // The secondary direction can just stay zero
                 }
+
+                required.position = c->getPosition() + componentWiseMultiplication(c->getAsRectangle().size, growthDirection);  // The secondary direction can just stay zero
 
                 if (c->getAsRectangle().size * secondaryGrowthDirection > required.size * secondaryGrowthDirection) {
                     required.size = (
-                        c->getAsRectangle().size * secondaryGrowthDirection +   // Updates only the non growing direction
-                        required.size * growthDirection   // Preserves the growth direction dimension
+                        componentWiseMultiplication(c->getAsRectangle().size, secondaryGrowthDirection) +   // Updates only the non growing direction
+                        componentWiseMultiplication(required.size, growthDirection)   // Preserves the growth direction dimension
                     );
                 }
             }
 
             // compare the requirements to the current state, if vary; Then update
-            setDimensions(required.size);
+            setDimensions(
+                componentWiseMultiplication(required.size, secondaryGrowthDirection) + 
+                componentWiseMultiplication(required.position.surjection<2>(), growthDirection)
+            );
         }
 
         return;     // The rest is computed at content[i]::render::evaluateDynamicAttributes() to update their relative values to the proposed dimensions of this container.

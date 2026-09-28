@@ -123,7 +123,7 @@ namespace GGUI{
         }
 
         element* setDimensions(relativeNVector<int16_t, 2> dim) {
-            if (dim != dimensions) {
+            if (dim == dimensions) {
                 return this;
             }
 

@@ -400,7 +400,7 @@ namespace GGUI {
                     {owner->getWidth() - borderOffset*2, owner->getHeight() - borderOffset*2}
                 },
                 textColor, backgroundColor,
-                owner->getOpacity(),
+                owner->getOpacity() * UINT8_MAX,
                 textAttributes,
                 owner
             });
@@ -418,7 +418,7 @@ namespace GGUI {
                         {owner->getWidth(), owner->getHeight()}
                     },
                     borderColor, borderBackgroundColor,
-                    owner->getOpacity(),
+                    owner->getOpacity() * UINT8_MAX,
                     textAttributes,
                     owner
                 });
