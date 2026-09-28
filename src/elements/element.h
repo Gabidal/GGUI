@@ -46,8 +46,8 @@ namespace GGUI{
         
         float opacity = 1.0f;
 
-        RGB textColor, backgroundColor;
-        RGB borderGlyphColor, borderBackgroundColor;
+        RGB textColor = COLOR::BLACK, backgroundColor = COLOR::WHITE;
+        RGB borderGlyphColor = COLOR::BLACK, borderBackgroundColor = COLOR::WHITE;
 
         styledBorder borderStyle;
     public:

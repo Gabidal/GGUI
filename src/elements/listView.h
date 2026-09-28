@@ -29,13 +29,6 @@ namespace GGUI{
         }
 
         listView* add(element* e);
-
-        template<typename T>
-        listView* add(T& e) {
-            add(e.copy());
-
-            return this;
-        }
         
         std::string getTypedName() const override;
 
