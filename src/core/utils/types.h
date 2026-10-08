@@ -99,6 +99,12 @@ namespace GGUI{
             return result;
         }
 
+        constexpr NVector operator+(const T& scalar) const {
+            NVector result = *this;
+            for (size_t i = 0; i < DIM; i++) result.axis[i] = result.axis[i] + scalar;
+            return result;
+        }
+
         // -= operator
         constexpr NVector& operator-=(const NVector& other) {
             for (size_t i = 0; i < DIM; i++) axis[i] = axis[i] - other.axis[i];

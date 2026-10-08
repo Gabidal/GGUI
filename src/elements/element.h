@@ -55,7 +55,9 @@ namespace GGUI{
         stain::base flags = stain::types::FINALIZE;
         class listView* container = nullptr;
         
-        element() = default;
+        element() {
+            fullyStain();
+        }
 
         // Use copy() instead!
         element(const element&) = delete;
@@ -177,6 +179,8 @@ namespace GGUI{
         // Allocate the string somewhere else and give it as a view
         element* setTitle(std::string_view t) {
             title = t;
+            flags |= stain::types::EDGE;
+            updateFrame();
 
             return this;
         }
@@ -185,19 +189,43 @@ namespace GGUI{
             return title;
         }
 
-        element* setBackgroundColor(RGB color) { backgroundColor = color; return this; }
+        element* setBackgroundColor(RGB color) {
+            if (backgroundColor == color) return this;
+            backgroundColor = color;
+            flags |= stain::types::GRAPHICS;
+            updateFrame();
+            return this;
+        }
 
         RGB getBackgroundColor() const { return backgroundColor; }
         
-        element* setBorderColor(RGB color) { borderGlyphColor = color; return this; }
+        element* setBorderColor(RGB color) {
+            if (borderGlyphColor == color) return this;
+            borderGlyphColor = color;
+            flags |= stain::types::GRAPHICS;
+            updateFrame();
+            return this;
+        }
         
-        RGB getBorderGlyphColor() const { return borderBackgroundColor; }
+        RGB getBorderGlyphColor() const { return borderGlyphColor; }
 
-        element* setBorderBackgroundColor(RGB color) { borderBackgroundColor = color; return this; }
+        element* setBorderBackgroundColor(RGB color) {
+            if (borderBackgroundColor == color) return this;
+            borderBackgroundColor = color;
+            flags |= stain::types::GRAPHICS;
+            updateFrame();
+            return this;
+        }
         
         RGB getBorderBackgroundColor() const { return borderBackgroundColor; }
         
-        element* setTextColor(RGB color) { textColor = color; return this; }
+        element* setTextColor(RGB color) {
+            if (textColor == color) return this;
+            textColor = color;
+            flags |= stain::types::GRAPHICS;
+            updateFrame();
+            return this;
+        }
 
         RGB getTextColor() const { return textColor; }
 

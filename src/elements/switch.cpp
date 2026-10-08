@@ -56,6 +56,8 @@ namespace GGUI{
             Result.resize(getWidth() * getHeight(), ' ');
             flags ^= (stain::types::STRETCH);
             
+            assert(cellBuffer.size() > 0 && "Problematic zero dimensions!");
+            
             flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP | stain::types::NOT_RENDERED);
         }
 
@@ -75,10 +77,15 @@ namespace GGUI{
 
         // Check if the text has been changed.
         if (flags.has(stain::types::DEEP)){
+            graphicalReflectionPool.clear();
+            graphicalIdentityPool.clear();
+            graphicalReflectionPool.reserve(2 + 2);     // Two for text and two for box
             core::nestElement(this, &Text, Result, Text.render());
 
+            // compile graphical reflection pool
+            graphicalReflectionPool.insert(graphicalReflectionPool.end(), Text.graphicalReflectionPool.begin(), Text.graphicalReflectionPool.end());
+
             // Clean text update notice and state change notice.
-            // NOTE: Cleaning STATE flag without checking it's existence might lead to unexpected results.
             flags ^= (stain::types::DEEP);
 
             flags |= (stain::types::GRAPHICS);

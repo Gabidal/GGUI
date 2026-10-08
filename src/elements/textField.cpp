@@ -8,7 +8,7 @@ namespace GGUI{
     void textField::updateTextCache(){
         textLineCache.clear();
         size_t borderOffset = hasBorder() ? 2 : 0;
-        size_t innerWidth = getWidth() - borderOffset;
+        size_t innerWidth = std::max(0, int(getWidth()) - int(borderOffset));
 
         // NOTE: This can be potentially removed.
         // This happens when text("...") is given with percentage dimensions, leaving width as zero.
@@ -113,25 +113,27 @@ namespace GGUI{
         if (flags.isEmpty())
             return Result;
 
-        // This does not CLEAN the DEEP stain it only checks if setText has been invoked.
-        if (flags.has(stain::types::DEEP)){
-            updateTextCache();
+        if (flags.has(stain::base(stain::types::RESET) | stain::types::STRETCH)) {
+            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP);
         }
 
         if (flags.has(stain::types::RESET)){
-            flags ^= (stain::types::RESET);
+            flags ^= stain::types::RESET;
 
             std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
-            
-            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP);
+        }
+
+        // This does not CLEAN the DEEP stain it only checks if setText has been invoked.
+        if (flags.has(stain::types::DEEP)) {
+            updateTextCache();
         }
 
         // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer
         if (flags.has(stain::types::STRETCH)) {
             Result.clear();
             Result.resize(getWidth() * getHeight(), ' ');
-            flags ^= (stain::types::STRETCH);
-            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::RESET | stain::types::NOT_RENDERED);
+            flags ^= stain::types::STRETCH;
+            flags |= stain::types::NOT_RENDERED;
         }
 
         if (flags.has(stain::types::NOT_RENDERED)) {

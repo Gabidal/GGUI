@@ -44,20 +44,7 @@ namespace GGUI {
     }
 
     bool listView::contentIsShown(element* other) const {
-        rectangle self = {
-            getPosition(),
-            { getWidth(), getHeight() }
-        };
-
-        rectangle otherArea = {
-            other->getPosition(),
-            { other->getWidth(), other->getHeight() }
-        };
-
-        rectangle result = self.intersection(otherArea);
-
-        if (result.empty()) return false;
-        else return true;
+        return !core::getFittingArea(this, other).first.empty();
     }
 
     element* listView::copy() const {
@@ -80,7 +67,9 @@ namespace GGUI {
         result.reserve(content.size());
 
         for (auto* c : content) {
-            if (!c->showBorder || !contentIsShown(c))
+            assert(c && "Content element is nullptr!");
+
+            if (!c->getDisplay() || !contentIsShown(c))
                     continue;
 
             result.push_back(c);
@@ -111,20 +100,33 @@ namespace GGUI {
         return this;
     }
 
-    void listView::updateInnerBounds() {
-        rectangle result = { {}, {getWidth(), getHeight()} };
+    void listView::updateInnerBounds(IVector2 requiredSpace) {
+        const int borderThickness = hasBorder() ? 1 : 0;
 
-        TODO("Add dynamic border thickness")
-        if (showBorder) {
-            result.position += {1, 1};
-            result.size -= {1, 1};
-        }
+        innerBounds = {
+            {borderThickness, borderThickness},
+            requiredSpace
+        };
+    }
+
+    IVector2 listView::getBorderVector() const {
+        IVector2 growthDirection = getGrowthDirection();
+        IVector2 reverseGrowthDirection = IVector2(1, 1) - growthDirection;
+
+        IVector2 result = {0, 0};
+
+        result += reverseGrowthDirection * hasBorder();
+        
+        bool lastAddedChildHasBorders = content.empty() ? hasBorder() : content.back()->hasBorder();
+        result += growthDirection * lastAddedChildHasBorders;
+
+        return result;
     }
 
     rectangle listView::getBoundLimits() {
         rectangle result;
 
-        updateInnerBounds();
+        updateInnerBounds(getAsRectangle().size);
 
         result = getInnerBounds();
 
@@ -150,36 +152,25 @@ namespace GGUI {
             e->container = this;
             e->evaluateDynamicAttributes();
 
-            IVector2 growthDirection = {1, 0};  // Default to horizontal growth direction
-
-            if (containerFlag.has(containerFlags::vertical)) {
-                growthDirection = {0, 1};
-            }
+            IVector2 growthDirection = getGrowthDirection();  // Default to horizontal growth direction
+            // IVector2 reverseDirection = IVector2(1, 1) - growthDirection;
 
             TODO("Add here reverse growth direction.");
 
-            rectangle boundLimits = getBoundLimits();
+            // rectangle boundLimits = getBoundLimits();
+            IVector2 allowedOffsetDirections = getBorderVector();
+            IVector2 borderOffset = allowedOffsetDirections * e->hasBorder();
 
-            rectangle remainingSpace = {
-                // Zero the non-growing direction
-                { lastAddedElementInfo.x() * growthDirection.x(), lastAddedElementInfo.y() * growthDirection.y() },
-                // Relativize the dimensions
-                { boundLimits.size.x() - lastAddedElementInfo.x(), boundLimits.size.y() - lastAddedElementInfo.y() }
-            };
-
-            // Check if the size of the incoming content can fit inside this container
-            // Skip this if empty, in case when this is called while chaining constructors
-            if (container && e->getAsRectangle().size > remainingSpace.size) {
-                // If not
-                logger::log("Element " + std::string(e->getName()) + " cannot fit inside " + std::string(getName()) + " container. Skipping addition.");
-                return;
-            }
+            IVector2 contentsNewPosition = IVector2{
+                lastAddedElementInfo.x() * growthDirection.x(),
+                lastAddedElementInfo.y() * growthDirection.y()
+            } - borderOffset;
 
             // Set the contents position
             e->setPosition({
-                lastAddedElementInfo.x() * growthDirection.x(),
-                lastAddedElementInfo.y() * growthDirection.y(),
-                0
+                contentsNewPosition.x(),
+                contentsNewPosition.y(),
+                e->getPosition().z()    // Pass the users custom z value
             });
 
             // Set the lastAddedElementInfo to point to the end of the newly added content
@@ -191,8 +182,8 @@ namespace GGUI {
             // Update the parents size opposite of growth direction
             if (containerFlag.has(containerFlags::dynamic)) {
                 setDimensions({
-                    std::max(getWidth(), (short)(e->getWidth() + e->getPosition().x())),
-                    std::max(getHeight(), (short)(e->getHeight() + e->getPosition().y()))
+                    std::max<int>(getWidth(), e->getWidth() + e->getPosition().x()),
+                    std::max<int>(getHeight(), e->getHeight() + e->getPosition().y())
                 });
             }
 
@@ -203,21 +194,21 @@ namespace GGUI {
         return this;
     }
 
-    bool listView::contentChanged() const {
+    bool listView::CheckIfContentChanged() const {
         for (const element* e : content){
             assert(e != nullptr);
             assert(reinterpret_cast<uintptr_t>(e) % alignof(element) == 0);
 
             assert(!e->flags.has(stain::types::FINALIZE) && "Content element passthrough Finalization stage!");
 
-            // Not counting State machine, if element is not being drawn return always false.
+            // Hidden children do not prevent later visible siblings from updating.
             if (!e->getDisplay())
-                return false;
+                continue;
 
             if (!e->flags.isEmpty())
                 return true;
 
-            if (dynamic_cast<const listView*>(e) && static_cast<const listView*>(e)->contentChanged())
+            if (dynamic_cast<const listView*>(e) && static_cast<const listView*>(e)->CheckIfContentChanged())
                 return true;
         }
 
@@ -242,76 +233,96 @@ namespace GGUI {
     }
 
     void listView::computeDynamicSize() {
-        // Observe the minimum required container size
-        if (containerFlag.has(containerFlags::dynamic)) {
-            rectangle required = {};
+        return;
+        
+        if (!containerFlag.has(containerFlags::dynamic))
+            return;
 
-            // Utils:
-            IVector2 growthDirection = containerFlag.has(containerFlags::vertical) ? IVector2{0, 1} : IVector2{1, 0};
-            IVector2 secondaryGrowthDirection = IVector2{1, 1} - growthDirection;
+        const IVector2 growthDirection =
+            isVertical()
+                ? IVector2{0, 1}
+                : IVector2{1, 0};
 
-            auto componentWiseMultiplication = [](IVector2 a, IVector2 b) -> IVector2 {
-                return { a.x() * b.x(), a.y() * b.y() };
+        const int border = hasBorder() ? 1 : 0;
+
+        // Writable content starts inside the container border.
+        const IVector2 innerOrigin = {border, border};
+
+        IVector2 nextPosition = innerOrigin;
+
+        // Empty container still needs room for its borders.
+        IVector2 requiredEnd = innerOrigin;
+
+        bool previousHasBorder = hasBorder();
+
+        for (element* child : content) {
+            if (!child->getDisplay())
+                continue;
+
+            if (auto* list = dynamic_cast<listView*>(child))
+                list->computeDynamicSize();
+
+            if (previousHasBorder && child->hasBorder())
+                nextPosition -= growthDirection;
+
+            child->setPosition(nextPosition);
+
+            const IVector2 childSize = {
+                child->getWidth(),
+                child->getHeight()
             };
 
-            for (element* c : content) {
-                if (!c->getDisplay()) continue;
+            const IVector2 childEnd =
+                nextPosition + childSize;
 
-                // If the content is also a dynamic container such as a listView, then we need to process that first
-                if (dynamic_cast<listView*>(c)) static_cast<listView*>(c)->computeDynamicSize();
+            requiredEnd.x() =
+                std::max<int>(requiredEnd.x(), childEnd.x());
 
-                // Compare the required space end
-                if (c->getPosition() != required.position) {
-                    c->setPosition(required.position);
-                }
+            requiredEnd.y() =
+                std::max<int>(requiredEnd.y(), childEnd.y());
 
-                required.position = c->getPosition() + componentWiseMultiplication(c->getAsRectangle().size, growthDirection);  // The secondary direction can just stay zero
+            if (isVertical())
+                nextPosition.y() += childSize.y();
+            else
+                nextPosition.x() += childSize.x();
 
-                if (c->getAsRectangle().size * secondaryGrowthDirection > required.size * secondaryGrowthDirection) {
-                    required.size = (
-                        componentWiseMultiplication(c->getAsRectangle().size, secondaryGrowthDirection) +   // Updates only the non growing direction
-                        componentWiseMultiplication(required.size, growthDirection)   // Preserves the growth direction dimension
-                    );
-                }
-            }
-
-            // compare the requirements to the current state, if vary; Then update
-            setDimensions(
-                componentWiseMultiplication(required.size, secondaryGrowthDirection) + 
-                componentWiseMultiplication(required.position.surjection<2>(), growthDirection)
-            );
+            previousHasBorder = child->hasBorder();
         }
 
-        return;     // The rest is computed at content[i]::render::evaluateDynamicAttributes() to update their relative values to the proposed dimensions of this container.
+        // requiredEnd points immediately after the children.
+        // Add the container's opposite/right/bottom border.
+        requiredEnd += IVector2{border, border};
+
+        setDimensions(requiredEnd);
     }
 
     std::vector<terminal::cell>& listView::render() {
         // Check for Dynamic attributes
         evaluateDynamicAttributes();
 
-        if (contentChanged()) {
+        // When any content has a transparent attribute all components containing color that might have been combining with the transparent elements colors, need to be re-rendered.
+        if (hasTransparentContent()) flags |= stain::types::RESET;
+
+        // Transform RESET into the sub modules to be re-rendered
+        if (flags.has(stain::types::RESET)){
+            flags ^= (stain::types::RESET);
+            std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
+            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP);
+        } else if (CheckIfContentChanged()) {
+            flags |= stain::types::DEEP;
+        }
+
+        // Dynamic containers will stretch according to their contents
+        if (flags.has(stain::types::DEEP)) {
             computeDynamicSize();
         }
 
-        //if inned children have changed without this changing, then this will trigger.
-        if (!flags.has(stain::base(stain::types::STRETCH) | stain::types::RESET)){
-            bool tmp = contentChanged();
-
-            if (!tmp && flags.isEmpty()){
-                return cellBuffer;
-            }
-            else if (tmp || hasTransparentContent()){
-                flags |= (stain::types::RESET);
-            }
-        }
-
-        // This is to tell the rendering thread that some or no changes were made to the rendering buffer.
-        if (this == getRoot() && !flags.isEmpty()){
+        if (flags.isEmpty()) {
+            return cellBuffer;
+        } else if (this == getRoot()){
+            // This is to tell the rendering thread that some or no changes were made to the rendering buffer.
             thread::identicalFrame = false;
         }
-
-        if (flags.isEmpty())
-            return cellBuffer;
 
         if (flags.has(stain::types::MOVE)){
             flags ^= stain::types::MOVE;
@@ -319,19 +330,13 @@ namespace GGUI {
             updateAbsolutePositionCache();
         }
 
-        if (flags.has(stain::types::RESET)){
-            flags ^= (stain::types::RESET);
-
-            std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
-            
-            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP);
-        }
-
         if (flags.has(stain::types::STRETCH)){
             flags ^= (stain::types::STRETCH);
             
             cellBuffer.clear();
             cellBuffer.resize(getWidth() * getHeight(), ' ');
+            
+            assert(cellBuffer.size() > 0 && "Problematic zero dimensions!");
 
             flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP | stain::types::NOT_RENDERED);
         }
@@ -411,6 +416,14 @@ namespace GGUI {
         }
 
         return cellBuffer;
+    }
+
+    IVector2 listView::getGrowthDirection() const {
+        IVector2 result = {1, 0};
+
+        if (isVertical()) result = {0, 1};
+
+        return result;
     }
 
     void listView::postProcessBorders(element* A, element* B, std::vector<terminal::cell>& Parent_Buffer){
@@ -599,29 +612,29 @@ namespace GGUI {
         // Check for Dynamic attributes
         evaluateDynamicAttributes();
 
-        if (contentChanged()) {
+        // When any content has a transparent attribute all components containing color that might have been combining with the transparent elements colors, need to be re-rendered.
+        if (hasTransparentContent()) flags |= stain::types::RESET;
+
+        // Transform RESET into the sub modules to be re-rendered
+        if (flags.has(stain::types::RESET)){
+            flags ^= (stain::types::RESET);
+            std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
+            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP);
+        } else if (CheckIfContentChanged()) {
+            flags |= stain::types::DEEP;
+        }
+
+        // Dynamic containers will stretch according to their contents
+        if (flags.has(stain::types::DEEP)) {
             computeDynamicSize();
         }
 
-        //if inned children have changed without this changing, then this will trigger.
-        if (!flags.has(stain::base(stain::types::STRETCH) | stain::types::RESET)){
-            bool tmp = contentChanged();
-
-            if (!tmp && flags.isEmpty()){
-                return cellBuffer;
-            }
-            else if (tmp || hasTransparentContent()){
-                flags |= (stain::types::RESET);
-            }
-        }
-
-        // This is to tell the rendering thread that some or no changes were made to the rendering buffer.
-        if (this == getRoot() && !flags.isEmpty()){
+        if (flags.isEmpty()) {
+            return cellBuffer;
+        } else if (this == getRoot()){
+            // This is to tell the rendering thread that some or no changes were made to the rendering buffer.
             thread::identicalFrame = false;
         }
-
-        if (flags.isEmpty())
-            return cellBuffer;
 
         if (flags.has(stain::types::MOVE)){
             flags ^= stain::types::MOVE;
@@ -629,19 +642,13 @@ namespace GGUI {
             updateAbsolutePositionCache();
         }
 
-        if (flags.has(stain::types::RESET)){
-            flags ^= (stain::types::RESET);
-
-            std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
-            
-            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP);
-        }
-
         if (flags.has(stain::types::STRETCH)){
             flags ^= (stain::types::STRETCH);
             
             cellBuffer.clear();
             cellBuffer.resize(getWidth() * getHeight(), ' ');
+            
+            assert(cellBuffer.size() > 0 && "Problematic zero dimensions!");
 
             flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP | stain::types::NOT_RENDERED);
         }

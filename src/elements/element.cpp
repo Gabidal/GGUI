@@ -95,7 +95,7 @@ namespace GGUI {
 
             std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
             
-            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP);
+            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE);
         }
 
         if (flags.has(stain::types::STRETCH)){
@@ -104,7 +104,9 @@ namespace GGUI {
             cellBuffer.clear();
             cellBuffer.resize(getWidth() * getHeight(), ' ');
 
-            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP | stain::types::NOT_RENDERED);
+            assert(cellBuffer.size() > 0 && "Problematic zero dimensions!");
+
+            flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::NOT_RENDERED);
         }
 
         if (flags.has(stain::types::NOT_RENDERED)) {
@@ -286,14 +288,14 @@ namespace GGUI {
 
         // Top and Bottom horizontal borders
         for (unsigned int x = 1; x < Width - 1; ++x) {
-            Result[x] = Border.data[4];                          // Top row
+            Result[x] = Border.data[5];                          // Top row
             Result[(Height - 1) * Width + x] = Border.data[5];   // Bottom row
         }
 
         // Left and Right vertical borders
         for (unsigned int y = 1; y < Height - 1; ++y) {
             Result[y * Width] = Border.data[4];                 // Left column
-            Result[y * Width + (Width - 1)] = Border.data[5];   // Right column
+            Result[y * Width + (Width - 1)] = Border.data[4];   // Right column
         }
     }
 

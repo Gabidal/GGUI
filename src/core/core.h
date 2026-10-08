@@ -99,7 +99,7 @@ namespace GGUI{
 
         extern void handleEscape();
 
-        std::pair<rectangle, rectangle> getFittingArea(GGUI::element* Container, GGUI::element* Content);
+        std::pair<rectangle, rectangle> getFittingArea(const GGUI::element* Container, const GGUI::element* Content);
 
         void nestElement(element* container, element* content, std::vector<terminal::cell>& Parent_Buffer, const std::vector<terminal::cell>& Child_Buffer);
     }

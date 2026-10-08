@@ -39,7 +39,14 @@ namespace GGUI{
         }
         
         void input(std::function<void(textField*, char)> Then);
-        
+
+        textField* setBorder(bool b) {
+            element::setBorder(b);
+
+            updateTextCache();  // This will add/remove additional area for borders not to be rendered over the text
+
+            return this;
+        }
     protected:
         void alignTextLeft(std::vector<terminal::cell>& Result);
         

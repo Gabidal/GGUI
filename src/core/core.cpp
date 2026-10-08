@@ -158,7 +158,7 @@ namespace GGUI{
             // link the input poller pairs
             converter::link(inputManager, inputConverter);
 
-            main = new listView();
+            main = new listView(listView::containerFlags::DEFAULT);
             main->setName("main");
             main->setOverflow(true);
 
@@ -199,20 +199,18 @@ namespace GGUI{
          * @param Container The container element.
          * @param Content The content element.
          */
-        std::pair<rectangle, rectangle> getFittingArea(element* Container, element* Content){
+        std::pair<rectangle, rectangle> getFittingArea(const element* Container, const element* Content){
             // If both dont have same border setup and container has a border, then the content needs to be offsetted by one in every direction.
             int borderOffset = Container->hasBorder() != Content->hasBorder() && Container->hasBorder() ? 1 : 0;
             
             // Absolute bounding
             rectangle bounds = {
                 {borderOffset, borderOffset},
-                {Container->getWidth() - borderOffset, Container->getHeight() - borderOffset}
+                {std::max(0, Container->getWidth() - borderOffset * 2), std::max(0, Container->getHeight() - borderOffset * 2)}
             };
 
-            rectangle childInfo = { TODO("Give element a direct getRectangle()")
-                Content->getPosition(),
-                {Content->getWidth(), Content->getHeight()}
-            };
+            rectangle childInfo = Content->getAsRectangle();
+            childInfo.position += IVector3{borderOffset, borderOffset, 0};
 
             // The written output is the intersection between the content and the bounds
             rectangle dest = bounds.intersection(childInfo);

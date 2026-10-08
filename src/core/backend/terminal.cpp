@@ -1,4 +1,5 @@
 #include "terminal.h"
+#include "../core.h"
 #include "../../elements/element.h"
 #include "../../elements/listView.h"
 
@@ -57,6 +58,11 @@ namespace GGUI {
             // now check if this element is a container and if it contains a closer matching element inside it.
             if (dynamic_cast<listView*>(currentElement)) {
                 for (auto* content : static_cast<listView*>(currentElement)->getVisibleContent()) {  // should return via z-priority
+                    auto [visibleArea, remainder] = core::getFittingArea(currentElement, content);
+                    
+                    // Since getFittingArea uses relative positions, we need to make it absolute.
+                    visibleArea.position += currentElement->getAbsolutePosition();
+                    if (!visibleArea.hits(point)) continue;
                     handle = trace(point, content);   // this should return the closest hit.
 
                     if (handle.first) break;    // since z-priority the first match should be the best one.
@@ -432,6 +438,7 @@ namespace GGUI {
         }
         
         void renderable::updateAbsolutePositionCache() {
+            const auto previousPosition = absolutePositionCache;
             absolutePositionCache = {0, 0, 0};
             int Border_Offset = 0;
             
@@ -448,7 +455,15 @@ namespace GGUI {
             }
 
             // Add the position of the element to the position of its container
-            absolutePositionCache += owner->getPosition() + Border_Offset;
+            absolutePositionCache += owner->getPosition() + IVector3{Border_Offset, Border_Offset, 0};
+
+            if (previousPosition != absolutePositionCache) owner->flags |= stain::types::GRAPHICS;
+
+            // Moving a container also moves the style rectangles of its descendants.
+            if (auto* list = dynamic_cast<listView*>(owner)) {
+                owner->flags |= stain::types::DEEP;
+                for (auto* child : list->getContent()) child->updateAbsolutePositionCache();
+            }
         }
     }
 }

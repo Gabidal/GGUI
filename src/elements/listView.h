@@ -5,6 +5,7 @@
 
 namespace GGUI{
     class listView : public element {
+    public:
         enum class containerFlags : uint8_t {
             __min       = 0,
             DEFAULT     = __min,
@@ -15,7 +16,7 @@ namespace GGUI{
         
             __max
         };
-
+    protected:
         IVector2 lastAddedElementInfo = {};
         std::vector<element*> content;
 
@@ -24,7 +25,9 @@ namespace GGUI{
     public:
 
         template<typename... elements>
-        listView(elements*... e) : element() {
+        listView(linearMask<containerFlags> options, elements*... e) : element() {
+            containerFlag = containerFlag | options;
+            
             (add(e), ...);
         }
 
@@ -144,8 +147,10 @@ namespace GGUI{
         element* copy() const override;
     protected:
         element* createInstance() const override {
-            return new listView();
+            return new listView(containerFlags::DEFAULT);
         }
+        
+        IVector2 getGrowthDirection() const;
 
         // Combines border glyphs where applicable
         void postProcessBorders(element* A, element* B, std::vector<terminal::cell>& Parent_Buffer);
@@ -154,13 +159,15 @@ namespace GGUI{
 
         IVector2 getOuterBounds() const;    TODO("Deprecate")
 
-        void updateInnerBounds();
+        void updateInnerBounds(IVector2 requiredSpace);
+
+        IVector2 getBorderVector() const;
 
         rectangle getBoundLimits();
 
         void computeDynamicSize();
 
-        bool contentChanged() const;
+        bool CheckIfContentChanged() const;
 
         bool hasTransparentContent() const;
 
@@ -175,7 +182,7 @@ namespace GGUI{
         int scrollIndex = 0;  // Render based on the offset of the scrollIndex by flow direction.
     public:
 
-        scrollView() : listView() { containerFlag.add(containerFlags::overflow); }
+        scrollView() : listView(containerFlags::DEFAULT) { containerFlag.add(containerFlags::overflow); }
 
         void scrollUp() { scrollIndex++; };
 
