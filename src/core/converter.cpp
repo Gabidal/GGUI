@@ -46,6 +46,10 @@ namespace GGUI {
                     }
                     else {
                         terminal::currentStates->transmission.pollInput();
+
+                        if (terminal::currentStates->transmission.inputSize == 0) {
+                            continue;   // Do not lock or unlock rendering thread if this was just a input poll timeout!
+                        }
                     }
     
                     pauseGGUI([&](){

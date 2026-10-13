@@ -155,6 +155,9 @@ namespace GGUI {
         
         for (element* e : content) {
             if (e->hasRelativePosition()) continue;
+
+            // Compute nested listViews
+            if (dynamic_cast<listView*>(e)) static_cast<listView*>(e)->fitContent();
             
             IVector2 allowedOffsetDirections = getBorderVector(previousElement);
             IVector2 borderOffset = (
@@ -245,16 +248,18 @@ namespace GGUI {
         // Check for Dynamic attributes
         evaluateDynamicAttributes();
 
-        // When any content has a transparent attribute all components containing color that might have been combining with the transparent elements colors, need to be re-rendered.
-        if (hasTransparentContent()) flags |= stain::types::RESET;
+        if (CheckIfContentChanged()) {
+            flags |= stain::types::DEEP;
+        }
+
+        // Promote any stain type into RESET, preventing color accumulation
+        if (!flags.isEmpty() && hasTransparentContent()) flags |= stain::types::RESET;
 
         // Transform RESET into the sub modules to be re-rendered
         if (flags.has(stain::types::RESET)){
             flags ^= (stain::types::RESET);
             std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
             flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP);
-        } else if (CheckIfContentChanged()) {
-            flags |= stain::types::DEEP;
         }
 
         // Dynamic containers will stretch according to their contents

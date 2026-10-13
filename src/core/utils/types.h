@@ -366,14 +366,15 @@ namespace GGUI{
             return static_cast<containerType>(data & other.data);
         }
 
-        // removes all flags from other
+        // removes all flags from other!
         constexpr bitMask<enumType, containerType>& operator^=(const bitMask<enumType, containerType>& other) {
-            data ^= other.data;
+            data &= ~other.data;
             return *this;
         }
 
+        // removes all flags from other!
         constexpr bitMask<enumType, containerType>& operator^=(enumType other) {
-            data ^= static_cast<containerType>(other);
+            data &= ~static_cast<containerType>(other);
             return *this;
         }
 
