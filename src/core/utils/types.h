@@ -141,6 +141,19 @@ namespace GGUI{
             return result;
         }
 
+        // XOR
+        constexpr NVector operator^(const T& scalar) const {
+            NVector result = *this;
+            for (size_t i = 0; i < DIM; i++) result.axis[i] = result.axis[i] ^ scalar;
+            return result;
+        }
+
+        constexpr NVector operator!() const {
+            NVector result = *this;
+            for (size_t i = 0; i < DIM; i++) result.axis[i] = !result.axis[i];
+            return result;
+        }
+
         // ==, !=, <, <=, >, and >= operator
         // NOTE: std::sort will prioritize x > y > z > w > ...., instead of geometrical sorting.
         constexpr auto operator<=>(const NVector&) const = default;

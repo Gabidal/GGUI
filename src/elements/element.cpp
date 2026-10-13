@@ -171,6 +171,31 @@ namespace GGUI {
         else if (s == STATE::SHOWN      && onShow)      onShow(this);
     }
 
+    element* element::setPosition(decltype(position) c) {
+        if (c == getPosition()) return this;
+
+        // Update the element's position in the style
+        position = c;
+        
+        // Mark the element as dirty for movement updates
+        this->flags |= (stain::types::MOVE);
+        if (container) container->flags |= stain::types::RESET;
+
+        // Update the frame to reflect the position change
+        updateFrame();
+
+        return this;
+    }
+
+    void element::updatePosition(IVector3 v){
+        position += v;
+
+        flags |= (stain::types::MOVE);
+        if (container) container->flags |= stain::types::RESET;
+
+        updateFrame();
+    }
+
     element* element::setDisplay(bool f) {
         pauseGGUI([this, f]() {
             // Check if the to be displayed is true and the element wasn't already displayed.

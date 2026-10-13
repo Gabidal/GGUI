@@ -440,29 +440,27 @@ namespace GGUI {
         void renderable::updateAbsolutePositionCache() {
             const auto previousPosition = absolutePositionCache;
             absolutePositionCache = {0, 0, 0};
-            int Border_Offset = 0;
             
             // We need to promote to an element to get some information
-            element* owner = static_cast<element*>(this);
+            element* current = static_cast<element*>(this);
 
-            if (owner->container) {
+            if (current->container) {
                 // Get the position of the container
-                absolutePositionCache = owner->container->getAbsolutePosition();
-
-                Border_Offset = (owner->container->hasBorder() != owner->hasBorder() && owner->container->hasBorder()) ? 1 : 0;
+                absolutePositionCache = current->container->getAbsolutePosition();
 
                 absolutePositionCache.z() += 1;   // mainly used for the compute of rectangle priority
             }
 
             // Add the position of the element to the position of its container
-            absolutePositionCache += owner->getPosition() + IVector3{Border_Offset, Border_Offset, 0};
+            // If borders collude their affects should have been computed either at adding or computeDynamics functions!!!
+            absolutePositionCache += current->getPosition();
 
-            if (previousPosition != absolutePositionCache) owner->flags |= stain::types::GRAPHICS;
+            if (previousPosition != absolutePositionCache) current->flags |= stain::types::GRAPHICS;
 
             // Moving a container also moves the style rectangles of its descendants.
-            if (auto* list = dynamic_cast<listView*>(owner)) {
-                owner->flags |= stain::types::DEEP;
-                for (auto* child : list->getContent()) child->updateAbsolutePositionCache();
+            if (auto* list = dynamic_cast<listView*>(current)) {
+                current->flags |= stain::types::DEEP;   // Force the render() to go through content
+                for (auto* child : list->getContent()) child->flags |= stain::types::MOVE;
             }
         }
     }

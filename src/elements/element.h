@@ -148,31 +148,16 @@ namespace GGUI{
                 {dimensions.x().get(), dimensions.y().get()}
             };
         }
+        
+        element* setPosition(decltype(position) pos);
 
-        element* setPosition(IVector3 c) {
-            if (c == getPosition()) return this;
-
-            // Update the element's position in the style
-            position = { c.x(), c.y(), c.z() };
-            
-            // Mark the element as dirty for movement updates
-            this->flags |= (stain::types::MOVE);
-
-            // Update the frame to reflect the position change
-            updateFrame();
-
-            return this;
-        }
-
-        void updatePosition(IVector3 v){
-            position += v;
-
-            flags |= (stain::types::MOVE);
-
-            updateFrame();
-        }
+        void updatePosition(IVector3 v);
 
         IVector3 getPosition() const { return IVector3{position.x().get(), position.y().get(), position.z().get()}; }
+
+        bool hasRelativePosition() const {
+            return position.x().isRelative() || position.y().isRelative();  // z-axis is not part of this
+        }
 
         auto getAbsolutePosition() const { return absolutePositionCache; }
 

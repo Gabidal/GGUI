@@ -161,11 +161,11 @@ namespace GGUI{
 
         void updateInnerBounds(IVector2 requiredSpace);
 
-        IVector2 getBorderVector() const;
+        IVector2 getBorderVector(const element* previousElement) const;
 
         rectangle getBoundLimits();
 
-        void computeDynamicSize();
+        void fitContent();
 
         bool CheckIfContentChanged() const;
 

@@ -109,7 +109,7 @@ namespace GGUI {
         };
     }
 
-    IVector2 listView::getBorderVector() const {
+    IVector2 listView::getBorderVector(const element* previousElement) const {
         IVector2 growthDirection = getGrowthDirection();
         IVector2 reverseGrowthDirection = IVector2(1, 1) - growthDirection;
 
@@ -117,7 +117,7 @@ namespace GGUI {
 
         result += reverseGrowthDirection * hasBorder();
         
-        bool lastAddedChildHasBorders = content.empty() ? hasBorder() : content.back()->hasBorder();
+        bool lastAddedChildHasBorders = previousElement ? previousElement->hasBorder() : hasBorder();
         result += growthDirection * lastAddedChildHasBorders;
 
         return result;
@@ -146,25 +146,30 @@ namespace GGUI {
         return result;
     }
 
-    listView* listView::add(element* e) {
-        pauseGGUI([this, e]() {
-            // Update dynamic attributes to align with this container
-            e->container = this;
-            e->evaluateDynamicAttributes();
+    void listView::fitContent() {
+        lastAddedElementInfo = {};  // reset
+        const element* previousElement = nullptr;
+        IVector2 growthDirection = getGrowthDirection();  // Default to horizontal growth direction
 
-            IVector2 growthDirection = getGrowthDirection();  // Default to horizontal growth direction
-            // IVector2 reverseDirection = IVector2(1, 1) - growthDirection;
-
-            TODO("Add here reverse growth direction.");
-
-            // rectangle boundLimits = getBoundLimits();
-            IVector2 allowedOffsetDirections = getBorderVector();
-            IVector2 borderOffset = allowedOffsetDirections * e->hasBorder();
+        TODO("Add here reverse growth direction.");
+        
+        for (element* e : content) {
+            if (e->hasRelativePosition()) continue;
+            
+            IVector2 allowedOffsetDirections = getBorderVector(previousElement);
+            IVector2 borderOffset = (
+                allowedOffsetDirections * !e->hasBorder()   // This is basically an asymmetric version of component-wise xor: [(p ^ e) * !e]
+                -growthDirection * (    // Regardless of wether container has borders, when two content have borders they share same border.
+                    previousElement &&
+                    previousElement->hasBorder() &&
+                    e->hasBorder()
+                )
+            );
 
             IVector2 contentsNewPosition = IVector2{
                 lastAddedElementInfo.x() * growthDirection.x(),
                 lastAddedElementInfo.y() * growthDirection.y()
-            } - borderOffset;
+            } + borderOffset;
 
             // Set the contents position
             e->setPosition({
@@ -174,10 +179,7 @@ namespace GGUI {
             });
 
             // Set the lastAddedElementInfo to point to the end of the newly added content
-            lastAddedElementInfo = {
-                e->getWidth() + e->getPosition().x(),
-                e->getHeight() + e->getPosition().y()
-            };
+            lastAddedElementInfo = e->getAsRectangle().size + e->getAsRectangle().position.surjection<2>();
 
             // Update the parents size opposite of growth direction
             if (containerFlag.has(containerFlags::dynamic)) {
@@ -186,10 +188,17 @@ namespace GGUI {
                     std::max<int>(getHeight(), e->getHeight() + e->getPosition().y())
                 });
             }
+            previousElement = e;
+        }
+    }
 
-            flags |= stain::types::DEEP;
-            content.push_back(e);
-        });
+    listView* listView::add(element* e) {
+        // Update dynamic attributes to align with this container
+        e->container = this;
+        e->evaluateDynamicAttributes();
+
+        flags |= stain::types::DEEP;
+        content.push_back(e);
 
         return this;
     }
@@ -232,70 +241,6 @@ namespace GGUI {
         return false;
     }
 
-    void listView::computeDynamicSize() {
-        return;
-        
-        if (!containerFlag.has(containerFlags::dynamic))
-            return;
-
-        const IVector2 growthDirection =
-            isVertical()
-                ? IVector2{0, 1}
-                : IVector2{1, 0};
-
-        const int border = hasBorder() ? 1 : 0;
-
-        // Writable content starts inside the container border.
-        const IVector2 innerOrigin = {border, border};
-
-        IVector2 nextPosition = innerOrigin;
-
-        // Empty container still needs room for its borders.
-        IVector2 requiredEnd = innerOrigin;
-
-        bool previousHasBorder = hasBorder();
-
-        for (element* child : content) {
-            if (!child->getDisplay())
-                continue;
-
-            if (auto* list = dynamic_cast<listView*>(child))
-                list->computeDynamicSize();
-
-            if (previousHasBorder && child->hasBorder())
-                nextPosition -= growthDirection;
-
-            child->setPosition(nextPosition);
-
-            const IVector2 childSize = {
-                child->getWidth(),
-                child->getHeight()
-            };
-
-            const IVector2 childEnd =
-                nextPosition + childSize;
-
-            requiredEnd.x() =
-                std::max<int>(requiredEnd.x(), childEnd.x());
-
-            requiredEnd.y() =
-                std::max<int>(requiredEnd.y(), childEnd.y());
-
-            if (isVertical())
-                nextPosition.y() += childSize.y();
-            else
-                nextPosition.x() += childSize.x();
-
-            previousHasBorder = child->hasBorder();
-        }
-
-        // requiredEnd points immediately after the children.
-        // Add the container's opposite/right/bottom border.
-        requiredEnd += IVector2{border, border};
-
-        setDimensions(requiredEnd);
-    }
-
     std::vector<terminal::cell>& listView::render() {
         // Check for Dynamic attributes
         evaluateDynamicAttributes();
@@ -314,7 +259,7 @@ namespace GGUI {
 
         // Dynamic containers will stretch according to their contents
         if (flags.has(stain::types::DEEP)) {
-            computeDynamicSize();
+            fitContent();
         }
 
         if (flags.isEmpty()) {
@@ -408,10 +353,10 @@ namespace GGUI {
                     if (!A->getDisplay() || !A->hasBorder() || !B->getDisplay() || !B->hasBorder())
                         continue;
 
-                    postProcessBorders(A, B, cellBuffer);
+                    // postProcessBorders(A, B, cellBuffer);
                 }
 
-                postProcessBorders(this, A, cellBuffer);
+                // postProcessBorders(this, A, cellBuffer);
             }
         }
 
@@ -626,7 +571,7 @@ namespace GGUI {
 
         // Dynamic containers will stretch according to their contents
         if (flags.has(stain::types::DEEP)) {
-            computeDynamicSize();
+            fitContent();
         }
 
         if (flags.isEmpty()) {
@@ -720,10 +665,10 @@ namespace GGUI {
                     if (!A->getDisplay() || !A->hasBorder() || !B->getDisplay() || !B->hasBorder())
                         continue;
 
-                    postProcessBorders(A, B, cellBuffer);
+                    // postProcessBorders(A, B, cellBuffer);
                 }
 
-                postProcessBorders(this, A, cellBuffer);
+                // postProcessBorders(this, A, cellBuffer);
             }
         }
 

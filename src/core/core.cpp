@@ -200,17 +200,13 @@ namespace GGUI{
          * @param Content The content element.
          */
         std::pair<rectangle, rectangle> getFittingArea(const element* Container, const element* Content){
-            // If both dont have same border setup and container has a border, then the content needs to be offsetted by one in every direction.
-            int borderOffset = Container->hasBorder() != Content->hasBorder() && Container->hasBorder() ? 1 : 0;
-            
             // Absolute bounding
             rectangle bounds = {
-                {borderOffset, borderOffset},
-                {std::max(0, Container->getWidth() - borderOffset * 2), std::max(0, Container->getHeight() - borderOffset * 2)}
+                {},
+                {std::max<short>(0, Container->getWidth()), std::max<short>(0, Container->getHeight())}
             };
 
             rectangle childInfo = Content->getAsRectangle();
-            childInfo.position += IVector3{borderOffset, borderOffset, 0};
 
             // The written output is the intersection between the content and the bounds
             rectangle dest = bounds.intersection(childInfo);
