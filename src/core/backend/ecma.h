@@ -1107,7 +1107,7 @@ namespace GGUI {
 
                     lifetime::base status;
 
-                    constexpr size_t getActualLocation(sequence::prefix<> header, sequence::postfix<> body) {
+                    constexpr size_t getActualLocation(sequence::prefix<> header, sequence::postfix<> body) const {
                         location intermediateOffset = 0;
 
                         for (auto inter : body.getIntermediates()) {
@@ -1154,11 +1154,11 @@ namespace GGUI {
                     /**
                      * @brief Gets the cell handler at the specified position.
                      */
-                    constexpr cell get(location primitive, sequence::postfix<> body = {}) {
+                    constexpr cell get(location primitive, sequence::postfix<> body = {}) const {
                         return cells[getActualLocation(primitive.to7bit().compute(), body)];
                     }
 
-                    constexpr cell get(sequence::base* parsed, sequence::postfix<> body) {
+                    constexpr cell get(sequence::base* parsed, sequence::postfix<> body) const {
                         return cells[getActualLocation(*static_cast<sequence::prefix<>*>(parsed), body)];
                     }
 
@@ -1379,7 +1379,7 @@ namespace GGUI {
 
                         assert(currentRepertoire != repertoire::__max && "Repertoire not loaded for the given input byte!");
 
-                        auto currentPage = pages[static_cast<size_t>(currentRepertoire)];
+                        const auto& currentPage = pages[static_cast<size_t>(currentRepertoire)];
                         
                         // Call the sequence parser
                         auto [parsedLength, parsedSequence] = sequence::defaultSequenceParser(input);

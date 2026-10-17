@@ -100,7 +100,7 @@ namespace GGUI {
             currentStates->screen.dimensions = newSize;
 
             // Notify the renderer of change
-            getRoot()->setDimensions(newSize);
+            getRoot()->setDimensions(newSize);  TODO("Move this into renderer thread and flag resize here.")
         }
 
         void setAutomaticScreenResizeHandler() {
