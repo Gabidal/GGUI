@@ -230,7 +230,7 @@ namespace GGUI{
 
         void remove();
 
-        element* onClick(std::function<bool(converter::output::event::base*)> action);
+        element* onClick(const std::function<bool(converter::output::event::base*)>& action);
 
         /**
          * @brief A function that registers a lambda to be executed when the element is interacted with in any way.
@@ -240,7 +240,7 @@ namespace GGUI{
          * @param action The lambda to be called when the element is interacted with.
          * @param GLOBAL Whether the lambda should be executed even if the element is not under the mouse.
          */
-        element* on(std::initializer_list<converter::input::key::types> criteria, std::function<bool(converter::output::event::base*)> job, bool GLOBAL = false);
+        element* on(std::initializer_list<converter::input::key::types> criteria, const std::function<bool(converter::output::event::base*)>& job, bool GLOBAL = false);
 
         // Sets focus on this element
         void focus();

@@ -43,15 +43,15 @@ namespace GGUI{
         
         int frameDistance = 1; // Interpolation steps between two frames
 
-        constexpr animationSprite(std::vector<sprite> Frames = {}, int Offset = 0, int Speed = 1) : frames(Frames), offset(Offset), speed(Speed) {
+        constexpr animationSprite(std::vector<sprite> Frames = {}, int Offset = 0, int Speed = 1) : frames(std::move(Frames)), offset(Offset), speed(Speed) {
             // Check if the frames size is an power of twos compliment
             // This is done to make sure the animation can be looped without any issues
-            if (std::bitset<sizeof(unsigned char)>(Frames.size()).count() == 1)
+            if (std::bitset<sizeof(unsigned char)>(frames.size()).count() == 1)
                 isPowerOfTwo = true;
 
             // Calculate the frame distance to determine how much to increment the frame index
             // This is done by dividing the maximum value of an unsigned char (255) by the number of frames
-            frameDistance = ((float)UINT8_MAX + 1) / (float)Frames.size();
+            frameDistance = ((float)UINT8_MAX + 1) / (float)frames.size();
         }
 
     protected:

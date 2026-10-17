@@ -306,7 +306,7 @@ namespace GGUI{
      *          calls the Then function with the character as input. If the event is a backspace, it removes the last character from the text field. In all cases, it marks the text field as
      *          dirty and updates the frame.
      */
-    void textField::input(std::function<void(textField*, char)> Then) {
+    void textField::input(const std::function<void(textField*, char)>& Then) {
         addEventhandler(converter::output::event::action(
             {converter::input::key::types::ALL_LETTERS},
             [this, Then](converter::output::event::base*) { TODO("Going through all pressed keys seems very inefficient!")

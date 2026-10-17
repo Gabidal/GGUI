@@ -301,7 +301,7 @@ namespace GGUI{
      * @brief Register cleanup functions to be called on SIGINT, SIGTERM, std::exit(), std::quick_exit(), std::termination
      */
     void registerCleanupCallback(std::function<void()> Callback) {
-        core::userCleanupCallbacks.push_back(Callback);
+        core::userCleanupCallbacks.push_back(std::move(Callback));
     }
 
     /**

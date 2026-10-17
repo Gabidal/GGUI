@@ -367,7 +367,7 @@ namespace GGUI {
         return this;
     }
 
-    element* element::onClick(std::function<bool(converter::output::event::base*)> job){
+    element* element::onClick(const std::function<bool(converter::output::event::base*)>& job){
         auto wrapper = [this, job](converter::output::event::base* e){
             // As os 0.1.8 no need to check for mouse collision with current element, since mouse collision is already checked at the eventHandler scheduler.
 
@@ -396,7 +396,7 @@ namespace GGUI {
         return this;
     }
 
-    element* element::on(std::initializer_list<converter::input::key::types> criteria, std::function<bool(converter::output::event::base*)> job, bool GLOBAL){
+    element* element::on(std::initializer_list<converter::input::key::types> criteria, const std::function<bool(converter::output::event::base*)>& job, bool GLOBAL){
         addEventhandler(converter::output::event::action(
             criteria,
             [this, job, GLOBAL](converter::output::event::base* e){

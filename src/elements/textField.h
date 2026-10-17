@@ -38,7 +38,7 @@ namespace GGUI{
             return text;
         }
         
-        void input(std::function<void(textField*, char)> Then);
+        void input(const std::function<void(textField*, char)>& Then);
 
         textField* setBorder(bool b) {
             element::setBorder(b);

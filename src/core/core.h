@@ -111,8 +111,6 @@ namespace GGUI{
     extern void waitForTermination();
 
     extern listView* getRoot();
-    
-    extern void registerCleanupCallback(std::function<void()> Callback);
 
     extern void updateFrame();
     

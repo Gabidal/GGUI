@@ -125,19 +125,16 @@ namespace GGUI {
                     }
                 };
     
-                struct action : base{
+                struct action : public base {
                     std::string ID;
                     std::function<bool(event::base*)> job;
                 
-                    action() = default;
-                    action(const selectedKeys& Criteria, std::function<bool(event::base*)> Job, std::string id){
+                    action(const selectedKeys& Criteria, std::function<bool(event::base*)> Job, std::string id) : ID(std::move(id)), job(std::move(Job)) {
                         criteria = Criteria;
-                        job = Job;
-                        ID = id;
                     }
                 };
     
-                struct memory : action{
+                struct memory : public action {
                     enum class types : uint8_t {
                         NONE               = 0 << 0,
                         PROLONG_MEMORY     = 1 << 0,
@@ -148,12 +145,10 @@ namespace GGUI {
                     std::chrono::steady_clock::duration endTime;
     
                     // When the job starts, job, prolong previous similar job by this time.
-                    memory(std::chrono::steady_clock::duration end, std::function<bool(event::base*)> Job, types Flags = types::NONE, std::string_view id = ""){
+                    memory(std::chrono::steady_clock::duration end, std::function<bool(event::base*)> Job, types Flags = types::NONE, std::string id = "") : action({}, std::move(Job), std::move(id)) {
                         startTime = std::chrono::steady_clock::now();
                         endTime = end;
-                        job = Job;
                         flags = Flags;
-                        ID = id;
                     }
     
                     bool is(types f) const {

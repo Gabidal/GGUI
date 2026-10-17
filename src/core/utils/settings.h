@@ -38,11 +38,12 @@ namespace GGUI {
              * @param argDescription Description of the argument for help text
              * @param argHandler Callback function to handle the parsed value
              */
-            argumentDescriptor(const std::string& argName, 
-                             argumentType argType, 
-                             const std::string& argDescription,
-                             std::function<void(const std::string&)> argHandler)
-                : name(argName), type(argType), description(argDescription), handler(argHandler) {}
+            argumentDescriptor(
+                const std::string& argName, 
+                argumentType argType, 
+                const std::string& argDescription, 
+                std::function<void(const std::string&)> argHandler
+            ) : name(argName), type(argType), description(argDescription), handler(std::move(argHandler)) {}
 
             /**
              * @brief Checks if this argument requires a value.

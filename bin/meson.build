@@ -245,6 +245,28 @@ executable(
   pie: enable_pic_pie
 )
 
+lib_sources_prefixed = []
+foreach src : lib_sources
+  lib_sources_prefixed += '../' + src
+endforeach
+
+clang_tidy = find_program('clang-tidy', required: false)
+if clang_tidy.found()
+  run_target(
+    'clang-tidy',
+    command: [
+      clang_tidy,
+      '-p', meson.current_build_dir(),
+      '-checks=-*,' +
+      'performance-unnecessary-value-param,' +
+      'performance-unnecessary-copy-initialization,' +
+      'performance-for-range-copy,' +
+      'performance-move-const-arg',
+      lib_sources_prefixed
+    ]
+  )
+endif
+
 # Test target: link with exported lib and include exported header
 tester = executable(
   'tester',

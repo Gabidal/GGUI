@@ -601,7 +601,7 @@ namespace GGUI {
                     constexpr postfix(
                         std::vector<table::intermediate::identifiers> interms = {},
                         functionType Func = {}
-                    ) : intermediates(interms), function(Func) {}
+                    ) : intermediates(std::move(interms)), function(Func) {}
 
                     template<typename otherFunctionType>
                     constexpr postfix(const postfix<otherFunctionType>& other) : intermediates(other.getIntermediates()), function(static_cast<functionType>(other.getFinalByte())) {}
@@ -610,7 +610,7 @@ namespace GGUI {
                     constexpr functionType getFinalByte() const { return function; }
 
                     constexpr void modifyIntermediates(std::vector<table::intermediate::identifiers> newInterms) {
-                        intermediates = newInterms;
+                        intermediates = std::move(newInterms);
                     }
 
                     constexpr void toString(std::string& output) const {
@@ -861,7 +861,7 @@ namespace GGUI {
                     constexpr string(
                         table::C1 delimeter,
                         std::vector<char> chars
-                    ) : prefix(delimeter, types::STRING), characters(chars), terminator(table::C1::ST) {}
+                    ) : prefix(delimeter, types::STRING), characters(std::move(chars)), terminator(table::C1::ST) {}
 
                     constexpr string(
                         table::C1 delimeter
@@ -1107,7 +1107,7 @@ namespace GGUI {
 
                     lifetime::base status;
 
-                    constexpr size_t getActualLocation(sequence::prefix<> header, sequence::postfix<> body) const {
+                    constexpr size_t getActualLocation(const sequence::prefix<>& header, const sequence::postfix<>& body) const {
                         location intermediateOffset = 0;
 
                         for (auto inter : body.getIntermediates()) {
@@ -1147,19 +1147,19 @@ namespace GGUI {
                     /**
                      * @brief Adds a cell handler at the specified absolute position.
                      */
-                    constexpr void add(cell customFunctions, sequence::prefix<> header, sequence::postfix<> body = {}) {
+                    constexpr void add(cell customFunctions, const sequence::prefix<>& header, const sequence::postfix<>& body) {
                         cells[getActualLocation(header, body)] = customFunctions; 
                     }
 
                     /**
                      * @brief Gets the cell handler at the specified position.
                      */
-                    constexpr cell get(location primitive, sequence::postfix<> body = {}) const {
+                    constexpr cell get(location primitive, const sequence::postfix<>& body) const {
                         return cells[getActualLocation(primitive.to7bit().compute(), body)];
                     }
 
-                    constexpr cell get(sequence::base* parsed, sequence::postfix<> body) const {
-                        return cells[getActualLocation(*static_cast<sequence::prefix<>*>(parsed), body)];
+                    constexpr cell get(const sequence::base* parsed, const sequence::postfix<>& body) const {
+                        return cells[getActualLocation(*static_cast<const sequence::prefix<>*>(parsed), body)];
                     }
 
                     /**
@@ -1210,7 +1210,7 @@ namespace GGUI {
 
                 class cellPatch {
                 protected:
-                    constexpr size_t getActualLocation(sequence::postfix<> body = {}) {
+                    constexpr size_t getActualLocation(const sequence::postfix<>& body) {
                         location intermediateOffset = 0;
 
                         for (auto inter : body.getIntermediates()) {
@@ -1242,7 +1242,7 @@ namespace GGUI {
                     template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType> == true>>
                     constexpr cellPatch(enumType mainInstruction) : instructionSeries(static_cast<uint8_t>(mainInstruction)), patch{} {}
 
-                    constexpr void add(cell customFunctions, sequence::postfix<> body = {}) {
+                    constexpr void add(cell customFunctions, const sequence::postfix<>& body) {
                         patch[getActualLocation(body)] = { customFunctions, body }; 
                     }
                 };
