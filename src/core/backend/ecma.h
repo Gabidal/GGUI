@@ -272,7 +272,7 @@ namespace GGUI {
 
             namespace configuration {
                 // A simple helper class for cell location
-                struct location {
+                struct alignas(2) location {
                     uint8_t column, row;
 
                     constexpr location(uint8_t c, uint8_t r) : column(c), row(r) {}
@@ -344,12 +344,12 @@ namespace GGUI {
             }
 
             namespace sequences {
-                enum class specialTypes {
+                enum class specialTypes : uint8_t {
                     NORMAL,
                     HAS_INFINITE_PARAMETERS
                 };
 
-                enum class presentationDirections {
+                enum class presentationDirections : uint8_t {
                     HORIZONTAL_TOP_LEFT_TO_BOTTOM_RIGHT = 0,            /*  Ps1:
                                                                         line orientation:   horizontal
                                                                         line progression:   top-to-bottom
@@ -644,7 +644,7 @@ namespace GGUI {
                     // Writes into already existing storage
                     constexpr virtual void toString(writerView<char>&) const { return; }
 
-                    constexpr virtual postfix<> getPostfix() const { return {{}, 0}; }
+                    constexpr virtual postfix<> getPostfix() const { return {{}, (uint8_t)0}; }
                 };
 
                 /** 
@@ -888,7 +888,7 @@ namespace GGUI {
                 // Used as second pass post-processing via the callbacks
                 class transmission : public prefix<table::C0> {
                 public:
-                    enum class types {
+                    enum class types : uint8_t {
                         HEADER,
                         TEXT
                     } type;
@@ -991,7 +991,7 @@ namespace GGUI {
             namespace configuration {
 
                 // Use this to tell the page manager to flash with 8/7-bit C1
-                enum class bitType {
+                enum class bitType : uint8_t {
                     _7BIT,
                     _8BIT
                 };
@@ -1070,7 +1070,7 @@ namespace GGUI {
                         TO_UNLOAD   // Gives grace period for TEMPORARILY loaded pages one turn.
                     };
                     
-                    struct base {
+                    struct alignas(8) base {
                         layout::bounds range = {0, 0};
                         types type = types::UNLOADED;
                     };
@@ -1435,7 +1435,7 @@ namespace GGUI {
                 };
                 
                 template<typename enumType = types, typename = std::enable_if_t<std::is_enum_v<enumType> == true>>
-                struct base : public GGUI::linearMask<enumType, uint32_t> {
+                struct alignas(32) base : public GGUI::linearMask<enumType, uint32_t> {
                     using GGUI::linearMask<enumType, uint32_t>::linearMask;
 
                     constexpr base(const GGUI::linearMask<enumType, uint32_t>& other) : GGUI::linearMask<enumType, uint32_t>(other) {}
@@ -1810,15 +1810,15 @@ namespace GGUI {
             }
 
             // A simple helper structure of what a assigned tabulation stop looks like.
-            struct tabulationStop {
-                enum class modes {
+            struct alignas(8) tabulationStop {
+                enum class modes : uint8_t {
                     CENTRE,
                     LEADING_EDGE,
                     TRAILING_EDGE,
                     CENTERED_ON_CHARACTER,
                 } mode = modes::LEADING_EDGE;
 
-                enum class types {
+                enum class types : uint8_t {
                     CHARACTER,
                     LINE
                 } type = types::CHARACTER;
@@ -1826,8 +1826,8 @@ namespace GGUI {
                 IVector2 position = {0, 0};
             };
 
-            struct imaginaryLine {
-                enum class types {
+            struct alignas(16) imaginaryLine {
+                enum class types : uint8_t {
                     SUBSCRIPT,
                     SUPERSCRIPT
                 } type = types::SUBSCRIPT;
@@ -1850,7 +1850,7 @@ namespace GGUI {
                 __max = NINTH
             };
 
-            class justify {
+            class alignas(16) justify {
             public:
                 // This will work as bit index for bitmask of current enabled justifications.
                 enum class types : uint8_t {
@@ -1894,17 +1894,17 @@ namespace GGUI {
             };
 
             // This is used for secondary multi-sequence post-processing, like GCC for multi character combinations and such
-            struct callBack {
+            struct alignas(32) callBack {
                 size_t start, end;  // These represent the area of sequences to be processed together
                 void(*handler)(callBack, size_t&, size_t&, std::vector<sequence::base*>&) = nullptr;
             };
 
             // Small helper class
-            struct dataPage {
+            struct alignas(8) dataPage {
                 IVector2 start, end;
             };
 
-            struct fontAttributes {
+            struct alignas(32) fontAttributes {
                 IVector2 start, end = 0;    // presentation positions
 
                 size_t fontSize;    // Set by GSS. Non-specified metric of size scale
@@ -1914,7 +1914,7 @@ namespace GGUI {
                 fontAttributes(IVector2 Start, size_t FontSize, IVector2 scalar = {100, 100}) : start(Start), end(0), fontSize(FontSize), fontScalar(scalar) {}
             };
 
-            struct spacingFactor {
+            struct alignas(1) spacingFactor {
                 enum class types : uint8_t {
                     NORMAL,             // as specified by SCS, SHS or SP
                     EXPANDED,           // multiplied by a factor not greater than 2
@@ -1932,7 +1932,7 @@ namespace GGUI {
             };
 
             // Only used to store metadata, actual colors are found in the UTFs
-            class activeSGRStyle {
+            class alignas(32) activeSGRStyle {
             public:
                 GGUI::linearMask<graphicalTextAttributes, uint64_t> textAttributes = graphicalTextAttributes::DEFAULT;
                 IVector2 start = {};
@@ -2005,7 +2005,7 @@ namespace GGUI {
                 }
             };
 
-            enum class ancillaryStates {
+            enum class ancillaryStates : uint8_t {
                 UNKNOWN,
 
                 X_ON,   // Some devices use x- on/off to indicate stopping of rendering, to stop scrolling.
@@ -2015,7 +2015,7 @@ namespace GGUI {
                 INTERRUPT
             };
 
-            struct components {
+            struct alignas(128) components {
                 // This is primarily adjusted by the terminal after noticing a correctly parsed sequence.
                 bool enabled = false;
 
@@ -2728,7 +2728,7 @@ namespace GGUI {
                      * @example `01/11 05/11 Ps 06/07` or `9/11 Ps 06/07`
                      */
                     namespace TABULATION_CLEAR {
-                        enum class types {
+                        enum class types : uint8_t {
                             CHARACTER_TABULATOR_IN_ACTIVE_POSITION,
                             LINE_TABULATOR_IN_ACTIVE_LINE,
                             ALL_CHARACTER_TABULATORS_IN_ACTIVE_LINE,
@@ -2840,7 +2840,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      */
                     namespace GRAPHIC_CHARACTER_COMBINATION {
-                        enum class types {
+                        enum class types : uint8_t {
                             DOUBLE_WIDE,    // Expect next two characters to be as one
                             START,          // beginning and the - 
                             END             //                     end of string characters to be images as a single graphic symbol.
@@ -2911,7 +2911,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      */
                     namespace PAGE_FORMAT_SELECTION {
-                        enum class format {
+                        enum class format : uint8_t {
                             TALL_BASIC_COMMUNICATION,
                             WIDE_BASIC_COMMUNICATION,
                             TALL_BASIC_A4,
@@ -2968,7 +2968,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      */
                     namespace PARALLEL_TEXTS {
-                        enum class types {
+                        enum class types : uint8_t {
                             END,
                             BEGINNING_OF_PRINCIPAL_PARALLEL_TEXT,
                             BEGINNING_OF_SUPPLEMENTARY_PARALLEL_TEXT,
@@ -2995,7 +2995,7 @@ namespace GGUI {
                      * @param ...
                      */
                     namespace QUAD {
-                        enum class types {
+                        enum class types : uint8_t {
                             FLUSH_TO_LINE_HOME_POSITION_MARGIN,
                             FLUSH_TO_LINE_HOME_POSITION_MARGIN_AND_FILL_WITH_HEADER,
                             CENTRE_BETWEEN_LINE_HOME_POSITION_AND_LINE_LIMIT_POSITION_MARGINS,
@@ -3026,7 +3026,7 @@ namespace GGUI {
                      * @param ...
                      */
                     namespace SELECT_ALTERNATIVE_PRESENTATION_VARIANTS {
-                        enum class types {
+                        enum class types : uint8_t {
                             DEFAULT,                                        // default presentation (implementation-defined); cancels the effect of any preceding occurrence of SAPV in the data stream
                             LATIN_DECIMAL_DIGITS,                           // the decimal digits are presented by means of the graphic symbols used in the Latin script
                             ARABIC_DECIMAL_DIGITS,                          // the decimal digits are presented by means of the graphic symbols used in the Arabic script, i.e. the Hindi symbols
@@ -3064,7 +3064,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      */
                     namespace SET_CHARACTER_ORIENTATION {
-                        enum class types {
+                        enum class types : uint8_t {
                             DEFAULT,                                        // 0 degrees.
                             ROTATE_45,                                      // 45 degrees.
                             ROTATE_90,                                      // 90 degrees.
@@ -3090,7 +3090,7 @@ namespace GGUI {
                      * @param Ps2 default(None)
                      */
                     namespace SELECT_CHARACTER_PATH {
-                        enum class types {
+                        enum class types : uint8_t {
                             LEFT_TO_RIGHT       = 1,        // Ps1: In the case of horizontal line orientation
                             TOP_TO_BOTTOM       = 1,        // Ps1: In the case of vertical line orientation
 
@@ -3141,7 +3141,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      */
                     namespace START_DIRECTED_STRING {
-                        enum class types {
+                        enum class types : uint8_t {
                             END_OF_DIRECTED_STRING,                     // Re-establish the previous direction
                             START_OF_A_DIRECTED_LEFT_TO_RIGHT_STRING,   // Establish the direction left-to-right
                             START_OF_A_DIRECTED_RIGHT_TO_LEFT_STRING,   // Establish the direction right-to-left
@@ -3165,7 +3165,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      */
                     namespace SELECT_CHARACTER_SPACING {
-                        enum class types {
+                        enum class types : uint8_t {
                             FIT_10_CHARACTERS_PER_25_4_MM,
                             FIT_12_CHARACTERS_PER_25_4_MM,
                             FIT_15_CHARACTERS_PER_25_4_MM,
@@ -3263,7 +3263,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      */
                     namespace SELECT_PRINT_QUALITY_AND_RAPIDITY {
-                        enum class types {
+                        enum class types : uint8_t {
                             SLOW_SPEED,             // Highest quality
                             MEDIUM_SPEED,           // Medium quality
                             FAST_SPEED              // Draft quality
@@ -3303,7 +3303,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      */
                     namespace START_REVERSED_STRING {
-                        enum class types {
+                        enum class types : uint8_t {
                             END_OF_REVERSED_STRING,                     // end of a reversed string; re-establish the previous direction
                             START_OF_REVERSED_STRING                    // beginning of a reversed string; reverse the direction
                         };
@@ -3318,7 +3318,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      */
                     namespace SELECT_SIZE_UNIT {
-                        enum class types {
+                        enum class types : uint8_t {
                             CHARACTER,                          // The dimensions of this unit are device-dependent
                             MILLIMETRE,                         // 1 mm
                             COMPUTER_DECIPOINT,                 // 0,035 28 mm (1/720 of 25,4 mm)
@@ -3364,7 +3364,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      */
                     namespace SELECT_LINE_SPACING {
-                        enum class types {
+                        enum class types : uint8_t {
                             SIX_LINES_PER_25_4_MM,      // 6 lines per 25,4 mm
                             FOUR_LINES_PER_25_4_MM,     // 4 lines per 25,4 mm
                             THREE_LINES_PER_25_4_MM,    // 3 lines per 25,4 mm
@@ -3505,7 +3505,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      */
                     namespace ERASE_IN_AREA {
-                        enum class types {
+                        enum class types : uint8_t {
                             FROM_ACTIVE_POSITION_UNTIL_QUALIFIED_AREA_END,          /* 1) The active presentation position and the character positions up to the end of the qualified area are put into the erased state 
                                                                                        2) The active data position and the character positions up to the end of the qualified area are put into the erased state  */
                         
@@ -3547,7 +3547,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      */
                     namespace ERASE_IN_PAGE {
-                        enum class types {
+                        enum class types : uint8_t {
                             FROM_ACTIVE_POSITION_UNTIL_END_OF_PAGE,                 /* 1) The active presentation position and the character positions up to the end of the page are put into the erased state 
                                                                                        2) The active data position and the character positions up to the end of the page are put into the erased state  */
                         
@@ -3574,7 +3574,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      */
                     namespace ERASE_IN_FIELD {
-                        enum class types {
+                        enum class types : uint8_t {
                             FROM_ACTIVE_POSITION_UNTIL_END_OF_FIELD,                 /* 1) The active presentation position and the character positions up to the end of the field are put into the erased state 
                                                                                         2) The active data position and the character positions up to the end of the field are put into the erased state  */
                         
@@ -3601,7 +3601,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      */
                     namespace ERASE_IN_LINE {
-                        enum class types {
+                        enum class types : uint8_t {
                             FROM_ACTIVE_POSITION_UNTIL_END_OF_LINE,              /* 1) The active presentation position and the character positions up to the end of the line are put into the erased state 
                                                                                     2) The active data position and the character positions up to the end of the line are put into the erased state  */
                         
@@ -3726,7 +3726,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      */
                     namespace CURSOR_TABULATION_CONTROL {
-                        enum class types {
+                        enum class types : uint8_t {
                             INSERT_CHARACTER_STOP_AT_ACTIVE_POSITION,                       // A character tabulation stop is set at the active presentation position
                             INSERT_LINE_STOP_AT_ACTIVE_POSITION,                            // A line tabulation stop is set at the active line (the line that contains the active presentation position)
                             CLEAR_CHARACTER_STOP_AT_ACTIVE_POSITION,                        // The character tabulation stop at the active presentation position is cleared 
@@ -4142,7 +4142,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      */
                     namespace DEVICE_STATUS_REPORT {
-                        enum class types {
+                        enum class types : uint8_t {
                             READY,                                  // Ready, no malfunction detected
                             BUSY_REQUEST_LATER,                     // Busy, another DSR must be requested later
                             BUSY_SEND_LATER,                        // Busy, another DSR will be sent later 
@@ -4183,7 +4183,7 @@ namespace GGUI {
                      * @param Ps default(None)
                      */
                     namespace IDENTIFY_DEVICE_CONTROL_STRING {
-                        enum class types {
+                        enum class types : uint8_t {
                             DIAGNOSTIC_STATE_OF_STATUS_REPORT_TRANSFER_MODE,            // Reserved for use with the DIAGNOSTIC state of the STATUS REPORT TRANSFER MODE (SRTM)
                             DYNAMICALLY_REDEFINE_CHARACTER_SETS                         // Reserved for Dynamically Redefinable Character Sets (DRCS) according to Standard ECMA-35. 
                         };
@@ -4213,7 +4213,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      */
                     namespace MEDIA_COPY {
-                        enum class types {
+                        enum class types : uint8_t {
                             TRANSFER_TO_PRIMARY_AUXILIARY_DEVICE,           //initiate transfer to a primary auxiliary device
                             TRANSFER_FROM_PRIMARY_AUXILIARY_DEVICE,         //initiate transfer from a primary auxiliary device
                             TRANSFER_TO_SECONDARY_AUXILIARY_DEVICE,         //initiate transfer to a secondary auxiliary device
@@ -4281,7 +4281,7 @@ namespace GGUI {
                      * @param Ps default(0)
                      */
                     namespace SELECT_EDITING_EXTENT {
-                        enum class types {
+                        enum class types : uint8_t {
                             ACTIVE_PAGE,                    // the shifted part is limited to the active page in the presentation component
                             ACTIVE_LINE,                    // the shifted part is limited to the active line in the presentation component
                             ACTIVE_FIELD,                   // the shifted part is limited to the active field in the presentation component

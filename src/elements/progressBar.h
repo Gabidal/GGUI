@@ -15,7 +15,7 @@ namespace GGUI{
             TAIL
         };
 
-        struct part {
+        struct alignas(16) part {
             terminal::cell character = terminal::cell(' ');
             RGB color = COLOR::GRAY;
             partType type = partType::EMPTY;

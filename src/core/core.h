@@ -16,7 +16,7 @@
 #include "converter.h"
 
 namespace GGUI{
-    static struct mouse {
+    static struct alignas(8) mouse {
         enum class states : uint8_t {
             DISABLE,
             ENABLE

@@ -7,7 +7,7 @@
 #include <ostream>
 
 namespace GGUI{
-    class RGB{
+    class alignas(4) RGB {
     public:
         unsigned char red = 0;
         unsigned char green = 0;

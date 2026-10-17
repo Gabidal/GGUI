@@ -9,7 +9,7 @@
 #include <bitset>
 
 namespace GGUI{
-    struct sprite {
+    struct alignas(32) sprite {
         terminal::cell glyph  = ' ';           // terminal::cell for unicode characters
         unsigned char opacity = UINT8_MAX;
         RGB glyphColor        = {};
@@ -32,7 +32,7 @@ namespace GGUI{
         friend class canvas;
     };
 
-    struct animationSprite{
+    struct alignas(64) animationSprite {
     protected:
         bool isPowerOfTwo = false;
     public:
@@ -60,7 +60,7 @@ namespace GGUI{
         friend class canvas;
     };
 
-    class canvas : public element{
+    class canvas : public element {
     private:
         // DONT GIVE THIS TO USER!!!
         canvas(){}
@@ -77,7 +77,7 @@ namespace GGUI{
     public:
         ~canvas() override;
 
-        canvas* setNextAnimationFrame() { currentAnimationFrame++; }
+        canvas* setNextAnimationFrame() { currentAnimationFrame++; return this; }
 
         canvas* set(IVector2 point, animationSprite& sprite, bool Flush = true);
 

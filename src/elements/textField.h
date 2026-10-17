@@ -11,7 +11,7 @@ namespace GGUI{
         };
     protected:
         // Used to describe line snipped from the text
-        struct line {
+        struct alignas(8) line {
             uint32_t start, end;
 
             constexpr size_t getSize() const { return end - start; }

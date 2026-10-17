@@ -22,7 +22,7 @@ namespace GGUI{
         size_t longestLine = 0;
 
         // This is for the remaining liners to determine if they can append into the previous line or not.
-        enum class lineReason {
+        enum class lineReason : uint8_t {
             NONE,
             NEWLINE,
             WORDWRAP

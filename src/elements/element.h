@@ -23,7 +23,7 @@ namespace GGUI{
         class outputCapture;
     }
 
-    class element : public terminal::renderable {
+    class alignas(128) element : public terminal::renderable {
     protected:
         relativeNVector<int16_t, 2> dimensions = {1, 1};
         relativeNVector<int16_t, 3> position = {0, 0, 0};

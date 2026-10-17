@@ -5,85 +5,83 @@
 #include <functional>
 #include <chrono>
 
-namespace GGUI {
-    namespace SETTINGS{
-        /**
-         * @brief Enumeration of supported argument types for command line parsing.
-         */
-        enum class argumentType {
-            FLAG,           ///< Boolean flag argument (no value expected)
-            STRING,         ///< String value argument
-            INTEGER,        ///< Integer value argument
-            UNSIGNED_LONG   ///< Unsigned long value argument
-        };
+namespace GGUI::SETTINGS {
+    /**
+        * @brief Enumeration of supported argument types for command line parsing.
+        */
+    enum class argumentType {
+        FLAG,           ///< Boolean flag argument (no value expected)
+        STRING,         ///< String value argument
+        INTEGER,        ///< Integer value argument
+        UNSIGNED_LONG   ///< Unsigned long value argument
+    };
+
+    /**
+        * @brief Descriptor class for command line arguments.
+        * 
+        * This class encapsulates information about a command line argument including
+        * its name, type, description, and a callback function to handle the parsed value.
+        */
+    class argumentDescriptor {
+    public:
+        std::string name;                                    ///< Argument name (without dashes)
+        argumentType type;                                   ///< Type of argument (flag, string, integer, etc.)
+        std::string description;                             ///< Human-readable description for help text
+        std::function<void(const std::string&)> handler;    ///< Callback function to handle parsed value
 
         /**
-         * @brief Descriptor class for command line arguments.
-         * 
-         * This class encapsulates information about a command line argument including
-         * its name, type, description, and a callback function to handle the parsed value.
-         */
-        class argumentDescriptor {
-        public:
-            std::string name;                                    ///< Argument name (without dashes)
-            argumentType type;                                   ///< Type of argument (flag, string, integer, etc.)
-            std::string description;                             ///< Human-readable description for help text
-            std::function<void(const std::string&)> handler;    ///< Callback function to handle parsed value
+            * @brief Constructs an ArgumentDescriptor.
+            * 
+            * @param argName The name of the argument (without leading dashes)
+            * @param argType The type of the argument
+            * @param argDescription Description of the argument for help text
+            * @param argHandler Callback function to handle the parsed value
+            */
+        argumentDescriptor(
+            const std::string& argName, 
+            argumentType argType, 
+            const std::string& argDescription, 
+            std::function<void(const std::string&)> argHandler
+        ) : name(argName), type(argType), description(argDescription), handler(std::move(argHandler)) {}
 
-            /**
-             * @brief Constructs an ArgumentDescriptor.
-             * 
-             * @param argName The name of the argument (without leading dashes)
-             * @param argType The type of the argument
-             * @param argDescription Description of the argument for help text
-             * @param argHandler Callback function to handle the parsed value
-             */
-            argumentDescriptor(
-                const std::string& argName, 
-                argumentType argType, 
-                const std::string& argDescription, 
-                std::function<void(const std::string&)> argHandler
-            ) : name(argName), type(argType), description(argDescription), handler(std::move(argHandler)) {}
+        /**
+            * @brief Checks if this argument requires a value.
+            * 
+            * @return true if the argument type requires a value, false for flags
+            */
+        bool requiresvalue() const {
+            return type != argumentType::FLAG;
+        }
 
-            /**
-             * @brief Checks if this argument requires a value.
-             * 
-             * @return true if the argument type requires a value, false for flags
-             */
-            bool requiresvalue() const {
-                return type != argumentType::FLAG;
+        /**
+            * @brief Gets the type name as a string for help text.
+            * 
+            * @return String representation of the argument type
+            */
+        std::string getTypeName() const {
+            switch (type) {
+                case argumentType::FLAG: return "flag";
+                case argumentType::STRING: return "string";
+                case argumentType::INTEGER: return "integer";
+                case argumentType::UNSIGNED_LONG: return "unsigned long";
+                default: return "unknown";
             }
+        }
+    };
 
-            /**
-             * @brief Gets the type name as a string for help text.
-             * 
-             * @return String representation of the argument type
-             */
-            std::string getTypeName() const {
-                switch (type) {
-                    case argumentType::FLAG: return "flag";
-                    case argumentType::STRING: return "string";
-                    case argumentType::INTEGER: return "integer";
-                    case argumentType::UNSIGNED_LONG: return "unsigned long";
-                    default: return "unknown";
-                }
-            }
-        };
+    // Given as --mousePressCooldown = 123
+    extern std::chrono::steady_clock::duration mousePressDownCooldown;  // Milliseconds
 
-        // Given as --mousePressCooldown = 123
-        extern std::chrono::steady_clock::duration mousePressDownCooldown;  // Milliseconds
+    // Given as --enableWordWrapping
+    extern bool wordWrapping;
 
-        // Given as --enableWordWrapping
-        extern bool wordWrapping;
+    // Given as --enableDRM
+    extern bool enableDRM;
 
-        // Given as --enableDRM
-        extern bool enableDRM;
+    extern std::chrono::steady_clock::duration MAX_UPDATE_SPEED;
+    extern std::chrono::steady_clock::duration MIN_UPDATE_SPEED;
 
-        extern std::chrono::steady_clock::duration MAX_UPDATE_SPEED;
-        extern std::chrono::steady_clock::duration MIN_UPDATE_SPEED;
-
-        extern void parseCommandLineArguments(int argc, char** argv);
-    }
+    extern void parseCommandLineArguments(int argc, char** argv);
 }
 
 #endif

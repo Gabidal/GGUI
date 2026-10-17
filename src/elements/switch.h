@@ -15,7 +15,7 @@ namespace GGUI{
         constexpr std::string_view CHECKED_CHECK_BOX = "☒";
     }
 
-    struct visualState {
+    struct alignas(16) visualState {
         terminal::cell Off, On;
     };
 

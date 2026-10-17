@@ -8,245 +8,243 @@
 
 #include "../utils/utils.h"
 
-namespace GGUI {
-    namespace terminal {
-        // Inspired from https://notcurses.com/html/notcurses_8h_source.html
-        class cell {
-            uint32_t glyphs = 0;                    // Holds 1-4 UTF-8 code points, highest 5 bit, represents on/off switch for indexing from a string table.
-            [[maybe_unused]] uint8_t backstop = 0;  // Null terminates the inlined 4-bytes string inside glyphs.
-            uint8_t width = 1;                      // asked from wcwidth (linux) or ??? (windows)
-            uint8_t length = 0;
-        public:
-            constexpr cell() = default;
+namespace GGUI::terminal {
+    // Inspired from https://notcurses.com/html/notcurses_8h_source.html
+    class cell {
+        uint32_t glyphs = 0;                    // Holds 1-4 UTF-8 code points, highest 5 bit, represents on/off switch for indexing from a string table.
+        [[maybe_unused]] uint8_t backstop = 0;  // Null terminates the inlined 4-bytes string inside glyphs.
+        uint8_t width = 1;                      // asked from wcwidth (linux) or ??? (windows)
+        uint8_t length = 0;
+    public:
+        constexpr cell() = default;
 
-            constexpr cell(std::string_view utf) {
-                if (utf.size() <= sizeof(glyphs)) {
-                    for (size_t i = 0; i < utf.size(); ++i) {
-                        // (little endian layout)
-                        glyphs |= (static_cast<uint32_t>(static_cast<uint8_t>(utf[i])) << (i * 8));
-                    }
-                } else {
-                    assert(false && "String table not implemented!");
+        constexpr cell(std::string_view utf) {
+            if (utf.size() <= sizeof(glyphs)) {
+                for (size_t i = 0; i < utf.size(); ++i) {
+                    // (little endian layout)
+                    glyphs |= (static_cast<uint32_t>(static_cast<uint8_t>(utf[i])) << (i * 8));
                 }
-
-                length = utf.size();
+            } else {
+                assert(false && "String table not implemented!");
             }
 
-            constexpr cell(char character) : glyphs(static_cast<uint8_t>(character)), length(1) {}
-
-            // Checks wether the highest bit is set or not.
-            constexpr bool isIndex() const {
-                return (glyphs & indexFingerPrint) == indexFingerPrint;
-            }
-
-            constexpr bool setIndexFingerPrint() {
-                glyphs |= indexFingerPrint;
-                return true;
-            }
-
-            constexpr uint32_t getIndex() const {
-                assert(isIndex() && "This cell is not an index!");
-
-                return glyphs & ~indexFingerPrint;
-            }
-
-            constexpr uint8_t getWidth() const { return width; }
-
-            inline std::string_view getGlyphs() const {
-                return std::string_view(
-                    reinterpret_cast<const char*>(&glyphs),
-                    length
-                );
-            }
-
-            constexpr uint8_t getLength() const { return length; }
-        protected:
-            // First five bytes are set, since largest UTF-8 uses four bytes set and fifth unset, we can use that as an fingerprint.
-            static constexpr char32_t indexFingerPrint = (
-                (static_cast<uint32_t>(1) << 31) |
-                (static_cast<uint32_t>(1) << 30) |
-                (static_cast<uint32_t>(1) << 29) |
-                (static_cast<uint32_t>(1) << 28) |
-                (static_cast<uint32_t>(1) << 27)
-            );
-
-            friend void setGlyphWidth(cell& data);
-        };
-
-        // How many bytes/second
-        enum class baudRate : int32_t {
-            BYTES_50             = 50,
-            BYTES_75             = 75,
-            BYTES_110            = 110,
-            BYTES_134            = 134,
-            BYTES_150            = 150,
-            BYTES_200            = 200,
-            BYTES_300            = 300,
-            BYTES_600            = 600,
-            BYTES_1200           = 1200,
-            BYTES_1800           = 1800,
-            BYTES_2400           = 2400,
-            BYTES_4800           = 4800,
-            BYTES_9600           = 9600,
-            BYTES_19200          = 19200,
-            BYTES_28800          = 28800,
-            BYTES_38400          = 38400,
-            BYTES_57600          = 57600,
-            BYTES_115200         = 115200,
-            BYTES_230400         = 230400,
-            BYTES_460800         = 460800,
-            BYTES_576000         = 576000,
-            BYTES_921600         = 921600
-        };
-
-        enum class transmissionMode : int8_t {
-            DUPLEX,
-            HALF_DUPLEX,
-            SIMPLEX
-        };
-
-        struct transmissionInfo {
-            baudRate input, output;
-            int8_t bitsPerCharacter;
-        };
-
-        struct UARTFrame {
-            bool hasParityBitEnabled;
-            bool DualStopBitEnabled;
-
-            constexpr int32_t getStartBitCount()  const { return 1; /* UART always has a start bit. */ }
-            constexpr int32_t getParityBitCount() const { return hasParityBitEnabled ? 1 : 0; }
-            constexpr int32_t getStopBitCount()   const { return DualStopBitEnabled  ? 2 : 1; } 
-        };
-
-        struct limitations {
-            baudRate maximumSupportedTransmissionRate;
-            transmissionMode supportedTransmissionMode;
-            int32_t maximumBufferSize;
-            int32_t bufferThresholdBeforeOverflowSignal;
-            int32_t transmissionLatencyCharacterCount;
-
-            /**
-             * @brief Calculates the number of characters that can be transmitted before overflow signal is sent, given the current transmission conditions.
-             */
-            constexpr int32_t numberOfCharacterToOverflow(transmissionInfo currentTransmission) const {
-                return std::max(
-                    0, 
-                    (int32_t)(
-                        bufferThresholdBeforeOverflowSignal - (
-                            transmissionLatencyCharacterCount * ((float)currentTransmission.input / (float)currentTransmission.output)
-                        )
-                    )
-                );
-            }
-
-            /**
-             * @brief Calculates the time to respond to the XOFF signal to avoid overflow, given the current transmission conditions and UART frame configuration.
-             */
-            constexpr float timeToRespond(transmissionInfo currentTransmission, UARTFrame frameInfo) const {
-                return (float)(
-                    numberOfCharacterToOverflow(currentTransmission) * 
-                    (frameInfo.getStartBitCount() + currentTransmission.bitsPerCharacter + frameInfo.getParityBitCount() + frameInfo.getStopBitCount())
-                ) / (float)currentTransmission.input;
-            }
-        };
-
-        namespace ecma {
-            enum class graphicalTextAttributes : uint8_t {
-                DEFAULT,                                        // default rendition (implementation-defined), cancels the effect of any preceding occurrence of SGR in the data stream regardless of the setting of the GRAPHIC RENDITION COMBINATION MODE (GRCM)
-                __min = DEFAULT,
-                BOLD,                                           // bold or increased intensity
-                FAINT,                                          // faint, decreased intensity or second colour
-                ITALIC,                                         // italicized
-                UNDERLINE,                                      // singly underlined
-                SLOW_BLINK,                                     // slowly blinking (less then 150 per minute)
-                RAPID_BLINK,                                    // rapidly blinking (150 per minute or more)
-                REVERSE_VIDEO,                                  // negative image
-                CONCEAL,                                        // concealed characters
-                CROSSED_OUT,                                    // crossed-out (characters still legible but marked as to be deleted)
-                PRIMARY_FONT,                                   // primary (default) font
-                ALT_FONT_1,                                     // first alternative font
-                ALT_FONT_2,                                     // second alternative font
-                ALT_FONT_3,                                     // third alternative font
-                ALT_FONT_4,                                     // fourth alternative font
-                ALT_FONT_5,                                     // fifth alternative font
-                ALT_FONT_6,                                     // sixth alternative font
-                ALT_FONT_7,                                     // seventh alternative font
-                ALT_FONT_8,                                     // eighth alternative font
-                ALT_FONT_9,                                     // ninth alternative font
-                FRAKTUR,                                        // Fraktur (Gothic)
-                DOUBLY_UNDERLINED,                              // doubly underlined
-                NORMAL_INTENSITY,                               // normal colour or normal intensity (neither bold nor faint)
-                NOT_ITALIC_NOT_FRAKTUR,                         // not italicized, not fraktur
-                NOT_UNDERLINED,                                 // not underlined (neither singly nor doubly)
-                NOT_BLINKING,                                   // steady (not blinking)
-                RESERVED_PROPORTIONAL_SPACING,                  // (reserved for proportional spacing as specified in CCITT Recommendation T.61)
-                POSITIVE_IMAGE,                                 // positive image
-                REVEAL,                                         // revealed characters
-                NOT_CROSSED_OUT,                                // not crossed out
-                FG_BLACK,                                       // black display
-                FG_RED,                                         // red display
-                FG_GREEN,                                       // green display
-                FG_YELLOW,                                      // yellow display
-                FG_BLUE,                                        // blue display
-                FG_MAGENTA,                                     // magenta display
-                FG_CYAN,                                        // cyan display
-                FG_WHITE,                                       // white display
-                FOREGROUND_COLOR,                               // intended for setting character foreground colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
-                FG_DEFAULT,                                     // default display colour (implementation-defined)
-                BG_BLACK,                                       // black background
-                BG_RED,                                         // red background
-                BG_GREEN,                                       // green background
-                BG_YELLOW,                                      // yellow background
-                BG_BLUE,                                        // blue background
-                BG_MAGENTA,                                     // magenta background
-                BG_CYAN,                                        // cyan background
-                BG_WHITE,                                       // white background
-                BACKGROUND_COLOR,                               // intended for setting character background colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
-                BG_DEFAULT,                                     // default background colour (implementation-defined)
-                RESERVED_CANCEL_PROPORTIONAL_SPACING,           // (reserved for cancelling the effect of the rendering aspect established by parameter value 26)
-                FRAMED,                                         // framed
-                ENCIRCLED,                                      // encircled
-                OVERLINED,                                      // overlined
-                NOT_FRAMED_NOT_ENCIRCLED,                       // not framed, not encircled
-                NOT_OVERLINED,                                  // not overlined
-                RESERVED_56,                                    // (reserved for future standardization)
-                RESERVED_57,                                    // (reserved for future standardization)
-                RESERVED_58,                                    // (reserved for future standardization)
-                RESERVED_59,                                    // (reserved for future standardization)
-                IDEOGRAM_UNDERLINE,                             // ideogram underline or right side line
-                IDEOGRAM_DOUBLE_UNDERLINE,                      // ideogram double underline or double line on the right side
-                IDEOGRAM_OVERLINE,                              // ideogram overline or left side line
-                IDEOGRAM_DOUBLE_OVERLINE,                       // ideogram double overline or double line on the left side
-                IDEOGRAM_STRESS_MARKING,                        // ideogram stress marking
-                __max = IDEOGRAM_STRESS_MARKING,
-                IDEOGRAM_ATTRIBUTES_OFF,                        // cancels the effect of the rendition aspects established by parameter values 60 to 64
-            };
+            length = utf.size();
         }
 
-        enum class textAttributeTypes : uint8_t {
-            DEFAULT             = table::alias(terminal::ecma::graphicalTextAttributes::DEFAULT),
-            __min               = DEFAULT,
-            BOLD                = table::alias(terminal::ecma::graphicalTextAttributes::BOLD),
-            FAINT               = table::alias(terminal::ecma::graphicalTextAttributes::FAINT),
-            ITALIC              = table::alias(terminal::ecma::graphicalTextAttributes::ITALIC),
-            UNDERLINE           = table::alias(terminal::ecma::graphicalTextAttributes::UNDERLINE),
-            SLOW_BLINK          = table::alias(terminal::ecma::graphicalTextAttributes::SLOW_BLINK),
-            RAPID_BLINK         = table::alias(terminal::ecma::graphicalTextAttributes::RAPID_BLINK),
-            REVERSE_VIDEO       = table::alias(terminal::ecma::graphicalTextAttributes::REVERSE_VIDEO),
-            CROSSED_OUT         = table::alias(terminal::ecma::graphicalTextAttributes::CROSSED_OUT),
-            PRIMARY_FONT        = table::alias(terminal::ecma::graphicalTextAttributes::PRIMARY_FONT),
-            ALTERNATIVE_FONT_1  = table::alias(terminal::ecma::graphicalTextAttributes::ALT_FONT_1),
-            DOUBLE_UNDERLINE    = table::alias(terminal::ecma::graphicalTextAttributes::DOUBLY_UNDERLINED),
-            FOREGROUND_COLOR    = table::alias(terminal::ecma::graphicalTextAttributes::FOREGROUND_COLOR),
-            BACKGROUND_COLOR    = table::alias(terminal::ecma::graphicalTextAttributes::BACKGROUND_COLOR),
-            FRAMED              = table::alias(terminal::ecma::graphicalTextAttributes::FRAMED),
-            ENCIRCLED           = table::alias(terminal::ecma::graphicalTextAttributes::ENCIRCLED),
-            OVERLINE            = table::alias(terminal::ecma::graphicalTextAttributes::OVERLINED),
+        constexpr cell(char character) : glyphs(static_cast<uint8_t>(character)), length(1) {}
 
-            __max               = OVERLINE
+        // Checks wether the highest bit is set or not.
+        constexpr bool isIndex() const {
+            return (glyphs & indexFingerPrint) == indexFingerPrint;
+        }
+
+        constexpr bool setIndexFingerPrint() {
+            glyphs |= indexFingerPrint;
+            return true;
+        }
+
+        constexpr uint32_t getIndex() const {
+            assert(isIndex() && "This cell is not an index!");
+
+            return glyphs & ~indexFingerPrint;
+        }
+
+        constexpr uint8_t getWidth() const { return width; }
+
+        inline std::string_view getGlyphs() const {
+            return std::string_view(
+                reinterpret_cast<const char*>(&glyphs),
+                length
+            );
+        }
+
+        constexpr uint8_t getLength() const { return length; }
+    protected:
+        // First five bytes are set, since largest UTF-8 uses four bytes set and fifth unset, we can use that as an fingerprint.
+        static constexpr char32_t indexFingerPrint = (
+            (static_cast<uint32_t>(1) << 31) |
+            (static_cast<uint32_t>(1) << 30) |
+            (static_cast<uint32_t>(1) << 29) |
+            (static_cast<uint32_t>(1) << 28) |
+            (static_cast<uint32_t>(1) << 27)
+        );
+
+        friend void setGlyphWidth(cell& data);
+    };
+
+    // How many bytes/second
+    enum class baudRate : int32_t {
+        BYTES_50             = 50,
+        BYTES_75             = 75,
+        BYTES_110            = 110,
+        BYTES_134            = 134,
+        BYTES_150            = 150,
+        BYTES_200            = 200,
+        BYTES_300            = 300,
+        BYTES_600            = 600,
+        BYTES_1200           = 1200,
+        BYTES_1800           = 1800,
+        BYTES_2400           = 2400,
+        BYTES_4800           = 4800,
+        BYTES_9600           = 9600,
+        BYTES_19200          = 19200,
+        BYTES_28800          = 28800,
+        BYTES_38400          = 38400,
+        BYTES_57600          = 57600,
+        BYTES_115200         = 115200,
+        BYTES_230400         = 230400,
+        BYTES_460800         = 460800,
+        BYTES_576000         = 576000,
+        BYTES_921600         = 921600
+    };
+
+    enum class transmissionMode : int8_t {
+        DUPLEX,
+        HALF_DUPLEX,
+        SIMPLEX
+    };
+
+    struct alignas(16) transmissionInfo {
+        baudRate input, output;
+        int8_t bitsPerCharacter;
+    };
+
+    struct alignas(2) UARTFrame {
+        bool hasParityBitEnabled;
+        bool DualStopBitEnabled;
+
+        constexpr int32_t getStartBitCount()  const { return 1; /* UART always has a start bit. */ }
+        constexpr int32_t getParityBitCount() const { return hasParityBitEnabled ? 1 : 0; }
+        constexpr int32_t getStopBitCount()   const { return DualStopBitEnabled  ? 2 : 1; } 
+    };
+
+    struct alignas(32) limitations {
+        baudRate maximumSupportedTransmissionRate;
+        transmissionMode supportedTransmissionMode;
+        int32_t maximumBufferSize;
+        int32_t bufferThresholdBeforeOverflowSignal;
+        int32_t transmissionLatencyCharacterCount;
+
+        /**
+            * @brief Calculates the number of characters that can be transmitted before overflow signal is sent, given the current transmission conditions.
+            */
+        constexpr int32_t numberOfCharacterToOverflow(transmissionInfo currentTransmission) const {
+            return std::max(
+                0, 
+                (int32_t)(
+                    bufferThresholdBeforeOverflowSignal - (
+                        transmissionLatencyCharacterCount * ((float)currentTransmission.input / (float)currentTransmission.output)
+                    )
+                )
+            );
+        }
+
+        /**
+            * @brief Calculates the time to respond to the XOFF signal to avoid overflow, given the current transmission conditions and UART frame configuration.
+            */
+        constexpr float timeToRespond(transmissionInfo currentTransmission, UARTFrame frameInfo) const {
+            return (float)(
+                numberOfCharacterToOverflow(currentTransmission) * 
+                (frameInfo.getStartBitCount() + currentTransmission.bitsPerCharacter + frameInfo.getParityBitCount() + frameInfo.getStopBitCount())
+            ) / (float)currentTransmission.input;
+        }
+    };
+
+    namespace ecma {
+        enum class graphicalTextAttributes : uint8_t {
+            DEFAULT,                                        // default rendition (implementation-defined), cancels the effect of any preceding occurrence of SGR in the data stream regardless of the setting of the GRAPHIC RENDITION COMBINATION MODE (GRCM)
+            __min = DEFAULT,
+            BOLD,                                           // bold or increased intensity
+            FAINT,                                          // faint, decreased intensity or second colour
+            ITALIC,                                         // italicized
+            UNDERLINE,                                      // singly underlined
+            SLOW_BLINK,                                     // slowly blinking (less then 150 per minute)
+            RAPID_BLINK,                                    // rapidly blinking (150 per minute or more)
+            REVERSE_VIDEO,                                  // negative image
+            CONCEAL,                                        // concealed characters
+            CROSSED_OUT,                                    // crossed-out (characters still legible but marked as to be deleted)
+            PRIMARY_FONT,                                   // primary (default) font
+            ALT_FONT_1,                                     // first alternative font
+            ALT_FONT_2,                                     // second alternative font
+            ALT_FONT_3,                                     // third alternative font
+            ALT_FONT_4,                                     // fourth alternative font
+            ALT_FONT_5,                                     // fifth alternative font
+            ALT_FONT_6,                                     // sixth alternative font
+            ALT_FONT_7,                                     // seventh alternative font
+            ALT_FONT_8,                                     // eighth alternative font
+            ALT_FONT_9,                                     // ninth alternative font
+            FRAKTUR,                                        // Fraktur (Gothic)
+            DOUBLY_UNDERLINED,                              // doubly underlined
+            NORMAL_INTENSITY,                               // normal colour or normal intensity (neither bold nor faint)
+            NOT_ITALIC_NOT_FRAKTUR,                         // not italicized, not fraktur
+            NOT_UNDERLINED,                                 // not underlined (neither singly nor doubly)
+            NOT_BLINKING,                                   // steady (not blinking)
+            RESERVED_PROPORTIONAL_SPACING,                  // (reserved for proportional spacing as specified in CCITT Recommendation T.61)
+            POSITIVE_IMAGE,                                 // positive image
+            REVEAL,                                         // revealed characters
+            NOT_CROSSED_OUT,                                // not crossed out
+            FG_BLACK,                                       // black display
+            FG_RED,                                         // red display
+            FG_GREEN,                                       // green display
+            FG_YELLOW,                                      // yellow display
+            FG_BLUE,                                        // blue display
+            FG_MAGENTA,                                     // magenta display
+            FG_CYAN,                                        // cyan display
+            FG_WHITE,                                       // white display
+            FOREGROUND_COLOR,                               // intended for setting character foreground colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
+            FG_DEFAULT,                                     // default display colour (implementation-defined)
+            BG_BLACK,                                       // black background
+            BG_RED,                                         // red background
+            BG_GREEN,                                       // green background
+            BG_YELLOW,                                      // yellow background
+            BG_BLUE,                                        // blue background
+            BG_MAGENTA,                                     // magenta background
+            BG_CYAN,                                        // cyan background
+            BG_WHITE,                                       // white background
+            BACKGROUND_COLOR,                               // intended for setting character background colour as specified in ISO 8613-6 [CCITT Recommendation T.416])
+            BG_DEFAULT,                                     // default background colour (implementation-defined)
+            RESERVED_CANCEL_PROPORTIONAL_SPACING,           // (reserved for cancelling the effect of the rendering aspect established by parameter value 26)
+            FRAMED,                                         // framed
+            ENCIRCLED,                                      // encircled
+            OVERLINED,                                      // overlined
+            NOT_FRAMED_NOT_ENCIRCLED,                       // not framed, not encircled
+            NOT_OVERLINED,                                  // not overlined
+            RESERVED_56,                                    // (reserved for future standardization)
+            RESERVED_57,                                    // (reserved for future standardization)
+            RESERVED_58,                                    // (reserved for future standardization)
+            RESERVED_59,                                    // (reserved for future standardization)
+            IDEOGRAM_UNDERLINE,                             // ideogram underline or right side line
+            IDEOGRAM_DOUBLE_UNDERLINE,                      // ideogram double underline or double line on the right side
+            IDEOGRAM_OVERLINE,                              // ideogram overline or left side line
+            IDEOGRAM_DOUBLE_OVERLINE,                       // ideogram double overline or double line on the left side
+            IDEOGRAM_STRESS_MARKING,                        // ideogram stress marking
+            __max = IDEOGRAM_STRESS_MARKING,
+            IDEOGRAM_ATTRIBUTES_OFF,                        // cancels the effect of the rendition aspects established by parameter values 60 to 64
         };
     }
+
+    enum class textAttributeTypes : uint8_t {
+        DEFAULT             = table::alias(terminal::ecma::graphicalTextAttributes::DEFAULT),
+        __min               = DEFAULT,
+        BOLD                = table::alias(terminal::ecma::graphicalTextAttributes::BOLD),
+        FAINT               = table::alias(terminal::ecma::graphicalTextAttributes::FAINT),
+        ITALIC              = table::alias(terminal::ecma::graphicalTextAttributes::ITALIC),
+        UNDERLINE           = table::alias(terminal::ecma::graphicalTextAttributes::UNDERLINE),
+        SLOW_BLINK          = table::alias(terminal::ecma::graphicalTextAttributes::SLOW_BLINK),
+        RAPID_BLINK         = table::alias(terminal::ecma::graphicalTextAttributes::RAPID_BLINK),
+        REVERSE_VIDEO       = table::alias(terminal::ecma::graphicalTextAttributes::REVERSE_VIDEO),
+        CROSSED_OUT         = table::alias(terminal::ecma::graphicalTextAttributes::CROSSED_OUT),
+        PRIMARY_FONT        = table::alias(terminal::ecma::graphicalTextAttributes::PRIMARY_FONT),
+        ALTERNATIVE_FONT_1  = table::alias(terminal::ecma::graphicalTextAttributes::ALT_FONT_1),
+        DOUBLE_UNDERLINE    = table::alias(terminal::ecma::graphicalTextAttributes::DOUBLY_UNDERLINED),
+        FOREGROUND_COLOR    = table::alias(terminal::ecma::graphicalTextAttributes::FOREGROUND_COLOR),
+        BACKGROUND_COLOR    = table::alias(terminal::ecma::graphicalTextAttributes::BACKGROUND_COLOR),
+        FRAMED              = table::alias(terminal::ecma::graphicalTextAttributes::FRAMED),
+        ENCIRCLED           = table::alias(terminal::ecma::graphicalTextAttributes::ENCIRCLED),
+        OVERLINE            = table::alias(terminal::ecma::graphicalTextAttributes::OVERLINED),
+
+        __max               = OVERLINE
+    };
 }
 
 #endif

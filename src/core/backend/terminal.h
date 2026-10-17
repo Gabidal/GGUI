@@ -23,7 +23,7 @@ namespace GGUI {
     }
 
     // This is what styling compiles during element::render().
-    struct activeStyle {
+    struct alignas(64) activeStyle {
         rectangle area              = {};    // absolute position
         RGB activeTextColor         = {};
         RGB activeBackgroundColor   = {};
@@ -62,7 +62,7 @@ namespace GGUI {
         extern void setGlyphWidth(cell&);
 
         // Links into different components and their properties to update and keep track of them while rendering
-        class outputCapture {
+        class alignas(64) outputCapture {
         protected:
             IVector2& cursor;
             IVector2& dimensions;
@@ -103,7 +103,7 @@ namespace GGUI {
             size_t getIndexOf(IVector2) const;
         protected:
             // Ray-tracing inspired SGR baker
-            std::pair<bool, activeStyle> trace(IVector2 point, element* currentElement);
+            std::pair<bool, activeStyle> trace(IVector2 point, const element* currentElement);
         public:
             // ===                  ===
             
@@ -111,7 +111,7 @@ namespace GGUI {
             friend void updateScreenDimensions();
         };
 
-        struct query {
+        struct alignas(128) query {
             // Some compile time constants; 510, is enough. If need raise this.
             static constexpr unsigned int capacity = UINT8_MAX * 2;
 
@@ -179,7 +179,7 @@ namespace GGUI {
             void enableExtensions();
         };
 
-        struct renderable {
+        struct alignas(128) renderable {
             // Updated by element: Only fetch one container UP, and own position +, then content repeat in Render pipeline.
             IVector3 absolutePositionCache;
             linearMask<terminal::textAttributeTypes, uint64_t> textAttributes = terminal::textAttributeTypes::DEFAULT;

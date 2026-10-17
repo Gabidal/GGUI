@@ -99,22 +99,22 @@ link_args = []
 if build_type == 'debugoptimized' or build_type == 'release'
 
   # NOTE: -static doesn't react similar to how it behaves in linux.
-  link_args += ['-static'] # Link all libc and other libraries statically for maximum inline.
+  #link_args += ['-static'] # Link all libc and other libraries statically for maximum inline.
 
   # Avoid -march=native for cross builds (e.g., MinGW)
   if not is_cross and cppc.has_argument('-march=native')
     cpp_args += ['-march=native']
   endif
   if cppc.has_argument('-flto')
-    cpp_args += ['-flto']
-    link_args += ['-flto']
+    #cpp_args += ['-flto']
+    #link_args += ['-flto']
   endif
   if cppc.has_argument('-fwhole-program')
     # cpp_args += ['-fwhole-program']
-    link_args += ['-fwhole-program']
+    #link_args += ['-fwhole-program']
   endif
   if cppc.has_argument('-fvisibility=hidden')
-    cpp_args += ['-fvisibility=hidden']
+    #cpp_args += ['-fvisibility=hidden']
   endif
 endif
 
@@ -257,11 +257,7 @@ if clang_tidy.found()
     command: [
       clang_tidy,
       '-p', meson.current_build_dir(),
-      '-checks=-*,' +
-      'performance-unnecessary-value-param,' +
-      'performance-unnecessary-copy-initialization,' +
-      'performance-for-range-copy,' +
-      'performance-move-const-arg',
+      '-checks=performance*,clang-diagnostic*',
       lib_sources_prefixed
     ]
   )

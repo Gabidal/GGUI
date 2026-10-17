@@ -4,464 +4,467 @@
 #include "../../elements/listView.h"
 
 #include "../utils/logger.h"
+#include "../utils/utils.h"
+
+#include <vector>
+#include <string_view>
+#include <cstdint>
 
 /**
  * Cross platform functions and containers are held here:
 */
 
-namespace GGUI {
-    namespace terminal {
-        base* currentStates = nullptr;
+namespace GGUI::terminal {
+    base* currentStates = nullptr;
 
-        extern void platformInit();         // Platform Specific
+    extern void platformInit();         // Platform Specific
 
-        extern void queryInput();          // Platform Specific
+    extern void queryInput();          // Platform Specific
 
-        extern void queryOutput(std::vector<std::string_view>&& queue);     // Platform Specific
+    extern void queryOutput(std::vector<std::string_view>&& queue);     // Platform Specific
 
-        extern void queryResponse();        // Platform Specific
+    extern void queryResponse();        // Platform Specific
+    
+    extern void parseInput();           // Terminal Specific
+
+    extern void updateScreenDimensions(); // Platform Specific
+
+    extern bool isConnected();          // Platform Specific
+
+    void outputCapture::link(element* DOM) {
+        dom = DOM;
+    }
+
+    // Used as an helper tool to easily transform between the two identities.
+    constexpr ecma::activeSGRStyle rasterize(activeStyle point) {
+        ecma::activeSGRStyle result;
+
+        if (point.opacity != UINT8_MAX) {
+            // we need to ask the terminal for the active default colors
+            TODO("Needs XTERM module, for active default terminal colors.")
+        }
+
+        // Since the activeTextAttributes are aliased from ecma::textAttributes this is ok.
+        result.textAttributes = point.activeTextAttributes;
+        result.textColor = point.activeTextColor;
+        result.backgroundColor = point.activeBackgroundColor;
+
+        return result;
+    }
+
+    // first we go recursively inside the container and the content that contains this point.
+    std::pair<bool, activeStyle> outputCapture::trace(IVector2 point, const element* currentElement) {
+        // since overflow content inside a container only is allowed is the container is dynamic in size, otherwise overflow content is always hidden, so the lowest identity pool is always the largest. 
+        if (currentElement->graphicalIdentityPool.empty() || !currentElement->graphicalIdentityPool.back().area.hits(point)) { return {false, {} }; }
+
+        std::pair<bool, activeStyle> handle = {false, {} };
         
-        extern void parseInput();           // Terminal Specific
+        // now check if this element is a container and if it contains a closer matching element inside it.
+        if (dynamic_cast<const listView*>(currentElement)) {
+            for (const auto* content : static_cast<const listView*>(currentElement)->getVisibleContent()) {  // should return via z-priority
+                auto [visibleArea, remainder] = core::getFittingArea(currentElement, content);
+                
+                // Since getFittingArea uses relative positions, we need to make it absolute.
+                visibleArea.position += currentElement->getAbsolutePosition();
+                if (!visibleArea.hits(point)) continue;
+                handle = trace(point, content);   // this should return the closest hit.
 
-        extern void updateScreenDimensions(); // Platform Specific
-
-        extern bool isConnected();          // Platform Specific
-
-        void outputCapture::link(element* DOM) {
-            dom = DOM;
+                if (handle.first) break;    // since z-priority the first match should be the best one.
+            }
         }
 
-        // Used as an helper tool to easily transform between the two identities.
-        constexpr ecma::activeSGRStyle rasterize(activeStyle point) {
-            ecma::activeSGRStyle result;
-
-            if (point.opacity != UINT8_MAX) {
-                // we need to ask the terminal for the active default colors
-                TODO("Needs XTERM module, for active default terminal colors.")
-            }
-
-            // Since the activeTextAttributes are aliased from ecma::textAttributes this is ok.
-            result.textAttributes = point.activeTextAttributes;
-            result.textColor = point.activeTextColor;
-            result.backgroundColor = point.activeBackgroundColor;
-
-            return result;
-        }
-
-        // first we go recursively inside the container and the content that contains this point.
-        std::pair<bool, activeStyle> outputCapture::trace(IVector2 point, element* currentElement) {
-            // since overflow content inside a container only is allowed is the container is dynamic in size, otherwise overflow content is always hidden, so the lowest identity pool is always the largest. 
-            if (currentElement->graphicalIdentityPool.empty() || !currentElement->graphicalIdentityPool.back().area.hits(point)) { return {false, {} }; }
-
-            std::pair<bool, activeStyle> handle = {false, {} };
-            
-            // now check if this element is a container and if it contains a closer matching element inside it.
-            if (dynamic_cast<listView*>(currentElement)) {
-                for (auto* content : static_cast<listView*>(currentElement)->getVisibleContent()) {  // should return via z-priority
-                    auto [visibleArea, remainder] = core::getFittingArea(currentElement, content);
-                    
-                    // Since getFittingArea uses relative positions, we need to make it absolute.
-                    visibleArea.position += currentElement->getAbsolutePosition();
-                    if (!visibleArea.hits(point)) continue;
-                    handle = trace(point, content);   // this should return the closest hit.
-
-                    if (handle.first) break;    // since z-priority the first match should be the best one.
+        // If none of the contents hit, then this current Container is the closest hit
+        if (!handle.first) {      
+            for (const auto& localGraphicalPool : currentElement->graphicalIdentityPool) {
+                if (localGraphicalPool.area.hits(point)) {
+                    handle.second = localGraphicalPool;    // this is the closest hit.
+                    handle.first = true;
+                    handle.second.activeTextAttributes.add(textAttributeTypes::FOREGROUND_COLOR);
+                    handle.second.activeTextAttributes.add(textAttributeTypes::BACKGROUND_COLOR);
+                    break;
                 }
             }
 
-            // If none of the contents hit, then this current Container is the closest hit
-            if (!handle.first) {      
-                for (auto& localGraphicalPool : currentElement->graphicalIdentityPool) {
-                    if (localGraphicalPool.area.hits(point)) {
-                        handle.second = localGraphicalPool;    // this is the closest hit.
-                        handle.first = true;
-                        handle.second.activeTextAttributes.add(textAttributeTypes::FOREGROUND_COLOR);
-                        handle.second.activeTextAttributes.add(textAttributeTypes::BACKGROUND_COLOR);
-                        break;
-                    }
-                }
-
-                // regardless of opacity there is no more data here, we need to go back to current containers container container.
-                return handle;
-            }
-
-            // only process further if opacity is not 100%
-            if (handle.second.opacity == UINT8_MAX) return handle;
-
-            // here we now have to process the opacity.
-            // Since we are currently in the >>second<< closest hit element
-            // Two probable instances: 
-            //   first: the incoming handle still hovers over some other current container content reflection pool
-            //   second: the incoming handle needs to be calculated via this current containers own identity pool
-            // Since the second is an extension of the first instance, we can do both of them at the same time.
-            
-            size_t start = 0;
-
-            // First find the index of the handle
-            for (; start < currentElement->graphicalReflectionPool.size(); start++) {
-                const activeStyle* current = currentElement->graphicalReflectionPool[start];
-                if (current->origin == handle.second.origin && current->area.hits(point)) break;    // we found the handle, now we can start processing from this index onwards.
-            }
-            
-            // skip styles from the same origin and find the layer below
-            for (; 
-                start < currentElement->graphicalReflectionPool.size() && 
-                currentElement->graphicalReflectionPool[start]->origin == handle.second.origin
-                ; start++
-            );
-
-            // now that we have the start index, we can start iterating from that point onwards and every reflected style that hits should contribute to the color via the opacity compute.
-            for (; start < currentElement->graphicalReflectionPool.size(); start++) {
-                auto* reflectedStyle = currentElement->graphicalReflectionPool[start];
-
-                if (reflectedStyle->area.hits(point)) {
-                    handle.second = handle.second.computeColor(reflectedStyle);
-
-                    if (handle.second.opacity == UINT8_MAX) break;    // if we reach 100% opacity, we can stop processing further.
-                }
-            }
-
-            // It is ok if handles opacity is not 100% here, we just let the recursion handle the rest.
-            // Note that if an x<100% opacity handle gets into the final SGR style, then it will be mixed by the terminals active default colors.
+            // regardless of opacity there is no more data here, we need to go back to current containers container container.
             return handle;
         }
 
-        size_t outputCapture::getIndexOf(IVector2 val) const {
-            return (val.y() * dom->getWidth()) + val.x();
+        // only process further if opacity is not 100%
+        if (handle.second.opacity == UINT8_MAX) return handle;
+
+        // here we now have to process the opacity.
+        // Since we are currently in the >>second<< closest hit element
+        // Two probable instances: 
+        //   first: the incoming handle still hovers over some other current container content reflection pool
+        //   second: the incoming handle needs to be calculated via this current containers own identity pool
+        // Since the second is an extension of the first instance, we can do both of them at the same time.
+        
+        size_t start = 0;
+
+        // First find the index of the handle
+        for (; start < currentElement->graphicalReflectionPool.size(); start++) {
+            const activeStyle* current = currentElement->graphicalReflectionPool[start];
+            if (current->origin == handle.second.origin && current->area.hits(point)) break;    // we found the handle, now we can start processing from this index onwards.
         }
+        
+        // skip styles from the same origin and find the layer below
+        for (; 
+            start < currentElement->graphicalReflectionPool.size() && 
+            currentElement->graphicalReflectionPool[start]->origin == handle.second.origin
+            ; start++
+        );
 
-        void outputCapture::computeSGRAreas() {
-            // Clear residue from previous render
-            activeGraphicAttributes.clear();    TODO("Change this to a dif to only render changed areas.")
+        // now that we have the start index, we can start iterating from that point onwards and every reflected style that hits should contribute to the color via the opacity compute.
+        for (; start < currentElement->graphicalReflectionPool.size(); start++) {
+            const auto* reflectedStyle = currentElement->graphicalReflectionPool[start];
 
-            // ask for points where the styling changes
-            for (const auto& pos : dom->getDeltaPoints()) {
-                // trace from top to bottom style
-                auto currentCellStyle = trace(pos, dom).second;
+            if (reflectedStyle->area.hits(point)) {
+                handle.second = handle.second.computeColor(reflectedStyle);
 
-                // transform GGUI style into SGR style
-                auto rasterizedCellStyle = rasterize(currentCellStyle);
-
-                // Only save changes, to minimize SGR sequences
-                if (!activeGraphicAttributes.empty() && rasterizedCellStyle == activeGraphicAttributes.back()) continue;
-                
-                rasterizedCellStyle.start = pos; // SGR needs to know where this style begins
-                activeGraphicAttributes.push_back(rasterizedCellStyle);
+                if (handle.second.opacity == UINT8_MAX) break;    // if we reach 100% opacity, we can stop processing further.
             }
         }
 
-        void outputCapture::preparePresentationBuffer() {
-            static std::string result; // internal cache between renders
+        // It is ok if handles opacity is not 100% here, we just let the recursion handle the rest.
+        // Note that if an x<100% opacity handle gets into the final SGR style, then it will be mixed by the terminals active default colors.
+        return handle;
+    }
 
-            size_t liquefiedSize = 0;
+    size_t outputCapture::getIndexOf(IVector2 val) const {
+        return (val.y() * dom->getWidth()) + val.x();
+    }
 
-            TODO("Remove this when moving from compactString into std::u32string")
-            for (auto& cs : buffer) {
-                liquefiedSize += cs.getLength();
-            }
+    void outputCapture::computeSGRAreas() {
+        // Clear residue from previous render
+        activeGraphicAttributes.clear();    TODO("Change this to a dif to only render changed areas.")
 
-            static std::vector<std::string> preBakedSGRSequences;
+        // ask for points where the styling changes
+        for (const auto& pos : dom->getDeltaPoints()) {
+            // trace from top to bottom style
+            auto currentCellStyle = trace(pos, dom).second;
+
+            // transform GGUI style into SGR style
+            auto rasterizedCellStyle = rasterize(currentCellStyle);
+
+            // Only save changes, to minimize SGR sequences
+            if (!activeGraphicAttributes.empty() && rasterizedCellStyle == activeGraphicAttributes.back()) continue;
             
-            // update the baked SGR container.
-            preBakedSGRSequences.resize(activeGraphicAttributes.size(), {});
+            rasterizedCellStyle.start = pos; // SGR needs to know where this style begins
+            activeGraphicAttributes.push_back(rasterizedCellStyle);
+        }
+    }
 
-            // Since we know how many SGR style attributes were gonna get
-            for (size_t i = 0; i < activeGraphicAttributes.size(); i++) {
-                preBakedSGRSequences[i] = ecma::sequence::toString(
-                    ecma::sequences::presentationControlFunctions::SELECT_GRAPHIC_RENDITION.compile(activeGraphicAttributes[i].compile())
-                );
+    void outputCapture::preparePresentationBuffer() {
+        static std::string result; // internal cache between renders
 
-                liquefiedSize += preBakedSGRSequences[i].size();
-            }
+        size_t liquefiedSize = 0;
 
-            result.resize(liquefiedSize, '\0');
+        TODO("Remove this when moving from compactString into std::u32string")
+        for (const auto& currentCell : buffer) {
+            liquefiedSize += currentCell.getLength();
+        }
 
-            // real heading of the current output buffer index
-            unsigned int outputIndex = 0;
+        static std::vector<std::string> preBakedSGRSequences;
+        
+        // update the baked SGR container.
+        preBakedSGRSequences.resize(activeGraphicAttributes.size(), {});
 
-            size_t currentSGRIndex = 0;             // pre baked SGR code accessor.
-            size_t nextSGRStartPositionAsIndex;     // this tells if the current cell index should take an SGR or not.
+        // Since we know how many SGR style attributes were gonna get
+        for (size_t i = 0; i < activeGraphicAttributes.size(); i++) {
+            preBakedSGRSequences[i] = ecma::sequence::toString(
+                ecma::sequences::presentationControlFunctions::SELECT_GRAPHIC_RENDITION.compile(activeGraphicAttributes[i].compile())
+            );
 
-            if (!activeGraphicAttributes.empty()) {     // Set the initial SGR index.
-                nextSGRStartPositionAsIndex = getIndexOf(activeGraphicAttributes[currentSGRIndex].start);
-            } else {
-                nextSGRStartPositionAsIndex = UINT32_MAX;   // never trigger SGR
-            }
+            liquefiedSize += preBakedSGRSequences[i].size();
+        }
 
-            IVector2 start = {0, 0};
-            // IVector2 end = cursor + dimensions;
-            IVector2 end = cursor + IVector2{dom->getWidth(), dom->getHeight()};
-            assert(cursor == IVector2(0, 0) && "Packet injections not supported yet!");
+        result.resize(liquefiedSize, '\0');
 
-            TODO("Since we know where SGR's are and delta of text, we could just jump between and write the small delta areas only!")
-            for (int y = start.y(); y < end.y(); y++) {
-                for (int x = start.x(); x < end.x(); x++) {
-                    // Add styling
-                    if (getIndexOf({x, y}) == nextSGRStartPositionAsIndex) {
-                        // Insert the SGR sequence into the output buffer
-                        const auto& sgrSequence = preBakedSGRSequences[currentSGRIndex];
+        // real heading of the current output buffer index
+        unsigned int outputIndex = 0;
 
-                        std::memcpy(result.data() + outputIndex, sgrSequence.data(), sgrSequence.size());
-                        outputIndex += sgrSequence.size();
+        size_t currentSGRIndex = 0;             // pre baked SGR code accessor.
+        size_t nextSGRStartPositionAsIndex;     // this tells if the current cell index should take an SGR or not.
 
-                        currentSGRIndex++;
+        if (!activeGraphicAttributes.empty()) {     // Set the initial SGR index.
+            nextSGRStartPositionAsIndex = getIndexOf(activeGraphicAttributes[currentSGRIndex].start);
+        } else {
+            nextSGRStartPositionAsIndex = UINT32_MAX;   // never trigger SGR
+        }
 
-                        if (currentSGRIndex < activeGraphicAttributes.size()) {
-                            nextSGRStartPositionAsIndex = getIndexOf(activeGraphicAttributes[currentSGRIndex].start);
-                        } else {
-                            nextSGRStartPositionAsIndex = UINT32_MAX; // No more SGR sequences to insert
-                        }
+        IVector2 start = {0, 0};
+        // IVector2 end = cursor + dimensions;
+        IVector2 end = cursor + IVector2{dom->getWidth(), dom->getHeight()};
+        assert(cursor == IVector2(0, 0) && "Packet injections not supported yet!");
+
+        TODO("Since we know where SGR's are and delta of text, we could just jump between and write the small delta areas only!")
+        for (int y = start.y(); y < end.y(); y++) {
+            for (int x = start.x(); x < end.x(); x++) {
+                // Add styling
+                if (getIndexOf({x, y}) == nextSGRStartPositionAsIndex) {
+                    // Insert the SGR sequence into the output buffer
+                    const auto& sgrSequence = preBakedSGRSequences[currentSGRIndex];
+
+                    std::memcpy(result.data() + outputIndex, sgrSequence.data(), sgrSequence.size());
+                    outputIndex += sgrSequence.size();
+
+                    currentSGRIndex++;
+
+                    if (currentSGRIndex < activeGraphicAttributes.size()) {
+                        nextSGRStartPositionAsIndex = getIndexOf(activeGraphicAttributes[currentSGRIndex].start);
+                    } else {
+                        nextSGRStartPositionAsIndex = UINT32_MAX; // No more SGR sequences to insert
                     }
-
-                    // Add text
-                    terminal::cell data = buffer[(y * dom->getWidth()) + x];
-
-                    std::memcpy(result.data() + outputIndex, data.getGlyphs().data(), data.getLength());
-                    outputIndex += data.getLength();
                 }
+
+                // Add text
+                terminal::cell data = buffer[(y * dom->getWidth()) + x];
+
+                std::memcpy(result.data() + outputIndex, data.getGlyphs().data(), data.getLength());
+                outputIndex += data.getLength();
             }
-
-            liquefiedBuffer = &result;
         }
 
-        void outputCapture::renderBuffer() {
-            // Write cursor-home, then the frame buffer. Avoid stdio printf/fflush.
-            static const std::string cursorReset = ecma::sequence::toString(ecma::sequences::cursorControlFunctions::CURSOR_POSITION.compile({0, 0}));
+        liquefiedBuffer = &result;
+    }
 
-            queryOutput({
-                cursorReset,
-                *currentStates->screen.liquefiedBuffer
-            });
-        }
+    void outputCapture::renderBuffer() {
+        // Write cursor-home, then the frame buffer. Avoid stdio printf/fflush.
+        static const std::string cursorReset = ecma::sequence::toString(ecma::sequences::cursorControlFunctions::CURSOR_POSITION.compile({0, 0}));
 
-        IVector2 outputCapture::getDimensions() const {
-            return dimensions;
-        }
+        queryOutput({
+            cursorReset,
+            *currentStates->screen.liquefiedBuffer
+        });
+    }
 
-        IVector2 outputCapture::getCursor() const {
-            return cursor;
-        }
+    IVector2 outputCapture::getDimensions() const {
+        return dimensions;
+    }
 
-        void outputCapture::update() {
-            buffer = dom->render();
-        }
+    IVector2 outputCapture::getCursor() const {
+        return cursor;
+    }
 
-        bool query::isConnected() {
+    void outputCapture::update() {
+        buffer = dom->render();
+    }
+
+    bool query::isConnected() {
+        std::unique_lock lock(mutex);
+        return state >= status::CONNECTED;
+    }
+
+    bool query::acknowledgeConnection() {
+        if (terminal::isConnected()) {      // asks the linux/win .cpp if the handles are connected properly
             std::unique_lock lock(mutex);
-            return state >= status::CONNECTED;
+            state = status::CONNECTED;
+            condition.notify_all();
+
+            return true;
         }
 
-        bool query::acknowledgeConnection() {
-            if (terminal::isConnected()) {      // asks the linux/win .cpp if the handles are connected properly
-                std::unique_lock lock(mutex);
-                state = status::CONNECTED;
-                condition.notify_all();
+        return false;
+    }
 
-                return true;
-            }
-
-            return false;
-        }
-
-        void query::addToQueue(std::string_view input) {
-            {
-                std::unique_lock lock(mutex);
-                state = status::SENDING;
-                condition.notify_all();
-            }
-
-            queryOutput({input});
-        }
-
-        void query::informParsedInput() {
-            // Only notify
-            if (inputSize > 0) {
-                std::unique_lock lock(mutex);
-                state = status::RECEIVING;
-                condition.notify_all();
-            }
-        }
-
-        void query::pollInput() {
-            queryInput();
-        }
-
-        bool query::waitForInput() {
+    void query::addToQueue(std::string_view input) {
+        {
             std::unique_lock lock(mutex);
-            // Only wait for some time and not stall
-            condition.wait(lock, [&](){ return state == status::RECEIVING; });
-
-            // check if timeout or successful
-            return state == status::RECEIVING;
+            state = status::SENDING;
+            condition.notify_all();
         }
 
-        void base::enableExtensions() {
-            static std::string queryDeviceAttribute = ecma::sequence::toString(ecma::sequences::miscellaneousControlFunctions::DEVICE_ATTRIBUTES.compile({}));
+        queryOutput({input});
+    }
 
-            std::vector<ecma::sequence::base*> unwantedSequences;
+    void query::informParsedInput() {
+        // Only notify
+        if (inputSize > 0) {
+            std::unique_lock lock(mutex);
+            state = status::RECEIVING;
+            condition.notify_all();
+        }
+    }
 
-            // Transmit the sequence
-            transmission.addToQueue(queryDeviceAttribute);
+    void query::pollInput() {
+        queryInput();
+    }
 
-            // Wait for parsed answer
-            transmission.waitForInput();
+    bool query::waitForInput() {
+        std::unique_lock lock(mutex);
+        // Only wait for some time and not stall
+        condition.wait(lock, [&](){ return state == status::RECEIVING; });
 
-            auto sequences = transmission.parsedInputBuffer;
+        // check if timeout or successful
+        return state == status::RECEIVING;
+    }
 
-            for (auto* sequence : sequences) {
-                if (decComponents.verifyExtensions(sequence)) continue;          // skip going through with others.
-                // if (xtermComponents.verifyExtensions(sequence)) continue;     // skip going through with others.
-                // if (kittyComponents.verifyExtensions(sequence)) continue;     // skip going through with others.
-            }
+    void base::enableExtensions() {
+        static std::string queryDeviceAttribute = ecma::sequence::toString(ecma::sequences::miscellaneousControlFunctions::DEVICE_ATTRIBUTES.compile({}));
+
+        std::vector<ecma::sequence::base*> unwantedSequences;
+
+        // Transmit the sequence
+        transmission.addToQueue(queryDeviceAttribute);
+
+        // Wait for parsed answer
+        transmission.waitForInput();
+
+        auto sequences = transmission.parsedInputBuffer;
+
+        for (auto* sequence : sequences) {
+            if (decComponents.verifyExtensions(sequence)) continue;          // skip going through with others.
+            // if (xtermComponents.verifyExtensions(sequence)) continue;     // skip going through with others.
+            // if (kittyComponents.verifyExtensions(sequence)) continue;     // skip going through with others.
+        }
+    }
+
+    void init(converter::input::base* inputPoller) {
+        currentStates = new base(inputPoller);
+
+        // connect to I/O
+        platformInit();
+
+        // Check whether the platform specific connection was established correctly.
+        currentStates->transmission.acknowledgeConnection();
+
+        // Start probing connection features
+        currentStates->enableExtensions();
+
+        // Fetch the initial window size, the linux/win- cpp will automatically update it.
+        updateScreenDimensions();
+    }
+
+    extern void platformDeinit();
+    
+    void deinit() {
+        logger::log("Reverting to normal console mode...");
+
+        // Calls based on feature flags correct public and/or private SGR or other extension CSI's.
+
+        // Now cal platform specific de-initializers
+        platformDeinit();
+    }
+
+    void base::parseInput() {
+        // Parses input based on modular features, each brought by their own respective flag.
+
+        // If special loaders needed to be present they better have been initialized properly at initialization phase when the handshake/probing happens.
+        transmission.parsedInputBuffer = ecma::sequence::parse(std::string_view(transmission.inputBuffer.data(), transmission.inputSize));   // move the parsed sequences into the public buffer for outside access.
+    
+        // Inform waiters that the polled data has been received
+        terminal::currentStates->transmission.informParsedInput();
+    }
+
+    std::vector<IVector2> renderable::getDeltaPoints() {
+        std::vector<IVector2> result;
+        // Rough heuristic to prevent constant reallocations
+        result.reserve(graphicalReflectionPool.size() * 50);    // multiply by the probable vertical length
+
+        for (const auto* reflection : graphicalReflectionPool) {
+            // no need to skip hidden since the reflection pool already filters them out.
+
+            const std::vector<IVector2>& tmp = reflection->area.getVerticalFaces();
+
+            // blind add
+            result.insert(result.end(), tmp.begin(), tmp.end());
         }
 
-        void init(converter::input::base* inputPoller) {
-            currentStates = new base(inputPoller);
+        // sort the points
+        std::sort(result.begin(), result.end(), [](const IVector2& a, const IVector2& b) {
+            return std::tie(a.y(), a.x()) < std::tie(b.y(), b.x());
+        });
 
-            // connect to I/O
-            platformInit();
+        // remove duplicates
+        result.erase(
+            std::unique(result.begin(), result.end()),
+            result.end()
+        );
 
-            // Check whether the platform specific connection was established correctly.
-            currentStates->transmission.acknowledgeConnection();
+        // account only hits that are inside the dom area
+        result.erase(
+            std::remove_if(result.begin(), result.end(), [this](const IVector2& point) {
+                return graphicalIdentityPool.back().area.hits(point) == false;
+            }),
+            result.end()
+        );
 
-            // Start probing connection features
-            currentStates->enableExtensions();
+        return result;
+    }
 
-            // Fetch the initial window size, the linux/win- cpp will automatically update it.
-            updateScreenDimensions();
-        }
+    void renderable::compileActiveGraphics() {
+        graphicalIdentityPool.reserve(2);
 
-        extern void platformDeinit();
-        
-        void deinit() {
-            logger::log("Reverting to normal console mode...");
+        // We need to promote to an element to get some information
+        element* owner = static_cast<element*>(this);
 
-            // Calls based on feature flags correct public and/or private SGR or other extension CSI's.
+        RGB textColor = owner->getTextColor();
+        RGB backgroundColor = owner->getBackgroundColor();
 
-            // Now cal platform specific de-initializers
-            platformDeinit();
-        }
+        int borderOffset = owner->hasBorder();
 
-        void base::parseInput() {
-            // Parses input based on modular features, each brought by their own respective flag.
+        // Add the inner area
+        graphicalIdentityPool.push_back({
+            {   // rectangle area
+                absolutePositionCache + IVector3{borderOffset, borderOffset, 0},
+                {owner->getWidth() - borderOffset*2, owner->getHeight() - borderOffset*2}
+            },
+            textColor, backgroundColor,
+            owner->getOpacity() * UINT8_MAX,
+            textAttributes,
+            owner
+        });
 
-            // If special loaders needed to be present they better have been initialized properly at initialization phase when the handshake/probing happens.
-            transmission.parsedInputBuffer = ecma::sequence::parse(std::string_view(transmission.inputBuffer.data(), transmission.inputSize));   // move the parsed sequences into the public buffer for outside access.
-        
-            // Inform waiters that the polled data has been received
-            terminal::currentStates->transmission.informParsedInput();
-        }
+        // Add the border area; To keep z-priority, so largest view is last
+        if (owner->hasBorder()) {     TODO("This seems very inefficient!")
+            RGB borderColor = owner->getBorderGlyphColor();
+            RGB borderBackgroundColor = owner->getBorderBackgroundColor();
 
-        std::vector<IVector2> renderable::getDeltaPoints() {
-            std::vector<IVector2> result;
-            // Rough heuristic to prevent constant reallocations
-            result.reserve(graphicalReflectionPool.size() * 50);    // multiply by the probable vertical length
+            TODO("Add here the border width into the offset calculation")
 
-            for (const auto* reflection : graphicalReflectionPool) {
-                // no need to skip hidden since the reflection pool already filters them out.
-
-                const std::vector<IVector2>& tmp = reflection->area.getVerticalFaces();
-
-                // blind add
-                result.insert(result.end(), tmp.begin(), tmp.end());
-            }
-
-            // sort the points
-            std::sort(result.begin(), result.end(), [](const IVector2& a, const IVector2& b) {
-                return std::tie(a.y(), a.x()) < std::tie(b.y(), b.x());
-            });
-
-            // remove duplicates
-            result.erase(
-                std::unique(result.begin(), result.end()),
-                result.end()
-            );
-
-            // account only hits that are inside the dom area
-            result.erase(
-                std::remove_if(result.begin(), result.end(), [this](const IVector2& point) {
-                    return graphicalIdentityPool.back().area.hits(point) == false;
-                }),
-                result.end()
-            );
-
-            return result;
-        }
-
-        void renderable::compileActiveGraphics() {
-            graphicalIdentityPool.reserve(2);
-
-            // We need to promote to an element to get some information
-            element* owner = static_cast<element*>(this);
-
-            RGB textColor = owner->getTextColor();
-            RGB backgroundColor = owner->getBackgroundColor();
-
-            int borderOffset = owner->hasBorder();
-
-            // Add the inner area
             graphicalIdentityPool.push_back({
                 {   // rectangle area
-                    absolutePositionCache + IVector3{borderOffset, borderOffset, 0},
-                    {owner->getWidth() - borderOffset*2, owner->getHeight() - borderOffset*2}
+                    absolutePositionCache,
+                    {owner->getWidth(), owner->getHeight()}
                 },
-                textColor, backgroundColor,
+                borderColor, borderBackgroundColor,
                 owner->getOpacity() * UINT8_MAX,
                 textAttributes,
                 owner
             });
-
-            // Add the border area; To keep z-priority, so largest view is last
-            if (owner->hasBorder()) {     TODO("This seems very inefficient!")
-                RGB borderColor = owner->getBorderGlyphColor();
-                RGB borderBackgroundColor = owner->getBorderBackgroundColor();
-
-                TODO("Add here the border width into the offset calculation")
-
-                graphicalIdentityPool.push_back({
-                    {   // rectangle area
-                        absolutePositionCache,
-                        {owner->getWidth(), owner->getHeight()}
-                    },
-                    borderColor, borderBackgroundColor,
-                    owner->getOpacity() * UINT8_MAX,
-                    textAttributes,
-                    owner
-                });
-            }
-
-            std::transform(
-                graphicalIdentityPool.begin(), graphicalIdentityPool.end(),
-                std::back_inserter(graphicalReflectionPool),
-                [](activeStyle& as) { return &as; }
-            );
         }
+
+        std::transform(
+            graphicalIdentityPool.begin(), graphicalIdentityPool.end(),
+            std::back_inserter(graphicalReflectionPool),
+            [](activeStyle& as) { return &as; }
+        );
+    }
+    
+    void renderable::updateAbsolutePositionCache() {
+        const auto previousPosition = absolutePositionCache;
+        absolutePositionCache = {0, 0, 0};
         
-        void renderable::updateAbsolutePositionCache() {
-            const auto previousPosition = absolutePositionCache;
-            absolutePositionCache = {0, 0, 0};
-            
-            // We need to promote to an element to get some information
-            element* current = static_cast<element*>(this);
+        // We need to promote to an element to get some information
+        element* current = static_cast<element*>(this);
 
-            if (current->container) {
-                // Get the position of the container
-                absolutePositionCache = current->container->getAbsolutePosition();
+        if (current->container) {
+            // Get the position of the container
+            absolutePositionCache = current->container->getAbsolutePosition();
 
-                absolutePositionCache.z() += 1;   // mainly used for the compute of rectangle priority
-            }
+            absolutePositionCache.z() += 1;   // mainly used for the compute of rectangle priority
+        }
 
-            // Add the position of the element to the position of its container
-            // If borders collude their affects should have been computed either at adding or computeDynamics functions!!!
-            absolutePositionCache += current->getPosition();
+        // Add the position of the element to the position of its container
+        // If borders collude their affects should have been computed either at adding or computeDynamics functions!!!
+        absolutePositionCache += current->getPosition();
 
-            if (previousPosition != absolutePositionCache) current->flags |= stain::types::GRAPHICS;
+        if (previousPosition != absolutePositionCache) current->flags |= stain::types::GRAPHICS;
 
-            // Moving a container also moves the style rectangles of its descendants.
-            if (auto* list = dynamic_cast<listView*>(current)) {
-                current->flags |= stain::types::DEEP;   // Force the render() to go through content
-                for (auto* child : list->getContent()) child->flags |= stain::types::MOVE;
-            }
+        // Moving a container also moves the style rectangles of its descendants.
+        if (auto* list = dynamic_cast<listView*>(current)) {
+            current->flags |= stain::types::DEEP;   // Force the render() to go through content
+            for (auto* child : list->getContent()) child->flags |= stain::types::MOVE;
         }
     }
 }

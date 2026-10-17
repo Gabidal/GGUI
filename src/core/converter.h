@@ -9,187 +9,185 @@
 
 #include "utils/utils.h"
 
-namespace GGUI {
-    /**
-     * @brief Combines the terminal and DRM backend input polling and converts them into GGUI events.
-     */
-    namespace converter {
-        namespace output {
-            struct base;
-        }
+/**
+ * @brief Combines the terminal and DRM backend input polling and converts them into GGUI events.
+ */
+namespace GGUI::converter {
+    namespace output {
+        struct base;
+    }
 
-        namespace input {
-            struct key {
-                enum class types : uint8_t {
-                    __min                   = 32,
+    namespace input {
+        struct alignas(16) key {
+            enum class types : uint8_t {
+                __min                   = 32,
 
-                    SPACE                   = 32,
+                SPACE                   = 32,
 
-                    // Visible characters
-                    // ...
-                    // - END
+                // Visible characters
+                // ...
+                // - END
 
-                    DELETE                  = 127,
+                DELETE                  = 127,
 
-                    ALL_LETTERS,     // Used when wanting to gather all visible characters.
+                ALL_LETTERS,     // Used when wanting to gather all visible characters.
 
-                    INSERT,
+                INSERT,
 
-                    SHIFT,
-                    CTRL,
-                    SUPER,
-                    ALT,
-                    ALTGR,
-                    FN,
-                    ESCAPE,
-                    TABULATOR,
-                    ENTER,
-                    BACKSPACE,
+                SHIFT,
+                CTRL,
+                SUPER,
+                ALT,
+                ALTGR,
+                FN,
+                ESCAPE,
+                TABULATOR,
+                ENTER,
+                BACKSPACE,
 
-                    F1,
-                    F2,
-                    F3,
-                    F4,
-                    F5,
-                    F6,
-                    F7,
-                    F8,
-                    F9,
-                    F10,
-                    F11,
-                    F12,
+                F1,
+                F2,
+                F3,
+                F4,
+                F5,
+                F6,
+                F7,
+                F8,
+                F9,
+                F10,
+                F11,
+                F12,
 
-                    ARROW_UP,
-                    ARROW_DOWN,
-                    ARROW_LEFT,
-                    ARROW_RIGHT,
+                ARROW_UP,
+                ARROW_DOWN,
+                ARROW_LEFT,
+                ARROW_RIGHT,
 
-                    HOME,
-                    END,
+                HOME,
+                END,
 
-                    PAGE_UP,
-                    PAGE_DOWN,
+                PAGE_UP,
+                PAGE_DOWN,
 
-                    LEFT_CLICK,
-                    MIDDLE_CLICK,
-                    RIGHT_CLICK,
+                LEFT_CLICK,
+                MIDDLE_CLICK,
+                RIGHT_CLICK,
 
-                    DRAGGING,
+                DRAGGING,
 
-                    SCROLL_UP,
-                    SCROLL_DOWN,
+                SCROLL_UP,
+                SCROLL_DOWN,
 
-                    __max,
-                };
-
-                bool state;
-                std::chrono::steady_clock::time_point captureTime = std::chrono::steady_clock::now();
-
-                key(bool newState = false) : state(newState) {}
+                __max,
             };
 
-            using allKeys = std::array<key, (size_t)table::getSize<key::types>()>;
+            bool state;
+            std::chrono::steady_clock::time_point captureTime = std::chrono::steady_clock::now();
 
-            /**
-             * @brief Contains the incoming key information
-             * NOTE: this information is shared, so fetch this information from the correct backend interface!
-             */
-            struct base {
-                output::base* out = nullptr;
+            key(bool newState = false) : state(newState) {}
+        };
 
-                allKeys currentKeyboardState = {};
-                allKeys previousKeyboardState = {};     // used to compare changed states.
+        using allKeys = std::array<key, (size_t)table::getSize<key::types>()>;
 
-                std::thread pollingThread;
+        /**
+            * @brief Contains the incoming key information
+            * NOTE: this information is shared, so fetch this information from the correct backend interface!
+            */
+        struct alignas(128) base {
+            output::base* out = nullptr;
 
-                base();
+            allKeys currentKeyboardState = {};
+            allKeys previousKeyboardState = {};     // used to compare changed states.
 
-                void inputThread();
+            std::thread pollingThread;
+
+            base();
+
+            void inputThread();
+        };
+    }
+
+    namespace output {
+        namespace event {
+            using selectedKeys = std::vector<input::key::types>;
+
+            struct alignas(32) base {
+                selectedKeys criteria;
+
+                base(std::initializer_list<input::key::types> keys = {}) : criteria(keys) {}
+
+                bool has(input::key::types t) const {
+                    for (const auto& key : criteria){
+                        if (key == t) return true;
+                    }
+                    return false;
+                }
             };
-        }
 
-        namespace output {
-            namespace event {
-                using selectedKeys = std::vector<input::key::types>;
-    
-                struct base{
-                    selectedKeys criteria;
-
-                    base(std::initializer_list<input::key::types> keys = {}) : criteria(keys) {}
-
-                    bool has(input::key::types t) const {
-                        for (const auto& key : criteria){
-                            if (key == t) return true;
-                        }
-                        return false;
-                    }
-                };
-    
-                struct action : public base {
-                    std::string ID;
-                    std::function<bool(event::base*)> job;
-                
-                    action(const selectedKeys& Criteria, std::function<bool(event::base*)> Job, std::string id) : ID(std::move(id)), job(std::move(Job)) {
-                        criteria = Criteria;
-                    }
-                };
-    
-                struct memory : public action {
-                    enum class types : uint8_t {
-                        NONE               = 0 << 0,
-                        PROLONG_MEMORY     = 1 << 0,
-                        RETRIGGER          = 1 << 1
-                    } flags = types::NONE;
-
-                    std::chrono::steady_clock::time_point startTime;
-                    std::chrono::steady_clock::duration endTime;
-    
-                    // When the job starts, job, prolong previous similar job by this time.
-                    memory(std::chrono::steady_clock::duration end, std::function<bool(event::base*)> Job, types Flags = types::NONE, std::string id = "") : action({}, std::move(Job), std::move(id)) {
-                        startTime = std::chrono::steady_clock::now();
-                        endTime = end;
-                        flags = Flags;
-                    }
-    
-                    bool is(types f) const {
-                        return ((uint8_t)flags & (uint8_t)f) > 0;
-                    }
-    
-                    void add(types f){
-                        flags = (types)((uint8_t)flags | (uint8_t)f);
-                    }
-
-                    void remove(types f){
-                        flags = (types)((uint8_t)flags & ~(uint8_t)f);
-                    }
-                };
-            }
+            struct alignas(32) action : public base {
+                std::string ID;
+                std::function<bool(event::base*)> job;
             
-            struct base {
-                input::base* in;   // helper to more easily reference the incoming data and transform it.
+                action(const selectedKeys& Criteria, std::function<bool(event::base*)> Job, std::string id) : ID(std::move(id)), job(std::move(Job)) {
+                    criteria = Criteria;
+                }
+            };
 
-                std::vector<element*> handlers;     // A simple registry of elements that have registered themselves as event handlers
-                std::vector<event::base*> data;     // Converted data
+            struct alignas(64) memory : public action {
+                enum class types : uint8_t {
+                    NONE               = 0 << 0,
+                    PROLONG_MEMORY     = 1 << 0,
+                    RETRIGGER          = 1 << 1
+                } flags = types::NONE;
 
-                base() = default;
+                std::chrono::steady_clock::time_point startTime;
+                std::chrono::steady_clock::duration endTime;
 
-                // Reads the incoming data and transform it into 
-                void transformInput();
+                // When the job starts, job, prolong previous similar job by this time.
+                memory(std::chrono::steady_clock::duration end, std::function<bool(event::base*)> Job, types Flags = types::NONE, std::string id = "") : action({}, std::move(Job), std::move(id)) {
+                    startTime = std::chrono::steady_clock::now();
+                    endTime = end;
+                    flags = Flags;
+                }
 
-            protected:
-                void eventHandler(); 
-                void Populate_Inputs_For_Held_Down_Keys();
-                void mouseAPI();
-                void scrollAPI();
-                void handleEscape();
-                void handleTabulator();
+                bool is(types f) const {
+                    return ((uint8_t)flags & (uint8_t)f) > 0;
+                }
+
+                void add(types f){
+                    flags = (types)((uint8_t)flags | (uint8_t)f);
+                }
+
+                void remove(types f){
+                    flags = (types)((uint8_t)flags & ~(uint8_t)f);
+                }
             };
         }
+        
+        struct base {
+            input::base* in;   // helper to more easily reference the incoming data and transform it.
 
-        inline void link(input::base* in, output::base* out) {
-            in->out = out;
-            out->in = in;
-        }
+            std::vector<element*> handlers;     // A simple registry of elements that have registered themselves as event handlers
+            std::vector<event::base*> data;     // Converted data
+
+            base() = default;
+
+            // Reads the incoming data and transform it into 
+            void transformInput();
+
+        protected:
+            void eventHandler(); 
+            void Populate_Inputs_For_Held_Down_Keys();
+            void mouseAPI();
+            void scrollAPI();
+            void handleEscape();
+            void handleTabulator();
+        };
+    }
+
+    inline void link(input::base* in, output::base* out) {
+        in->out = out;
+        out->in = in;
     }
 }
 

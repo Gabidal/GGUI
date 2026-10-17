@@ -208,7 +208,7 @@ namespace GGUI{
     using FVector2 = NVector<float, 2>;
     using FVector3 = NVector<float, 3>;
 
-    class rectangle {
+    class alignas(16) rectangle {
     public:
         IVector3 position;
         IVector2 size;
@@ -666,7 +666,7 @@ namespace GGUI{
 
     template<typename T>
     requires std::is_default_constructible_v<T> && is_arithmeticType<T>
-    struct optionallyRelative {
+    struct alignas(8) optionallyRelative {
         enum class types : uint8_t {
             DEFAULT,        // no further evaluation needed, just return the value
             PERCENTAGE      // the value is a percentage of the container attribute
@@ -764,7 +764,7 @@ namespace GGUI{
     template<typename T, size_t DIM>
     using relativeNVector = NVector<optionallyRelative<T>, DIM>;
 
-    struct styledBorder {
+    struct alignas(128) styledBorder {
         std::array<std::string_view, 11> data = {
             "┌", "└", "┐", "┘", "│", "─", "├", "┤", "┬", "┴", "┼"
         };

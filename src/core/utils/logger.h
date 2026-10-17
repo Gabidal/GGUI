@@ -6,19 +6,15 @@
 #include <fstream>
 #include <filesystem>
 
-namespace GGUI{
+namespace GGUI::logger {
+    extern std::filesystem::path logFile;
 
-    // Contains Logging utils.
-    namespace logger{
-        extern std::filesystem::path logFile;
+    // File handle for logging to files for Atomic access across different threads.
+    extern thread::guard<std::basic_ofstream<char>> handle;
 
-        // File handle for logging to files for Atomic access across different threads.
-        extern thread::guard<std::basic_ofstream<char>> handle;
+    extern void log(const std::string& Text);
 
-        extern void log(const std::string& Text);
-    
-        extern void loggerThread();
-    }
+    extern void loggerThread();
 }
 
 #endif

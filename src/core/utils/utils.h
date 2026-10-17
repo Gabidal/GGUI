@@ -22,11 +22,15 @@ namespace GGUI{
     #define GGUI_STR(x) GGUI_STR_IMPL(x)
 
     #if defined(__clang__) || defined(__GNUC__)
-        #define TODO(text) _Pragma(GGUI_STR(message("TODO: " text)))
+        #define TODO(text) /*_Pragma(GGUI_STR(message("TODO: " text)))*/
     #else
         #define TODO(text)
     #endif
     // ===               ===, this is probably useless weight, but im gonna try this regardless hehe :)
+
+    // === PACK MACRO
+    #define pack __attribute__((packed))
+    // ===
 
     namespace utils{
         /**
