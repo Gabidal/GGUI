@@ -199,7 +199,7 @@ namespace GGUI {
                     // Add styling
                     if (getIndexOf({x, y}) == nextSGRStartPositionAsIndex) {
                         // Insert the SGR sequence into the output buffer
-                        auto sgrSequence = preBakedSGRSequences[currentSGRIndex];
+                        const auto& sgrSequence = preBakedSGRSequences[currentSGRIndex];
 
                         std::memcpy(result.data() + outputIndex, sgrSequence.data(), sgrSequence.size());
                         outputIndex += sgrSequence.size();
