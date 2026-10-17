@@ -455,7 +455,7 @@ namespace GGUI{
             std::vector<enumType> result;
 
             for (containerType i = static_cast<containerType>(enumType::__min); i <= static_cast<containerType>(enumType::__max); ++i) {
-                containerType bitMask = static_cast<containerType>(1) << (i - 1);
+                containerType bitMask = static_cast<containerType>(1) << std::max<containerType>((i - 1), 0);  // If first enum value is zero, avoid -1
                 if ((data & bitMask) != 0) {
                     result.push_back(static_cast<enumType>(i));
                 }
