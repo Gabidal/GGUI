@@ -1,1 +1,6 @@
-Checks: 'performance*,altera*,readability*,cppcoreguidelines*'
+Checks: >
+  performance*,
+  altera*,
+  cppcoreguidelines*,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
+  -cppcoreguidelines-special-member-functions,

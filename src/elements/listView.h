@@ -26,9 +26,7 @@ namespace GGUI{
     public:
 
         template<typename... elements>
-        listView(linearMask<containerFlags> options, elements*... e) : element() {
-            containerFlag = containerFlag | options;
-            
+        listView(elements*... e) : element() {
             (add(e), ...);
         }
 
@@ -148,7 +146,7 @@ namespace GGUI{
         element* copy() const override;
     protected:
         element* createInstance() const override {
-            return new listView(containerFlags::DEFAULT);
+            return new listView();
         }
 
         void updateZOrderedContent();
@@ -185,7 +183,7 @@ namespace GGUI{
         int scrollIndex = 0;  // Render based on the offset of the scrollIndex by flow direction.
     public:
 
-        scrollView() : listView(containerFlags::DEFAULT) { containerFlag.add(containerFlags::overflow); }
+        scrollView() : listView() { containerFlag.add(containerFlags::overflow); }
 
         void scrollUp() { scrollIndex++; };
 

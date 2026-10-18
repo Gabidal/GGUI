@@ -156,7 +156,7 @@ namespace GGUI{
             // link the input poller pairs
             converter::link(inputManager, inputConverter);
 
-            main = new listView(listView::containerFlags::DEFAULT);
+            main = new listView();
             main->setName("main");
             main->setOverflow(true);
 
