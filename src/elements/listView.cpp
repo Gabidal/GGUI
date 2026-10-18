@@ -53,6 +53,7 @@ namespace GGUI {
         listView* new_element = static_cast<listView*>(element::copy());
         
         // copy the contents over.
+        new_element->content.resize(content.size());
         for (unsigned int i = 0; i < this->content.size(); i++){
             new_element->content[i] = this->content[i]->copy();
         }
@@ -60,27 +61,10 @@ namespace GGUI {
         return new_element;
     }
 
-    const std::vector<element*> listView::getContent() { return content; }
+    const std::vector<element*>& listView::getContent() const { return content; }
 
-    std::vector<element*> listView::getVisibleContent() const {
-        std::vector<element*> result;
-        result.reserve(content.size());
-
-        for (auto* c : content) {
-            assert(c && "Content element is nullptr!");
-
-            if (!c->getDisplay() || !contentIsShown(c))
-                    continue;
-
-            result.push_back(c);
-        }
-
-        // sort result by z-priority, higher z is first
-        std::sort(result.begin(), result.end(), [](const element* a, const element* b) {
-            return a->getPosition().z() > b->getPosition().z();
-        });
-
-        return result;
+    const std::vector<element*>& listView::getVisibleOrderedContent() const {
+        return zOrderedContent;
     }
 
     listView* listView::setDisplay(bool f) {
@@ -298,15 +282,22 @@ namespace GGUI {
             flags ^= (stain::types::NOT_RENDERED);
         }
 
-        //This will add the content windows to the Result buffer
-        if (flags.has(stain::types::DEEP)){
-            flags ^= (stain::types::DEEP);
-
+        // Give graphic only updates also refresh on identity pools
+        if (flags.has(stain::types::DEEP) || flags.has(stain::types::GRAPHICS)) {
             // clean reflection pool
             graphicalReflectionPool.clear();
             graphicalIdentityPool.clear();
             // Resets baked graphics and reserves for content*2+2, for the incoming deep stains.
             graphicalReflectionPool.reserve(content.size() * 2 + 2); 
+        }
+
+        //This will add the content windows to the Result buffer
+        if (flags.has(stain::types::DEEP)){
+            flags ^= (stain::types::DEEP);
+
+            // Caches z-ordered content for the later stages of the rendering pipeline.
+            updateZOrderedContent();
+
             flags |= (stain::types::GRAPHICS);
 
             for (element* c : content){
@@ -366,6 +357,27 @@ namespace GGUI {
         }
 
         return cellBuffer;
+    }
+
+    void listView::updateZOrderedContent() {
+        // Reset & Resize
+        zOrderedContent.clear();
+        zOrderedContent.resize(content.size());
+
+        for (size_t i = 0; i < content.size(); i++) {
+            element* c = content[i];
+            assert(c && "Content element is nullptr!");
+
+            if (!c->getDisplay() || !contentIsShown(c))
+                    continue;
+
+            zOrderedContent[i] = c;
+        }
+
+        // sort zOrderedContent by z-priority, higher z is first
+        std::sort(zOrderedContent.begin(), zOrderedContent.end(), [](const element* a, const element* b) {
+            return a->getPosition().z() > b->getPosition().z();
+        });
     }
 
     IVector2 listView::getGrowthDirection() const {
@@ -700,7 +712,7 @@ namespace GGUI {
         }
 
         // If scrolling events dont exist but we allow to, then create them:
-        if (!scrollingEventsExists == allow) {
+        if (!scrollingEventsExists && allow) {
             this->on({converter::input::key::types::SCROLL_UP}, [this](converter::output::event::base*) {
                 this->scrollUp();
                 return true;
@@ -710,7 +722,7 @@ namespace GGUI {
                 this->scrollDown();
                 return true;
             });
-        } else if (scrollingEventsExists == !allow) {   // If scrolling events exist, but we dont allow, then:
+        } else if (scrollingEventsExists && !allow) {   // If scrolling events exist, but we dont allow, then:
             removeEventHandler(std::max(scrollUpEventHandlerIndex, scrollDownEventHandlerIndex));   // remove the later one so the prior ones index does not get shifted
             removeEventHandler(std::min(scrollUpEventHandlerIndex, scrollDownEventHandlerIndex));   // remove the prior one
         }

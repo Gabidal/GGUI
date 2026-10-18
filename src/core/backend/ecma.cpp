@@ -130,7 +130,7 @@ namespace GGUI::terminal::ecma {
 
                 return {
                     finalFunctionAt + 1,
-                    new sequence::control<sequence::parameter::numeric, uint8_t>(params, tail)
+                    new sequence::control<sequence::parameter::numeric, uint8_t>(std::move(params), tail)
                 };
 
             } else if (header == table::C1::APC || header == table::C1::DCS || header == table::C1::OSC || header == table::C1::PM || header == table::C1::SOS) {
@@ -205,7 +205,7 @@ namespace GGUI::terminal::ecma {
     }
 
     // parses sequence coming from SGR
-    std::pair<size_t, RGB> parseColorFromSGR(activeSGRStyle::directColorTypes dt, size_t start, std::vector<sequence::parameter::selectable<graphicalTextAttributes>>& params) {
+    std::pair<size_t, RGB> parseColorFromSGR(activeSGRStyle::directColorTypes dt, size_t start, const std::vector<sequence::parameter::selectable<graphicalTextAttributes>>& params) {
         switch (dt) {
             case activeSGRStyle::directColorTypes::INDEXED:
                 return {1, currentStates->colorIndexMap[(uint8_t)params[start].getValueAsInteger()]};
@@ -239,13 +239,15 @@ namespace GGUI::terminal::ecma {
         }
     }
 
-    void activeSGRStyle::parseArguments(std::vector<sequence::parameter::selectable<graphicalTextAttributes>>& params) {
+    void activeSGRStyle::parseArguments(const std::vector<sequence::parameter::selectable<graphicalTextAttributes>>& params) {
         for (size_t i = 0; i < params.size(); i++) {
             graphicalTextAttributes currentType = params[i].getValueAsInteger();
 
             if (currentType == graphicalTextAttributes::FOREGROUND_COLOR || currentType == graphicalTextAttributes::BACKGROUND_COLOR) {
+                assert(i + 1 < params.size() && "Expected a color type parameter after FOREGROUND_COLOR or BACKGROUND_COLOR.");
                 activeSGRStyle::directColorTypes colorType = (activeSGRStyle::directColorTypes)params[++i].getValueAsInteger();
 
+                assert(i < params.size() && "Expected color values after color type parameter.");
                 std::pair<size_t, RGB> parsedColor = parseColorFromSGR(colorType, ++i, params);
                 
                 if (currentType == graphicalTextAttributes::FOREGROUND_COLOR)   this->textColor = parsedColor.second;
@@ -1088,10 +1090,10 @@ namespace GGUI::terminal::ecma {
                 const auto& activeModes = currentStates->ecmaComponents.activeModes;
 
                 auto cursorPositionAtBuffer = currentStates->ecmaComponents.getPresentationPositionAsBufferAddress();
-                auto lineLimitAtBuffer = currentStates->ecmaComponents.activePresentationBuffer.begin() + (
+                auto lineLimitAtBuffer = currentStates->ecmaComponents.activePresentationBuffer->begin() + (
                     currentStates->screen.getIndexOf(currentStates->screen.getCursor()) - currentStates->ecmaComponents.activePresentationPosition.x()   // Is is to ge the actual buffer cell position, and then remove the character so that we can insert our own line limit instead
                 ) + currentStates->ecmaComponents.lineLimitPosition.x();
-                auto lineHomeAtBuffer = currentStates->ecmaComponents.activePresentationBuffer.begin() + (
+                auto lineHomeAtBuffer = currentStates->ecmaComponents.activePresentationBuffer->begin() + (
                     currentStates->screen.getIndexOf(currentStates->screen.getCursor()) - currentStates->ecmaComponents.activePresentationPosition.x()   // Is is to ge the actual buffer cell position, and then remove the character so that we can insert our own line home instead
                 ) + currentStates->ecmaComponents.homeLinePosition.x();
 
@@ -1139,11 +1141,11 @@ namespace GGUI::terminal::ecma {
 
                 auto screenWidth = currentStates->ecmaComponents.activeScreenDimensions.x();
 
-                auto activeLineBegin = currentStates->ecmaComponents.activePresentationBuffer.begin() + (
+                auto activeLineBegin = currentStates->ecmaComponents.activePresentationBuffer->begin() + (
                     currentStates->screen.getIndexOf(currentStates->screen.getCursor()) - currentStates->ecmaComponents.activePresentationPosition.x()
                 );
 
-                auto lineLimitAtBuffer = currentStates->ecmaComponents.activePresentationBuffer.begin() + (
+                auto lineLimitAtBuffer = currentStates->ecmaComponents.activePresentationBuffer->begin() + (
                     currentStates->ecmaComponents.lineLimitPosition.y() + 1
                 ) * screenWidth;
 
@@ -1165,7 +1167,7 @@ namespace GGUI::terminal::ecma {
                     auto startOfAffectedArea = activeLineBegin - insertedCellCount + screenWidth;
 
                     std::move_backward(
-                        currentStates->ecmaComponents.activePresentationBuffer.begin(),
+                        currentStates->ecmaComponents.activePresentationBuffer->begin(),
                         startOfAffectedArea,
                         activeLineBegin + screenWidth
                     );

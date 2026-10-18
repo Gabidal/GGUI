@@ -34,8 +34,6 @@ namespace GGUI{
         class bufferCapture;
 
         extern thread::guard<std::vector<converter::output::event::memory>> remember;
-        
-        extern std::unordered_map<std::string_view, element*> elementNames;
 
         class selectable {
             element* selected = nullptr;

@@ -18,7 +18,8 @@ namespace GGUI{
         };
     protected:
         IVector2 lastAddedElementInfo = {};
-        std::vector<element*> content;
+        std::vector<element*> content;      // Contains the contents in adding order
+        std::vector<element*> zOrderedContent;  // Updated in render()
 
         rectangle innerBounds;  // Cached inner bounds from border offset and margins
         linearMask<containerFlags> containerFlag = containerFlags::dynamic;
@@ -90,11 +91,11 @@ namespace GGUI{
 
         template<typename T>
         T* get(int index){
-            if (index > (signed)content.size() - 1)
+            if (std::abs(index) > (signed)content.size() - 1)
                 return nullptr;
 
             if (index < 0)
-                index = (signed)content.size() + index - 1;
+                index = (signed)content.size() + index;
 
             return (T*)this->content[index];
         }
@@ -133,9 +134,9 @@ namespace GGUI{
             return Result;
         }
 
-        std::vector<element*> getVisibleContent() const;
+        const std::vector<element*>& getVisibleOrderedContent() const;
 
-        const std::vector<element*> getContent();
+        const std::vector<element*>& getContent() const;
 
         listView* setDisplay(bool d);
 
@@ -149,6 +150,8 @@ namespace GGUI{
         element* createInstance() const override {
             return new listView(containerFlags::DEFAULT);
         }
+
+        void updateZOrderedContent();
         
         IVector2 getGrowthDirection() const;
 

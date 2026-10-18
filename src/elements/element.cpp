@@ -18,7 +18,7 @@ namespace GGUI {
 
         // Make sure this element is not listed in the container element.
         if (container) {
-            container->remove(this);
+            container->detach(this);
         }
 
         //now also update the event handlers.
@@ -139,11 +139,11 @@ namespace GGUI {
     }
 
     element* element::setFocusState(bool f) {
-        if (f == (core::focusedOn == this)){
+        if (f) core::focusedOn.link(this);
+
+        if (f != (core::focusedOn == this)){
             // If the focus state has changed, dirty the element and update the frame.
             flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE);
-
-            core::focusedOn.link(this);
 
             updateFrame();
         }
@@ -152,11 +152,11 @@ namespace GGUI {
     }
 
     element* element::setHoverState(bool h) {
+        if (h) core::hoveredOn.link(this);
+
         if (h == (core::hoveredOn == this)){
             // If the hover state has changed, dirty the element and update the frame.
             flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE);
-
-            core::hoveredOn.link(this);
 
             updateFrame();
         }
@@ -244,6 +244,29 @@ namespace GGUI {
         // reset the container info.
         new_element->container = nullptr;
 
+        new_element->dimensions = this->dimensions;
+        new_element->position = this->position;
+
+        new_element->display = this->display;
+        new_element->showBorder = this->showBorder;
+
+        new_element->title = this->title;
+
+        new_element->onInit = this->onInit;
+        new_element->onDestroy = this->onDestroy;
+        new_element->onHide = this->onHide;
+        new_element->onShow = this->onShow;
+        new_element->onRender = this->onRender;
+
+        new_element->opacity = this->opacity;
+
+        new_element->textColor = this->textColor;
+        new_element->backgroundColor = this->backgroundColor;
+        new_element->borderGlyphColor = this->borderGlyphColor;
+        new_element->borderBackgroundColor = this->borderBackgroundColor;
+
+        new_element->borderStyle = this->borderStyle;
+
         // now also update the event handlers.
         // NOTE: We don't have enough power to update the lambda captures of the this ptr value, so please use the self->host ptr instead!
         for (auto& e : this->handlers){
@@ -253,16 +276,6 @@ namespace GGUI {
 
         if (!new_element->handlers.empty()) {
             core::inputConverter->handlers.push_back(new_element);
-        }
-
-        // Clear the Focused on bool
-        if (core::focusedOn == this) {
-            core::focusedOn.unlink();
-        }
-
-        // Clear the Hovered on bool
-        if (core::hoveredOn == this) {
-            core::hoveredOn.unlink();
         }
 
         return new_element;
@@ -333,7 +346,7 @@ namespace GGUI {
         static constexpr std::string Ellipsis = "...";
         bool Enable_Ellipsis = false;
 
-        size_t Writable_Length = std::min(Title_Length, (size_t)(getWidth() - Horizontal_Offset - (int)Ellipsis.size() - 1));
+        size_t Writable_Length = std::min<size_t>(Title_Length, (getWidth() - (int)Horizontal_Offset - (int)Ellipsis.size() - 1));
 
         if (Writable_Length < Title_Length)
             Enable_Ellipsis = true;
@@ -347,7 +360,7 @@ namespace GGUI {
         if (Enable_Ellipsis){
             size_t Ellipsis_Offset = Writable_Length + Horizontal_Offset;
             for (size_t x = 0; x < Ellipsis.size(); x++){
-                if (Ellipsis_Offset + x < (size_t)(getWidth() - Horizontal_Offset)){
+                if (Ellipsis_Offset + x < (size_t)(getWidth() - (int)Horizontal_Offset)){
                     Result[Ellipsis_Offset + x] = Ellipsis[x];
                 }
             }
@@ -416,9 +429,6 @@ namespace GGUI {
     element* element::setName(const std::string& Name){
         // Set the name of the element.
         ID = Name;
-
-        // Store the element in the global Element_Names map.
-        core::elementNames[ID] = this;
 
         return this;
     }

@@ -32,5 +32,5 @@ int main(int argc, char* argv[]){
         );
     });
 
-    waitForTermination();
+    sleep(10);
 }

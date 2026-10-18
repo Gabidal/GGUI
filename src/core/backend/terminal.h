@@ -66,7 +66,7 @@ namespace GGUI {
         protected:
             IVector2& cursor;
             IVector2& dimensions;
-            std::vector<terminal::cell>& buffer;                 // This is what the terminal::render(main) gives us, this is different from the output, because of unicode strings, which would break the activePresentationPointer, since some unicodes can be longer than one index.
+            std::vector<terminal::cell>** buffer;                // This is what the terminal::render(main) gives us, this is different from the output, because of unicode strings, which would break the activePresentationPointer, since some unicodes can be longer than one index.
             std::string* liquefiedBuffer = nullptr;             // This is what send back into the output device to be rendered into the screen.       
             std::vector<ecma::activeSGRStyle>& activeGraphicAttributes;     // this is the liquefied graphic area metadata which is ecma-48 compatible.
             element* dom = nullptr;       // the primary element tree to be rendered.
@@ -74,7 +74,7 @@ namespace GGUI {
             outputCapture(
                 IVector2& presentationPosition,
                 IVector2& presentationDimension,
-                std::vector<terminal::cell>& activeBuffer,
+                std::vector<terminal::cell>** activeBuffer,
                 std::vector<ecma::activeSGRStyle>& RGA
             ) : cursor(presentationPosition), dimensions(presentationDimension), buffer(activeBuffer), activeGraphicAttributes(RGA) {}
 
@@ -164,7 +164,7 @@ namespace GGUI {
             outputCapture screen = outputCapture(
                 ecmaComponents.activePresentationPosition, 
                 ecmaComponents.activeScreenDimensions,
-                ecmaComponents.activePresentationBuffer, 
+                &ecmaComponents.activePresentationBuffer, 
                 ecmaComponents.registeredGraphicAttributes
             );
 

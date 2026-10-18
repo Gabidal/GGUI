@@ -455,7 +455,7 @@ namespace GGUI{
             std::vector<enumType> result;
 
             for (containerType i = static_cast<containerType>(enumType::__min); i <= static_cast<containerType>(enumType::__max); ++i) {
-                containerType bitMask = static_cast<containerType>(1) << std::max<containerType>((i - 1), 0);  // If first enum value is zero, avoid -1
+                containerType bitMask = toBitMask(static_cast<enumType>(i));  // If first enum value is zero, avoid -1
                 if ((data & bitMask) != 0) {
                     result.push_back(static_cast<enumType>(i));
                 }
@@ -756,9 +756,9 @@ namespace GGUI{
 
 
     protected:
-        T data;     // Contains the actual data
-        float percentage;   // Only used at evaluation on render pipeline
-        types evaluationType;
+        T data                  = {};     // Contains the actual data
+        float percentage        = 0.0f;   // Only used at evaluation on render pipeline
+        types evaluationType    = types::DEFAULT;
     };
 
     template<typename T, size_t DIM>

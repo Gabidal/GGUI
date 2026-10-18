@@ -74,6 +74,7 @@ namespace GGUI::terminal {
         int32_t outHandle = open(out.AbsolutePath.data(), out.flags | O_WRONLY);
         if (outHandle == device::CLOSED_HANDLE) {
             GGUI::logger::log("ERROR: Failed to open output route: " + std::string(strerror(errno)));
+            close(inHandle);    // close inHandle if inHandle succeeds but outHandle fails
             return;
         }
 
@@ -161,11 +162,13 @@ namespace GGUI::terminal {
             return;
         }
 
-        currentStates->transmission.inputSize = read(input.handle, currentStates->transmission.inputBuffer.data(), currentStates->transmission.capacity);
-        if (currentStates->transmission.inputSize <= 0) {
+        ssize_t potentiallyNegative = read(input.handle, currentStates->transmission.inputBuffer.data(), currentStates->transmission.capacity);
+        if (potentiallyNegative <= 0) {
             // EOF or error; normalize to 0 to signal no input
-            currentStates->transmission.inputSize = 0;
+            potentiallyNegative = 0;
         }
+        
+        currentStates->transmission.inputSize = static_cast<unsigned int>(potentiallyNegative);
     }
 
     void queryOutput(std::vector<std::string_view>&& queue) {

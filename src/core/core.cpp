@@ -44,8 +44,6 @@ namespace GGUI{
 
         thread::guard<std::vector<converter::output::event::memory>> remember;
 
-        std::unordered_map<std::string_view, element*> elementNames;
-
         selectable focusedOn;
         selectable hoveredOn;
 
@@ -401,18 +399,5 @@ namespace GGUI{
 
         // Resume the render thread with the previous render status.
         resumeGGUI();
-    }
-
-    element* getElement(std::string_view name){
-        element* Result = nullptr;
-
-        // Check if the element is in the global Element_Names map.
-        if (core::elementNames.find(name) != core::elementNames.end()){
-            // If the element exists, assign it to the result.
-            Result = core::elementNames[name];
-        }
-
-        // Return the result.
-        return Result;
     }
 }

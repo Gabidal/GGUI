@@ -61,7 +61,7 @@ namespace GGUI::terminal {
         
         // now check if this element is a container and if it contains a closer matching element inside it.
         if (dynamic_cast<const listView*>(currentElement)) {
-            for (const auto* content : static_cast<const listView*>(currentElement)->getVisibleContent()) {  // should return via z-priority
+            for (const auto* content : static_cast<const listView*>(currentElement)->getVisibleOrderedContent()) {
                 auto [visibleArea, remainder] = core::getFittingArea(currentElement, content);
                 
                 // Since getFittingArea uses relative positions, we need to make it absolute.
@@ -160,7 +160,7 @@ namespace GGUI::terminal {
         size_t liquefiedSize = 0;
 
         TODO("Remove this when moving from compactString into std::u32string")
-        for (const auto& currentCell : buffer) {
+        for (const auto& currentCell : **buffer) {
             liquefiedSize += currentCell.getLength();
         }
 
@@ -218,7 +218,7 @@ namespace GGUI::terminal {
                 }
 
                 // Add text
-                terminal::cell data = buffer[(y * dom->getWidth()) + x];
+                terminal::cell data = (**buffer)[(y * dom->getWidth()) + x];
 
                 std::memcpy(result.data() + outputIndex, data.getGlyphs().data(), data.getLength());
                 outputIndex += data.getLength();
@@ -247,7 +247,7 @@ namespace GGUI::terminal {
     }
 
     void outputCapture::update() {
-        buffer = dom->render();
+        *buffer = &dom->render();
     }
 
     bool query::isConnected() {
@@ -404,8 +404,8 @@ namespace GGUI::terminal {
         int borderOffset = owner->hasBorder();
 
         // Add the inner area
-        graphicalIdentityPool.push_back({
-            {   // rectangle area
+        graphicalIdentityPool.emplace_back(
+            rectangle{
                 absolutePositionCache + IVector3{borderOffset, borderOffset, 0},
                 {owner->getWidth() - borderOffset*2, owner->getHeight() - borderOffset*2}
             },
@@ -413,7 +413,7 @@ namespace GGUI::terminal {
             owner->getOpacity() * UINT8_MAX,
             textAttributes,
             owner
-        });
+        );
 
         // Add the border area; To keep z-priority, so largest view is last
         if (owner->hasBorder()) {     TODO("This seems very inefficient!")
@@ -422,8 +422,8 @@ namespace GGUI::terminal {
 
             TODO("Add here the border width into the offset calculation")
 
-            graphicalIdentityPool.push_back({
-                {   // rectangle area
+            graphicalIdentityPool.emplace_back(
+                rectangle{
                     absolutePositionCache,
                     {owner->getWidth(), owner->getHeight()}
                 },
@@ -431,7 +431,7 @@ namespace GGUI::terminal {
                 owner->getOpacity() * UINT8_MAX,
                 textAttributes,
                 owner
-            });
+            );
         }
 
         std::transform(

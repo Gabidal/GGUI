@@ -150,13 +150,17 @@ namespace GGUI{
             updateAbsolutePositionCache();
         }
 
+        // Give graphic only updates also refresh on identity pools
+        if (flags.has(stain::types::DEEP) || flags.has(stain::types::GRAPHICS)) {
+            // clean reflection pool
+            graphicalReflectionPool.clear();
+            graphicalIdentityPool.clear();
+        }
+
         // Align text and add content windows to the Result buffer if the DEEP stain is detected
         if (flags.has(stain::types::DEEP)) {
             flags ^= (stain::types::DEEP);
 
-            // clean reflection pool
-            graphicalReflectionPool.clear();
-            graphicalIdentityPool.clear();
             flags |= (stain::types::GRAPHICS);
 
             if (alignment == alignments::LEFT)

@@ -1,1 +1,1 @@
-Checks: 'performance-*'
+Checks: 'performance*,altera*,readability*,cppcoreguidelines*'

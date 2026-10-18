@@ -216,7 +216,7 @@ namespace GGUI{
 
         element* setCustomBorderStyle(GGUI::styledBorder style);
 
-        GGUI::styledBorder getCustomBorderStyle() const { return borderStyle; }
+        const GGUI::styledBorder& getCustomBorderStyle() const { return borderStyle; }
 
         virtual std::string getTypedName() const {
             return "element<" + ID + ">";

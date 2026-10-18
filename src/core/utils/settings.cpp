@@ -176,11 +176,11 @@ namespace GGUI::SETTINGS {
         };
 
         // Tokenize the command line arguments
-        std::vector<std::string> tokens = tokenizeArguments(argc, argv);
+        const std::vector<std::string>& tokens = tokenizeArguments(argc, argv);
         
         // Process each token
         for (size_t i = 0; i < tokens.size(); i++) {
-            std::string currentToken = tokens[i];
+            const std::string& currentToken = tokens[i];
             
             // Handle argument=value format
             std::string argName, argvalue;
@@ -207,7 +207,7 @@ namespace GGUI::SETTINGS {
                         descriptorIt->handler(argvalue);
                     } else if (i + 1 < tokens.size()) {
                         // value should be in next token
-                        std::string nextToken = tokens[++i];
+                        const std::string& nextToken = tokens[++i];
                         // Don't consume if next token looks like another argument
                         if (!nextToken.empty() && nextToken[0] == '-' && nextToken.length() > 1) {
                             logger::log("Error: Argument --" + argName + " requires a value.");

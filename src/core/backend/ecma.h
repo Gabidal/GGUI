@@ -462,8 +462,8 @@ namespace GGUI {
                             int32_t currentNumber = 0;
                             bool has_digit = true;          // Default true, so that ;;;; are possible.
 
-                            configuration::layout::bounds normalParameterCharacters = {table::parameters::ZERO, table::parameters::NINE};
-                            configuration::layout::bounds specialParameterCharacters = {table::parameters::FRACTION, table::parameters::PRIVATE};
+                            constexpr configuration::layout::bounds normalParameterCharacters = {table::parameters::ZERO, table::parameters::NINE};
+                            constexpr configuration::layout::bounds specialParameterCharacters = {table::parameters::FRACTION, table::parameters::PRIVATE};
 
 
                             for (char i : input) {
@@ -474,12 +474,12 @@ namespace GGUI {
 
                                     if (currentChar == (uint8_t)table::parameters::FRACTION) { // 03/10 ':'
                                         if (has_digit) {
-                                            subNumbers.push_back({static_cast<containerType>(currentNumber), types::NUMBER});
+                                            subNumbers.emplace_back(static_cast<containerType>(currentNumber), types::NUMBER);
                                         } else {
-                                            subNumbers.push_back({static_cast<containerType>(0), types::NUMBER}); // empty sub-string -> default / zero
+                                            subNumbers.emplace_back(static_cast<containerType>(0), types::NUMBER); // empty sub-string -> default / zero
                                         }
                                     } else {    // Special parameter values like '?'
-                                        subNumbers.push_back({currentChar, types::LETTER});
+                                        subNumbers.emplace_back(currentChar, types::LETTER);
                                     }
 
                                     // Reset
@@ -497,12 +497,11 @@ namespace GGUI {
                             }
 
                             if (has_digit) {
-                                subNumbers.push_back({static_cast<containerType>(currentNumber), types::NUMBER});
+                                subNumbers.emplace_back(static_cast<containerType>(currentNumber), types::NUMBER);
                                 // length++;    <-- no need to increase it since the loop which gathered these numbers already accounts the length.
                                 return;
                             } else {    // Trailing 03/10 (':'), stated by section f, needs to have a trailing zero.
-                                subNumbers.push_back({static_cast<containerType>(0), types::NUMBER});
-                                length++;
+                                subNumbers.emplace_back(static_cast<containerType>(0), types::NUMBER);
                             }
                         }
 
@@ -538,14 +537,14 @@ namespace GGUI {
                             }
                         }
 
-                        constexpr void add(containerType val) {
-                            subNumbers.push_back(val);
+                        constexpr void add(containerType val, types specialityType = types::NUMBER) {
+                            subNumbers.emplace_back(val, specialityType);
                         }
 
                         template<size_t s>
-                        constexpr void add(std::array<containerType, s> values) {
-                            for (const auto& i : values) {
-                                subNumbers.push_back(i);
+                        constexpr void add(std::array<std::pair<containerType, types>, s> values) {
+                            for (auto [value, type] : values) {
+                                subNumbers.emplace_back(value, type);
                             }
                         }
 
@@ -571,7 +570,7 @@ namespace GGUI {
                             }
 
                             // now add the fraction separator
-                            result += std::max(subNumbers.size() - 1, (size_t)0);
+                            result += subNumbers.empty() ? 0 : subNumbers.size() - 1;
 
                             return result;
                         }
@@ -606,7 +605,7 @@ namespace GGUI {
                     template<typename otherFunctionType>
                     constexpr postfix(const postfix<otherFunctionType>& other) : intermediates(other.getIntermediates()), function(static_cast<functionType>(other.getFinalByte())) {}
 
-                    constexpr std::vector<table::intermediate::identifiers> getIntermediates() const { return intermediates; }
+                    constexpr const std::vector<table::intermediate::identifiers>& getIntermediates() const { return intermediates; }
                     constexpr functionType getFinalByte() const { return function; }
 
                     constexpr void modifyIntermediates(std::vector<table::intermediate::identifiers> newInterms) {
@@ -748,12 +747,12 @@ namespace GGUI {
                     constexpr control(
                         std::vector<parameterType> params,
                         const postfix<finalFunctionType>& finalBytes
-                    ) : prefix(table::C1::CSI, types::CSI), parameters(params), finalByte(finalBytes) {}
+                    ) : prefix(table::C1::CSI, types::CSI), parameters(std::move(params)), finalByte(finalBytes) {}
 
                     constexpr control(
                         std::vector<parameterType> params,
                         finalFunctionType tail
-                    ) : prefix(table::C1::CSI, types::CSI), parameters(params), finalByte({}, tail) {}
+                    ) : prefix(table::C1::CSI, types::CSI), parameters(std::move(params)), finalByte({}, tail) {}
 
                     constexpr control(
                         finalFunctionType tail
@@ -765,7 +764,7 @@ namespace GGUI {
                         std::vector<parameterType> params,
                         std::vector<table::intermediate::identifiers> inters,
                         table::finalWithIntermediate tail
-                    ) : prefix(table::C1::CSI, types::CSI), parameters(params), finalByte(inters, tail) {}
+                    ) : prefix(table::C1::CSI, types::CSI), parameters(std::move(params)), finalByte(std::move(inters), tail) {}
 
                     template<typename T = finalFunctionType>
                     requires std::is_same_v<finalFunctionType, table::finalWithIntermediate>
@@ -780,14 +779,14 @@ namespace GGUI {
                     }
 
                     template<typename exportAs, typename fromType>
-                    constexpr std::vector<exportAs> convert(const std::vector<fromType>& params) const {
+                    constexpr std::vector<exportAs> convert(const std::vector<fromType>& params) const {    TODO("Add a backchannel parameter so that abstract callers could give expected parameter sizes for reserve(x)!")
                         std::vector<exportAs> result;
 
                         if constexpr (std::is_same<exportAs, fromType>::value) {
                             result = params;
                         } else {    // we need to copy data manually
                             for (const auto& i : params) {
-                                result.push_back(i);    // This triggers parameter::base<A -> B> conversion 
+                                result.emplace_back(i);    // This triggers parameter::base<A -> B> conversion 
                             }
                         }
 
@@ -832,7 +831,7 @@ namespace GGUI {
                         finalByte.toString(preAllocated);
                     }
 
-                    template<typename otherParameterType, typename finalByteType = uint8_t>
+                    template<typename otherParameterType, typename finalByteType = finalFunctionType>
                     constexpr control<parameterType, finalByteType> compile(const std::vector<otherParameterType>& params) const {
                         control<parameterType, finalByteType> result = *this; // Copy contents
 
@@ -847,7 +846,7 @@ namespace GGUI {
                         return finalByte;
                     }
 
-                    constexpr std::vector<parameterType> getParameters() const {
+                    constexpr const std::vector<parameterType>& getParameters() const {
                         return parameters;
                     }
                 };
@@ -921,11 +920,11 @@ namespace GGUI {
                         if (type == types::HEADER) output += GGUI::table::toString(table::C0::SOH);
                         else                       output += GGUI::table::toString(table::C0::STX);
 
-                        output += std::string(primary.begin(), primary.end());
+                        output.append(primary.begin(), primary.end());
 
                         if (!secondary.empty()) {
                             output += GGUI::table::toString(table::C0::STX);
-                            output += std::string(secondary.begin(), secondary.end());
+                            output.append(secondary.begin(), secondary.end());
                         } else {
                             if (type == types::HEADER)  output += GGUI::table::toString(table::C0::ETB);
                             else                        output += GGUI::table::toString(table::C0::ETX);
@@ -1213,7 +1212,7 @@ namespace GGUI {
                     constexpr size_t getActualLocation(const sequence::postfix<>& body) {
                         location intermediateOffset = 0;
 
-                        for (auto inter : body.getIntermediates()) {
+                        for (const auto& inter : body.getIntermediates()) {
                             intermediateOffset = inter;
 
                             // As the announcer is at row = zero, for distinguishing these states we add +1 to count zero index.
@@ -1953,25 +1952,30 @@ namespace GGUI {
                 constexpr activeSGRStyle() = default;
 
                 // NOTE: Since this class only contains metadata, if there is colors in the params via RGB or other formats these will be written into the terminal::screen.cellBuffer!
-                void parseArguments(std::vector<sequence::parameter::selectable<graphicalTextAttributes>>& params);
+                void parseArguments(const std::vector<sequence::parameter::selectable<graphicalTextAttributes>>& params);
 
                 constexpr std::vector<sequence::parameter::selectable<graphicalTextAttributes>> compile() const {
-                    std::vector<sequence::parameter::selectable<graphicalTextAttributes>> result;
+                    std::vector<sequence::parameter::selectable<graphicalTextAttributes>> result;   TODO("Add a backchannel parameter so that abstract callers could give expected parameter sizes for reserve(x)!")
 
-                    for (auto& attr : textAttributes.getAll()) {
-                        result.push_back(attr);
+                    const auto& allActiveTextAttributes = textAttributes.getAll();
+                    result.reserve(allActiveTextAttributes.size());
+
+                    for (auto& attr : allActiveTextAttributes) {
+                        result.emplace_back(attr);
 
                         if (attr == graphicalTextAttributes::FOREGROUND_COLOR || attr == graphicalTextAttributes::BACKGROUND_COLOR) {
                             if (activeDirectColorType == directColorTypes::RGB) {
+                                result.reserve(result.size() + 4);
+
                                 // add direct color type
-                                result.push_back(static_cast<graphicalTextAttributes>(activeDirectColorType));
+                                result.emplace_back(static_cast<graphicalTextAttributes>(activeDirectColorType));
 
                                 RGB use = textColor;
                                 if (attr == graphicalTextAttributes::BACKGROUND_COLOR) use = backgroundColor;
 
-                                result.push_back(static_cast<graphicalTextAttributes>(use.red));
-                                result.push_back(static_cast<graphicalTextAttributes>(use.green));
-                                result.push_back(static_cast<graphicalTextAttributes>(use.blue));
+                                result.emplace_back(static_cast<graphicalTextAttributes>(use.red));
+                                result.emplace_back(static_cast<graphicalTextAttributes>(use.green));
+                                result.emplace_back(static_cast<graphicalTextAttributes>(use.blue));
                             }
                         }
                     }
@@ -2048,10 +2052,10 @@ namespace GGUI {
                 IVector2 activePresentationPosition;
                 IVector2 activeScreenDimensions;
 
-                std::vector<terminal::cell> activePresentationBuffer;
+                std::vector<terminal::cell>* activePresentationBuffer = nullptr;
 
                 constexpr auto getPresentationPositionAsBufferAddress() {
-                    return activePresentationBuffer.begin() + activePresentationPosition.y() * activeScreenDimensions.x() + activePresentationPosition.x();
+                    return activePresentationBuffer->begin() + activePresentationPosition.y() * activeScreenDimensions.x() + activePresentationPosition.x();
                 }
 
                 enum class characterMovementDirection : uint8_t {
@@ -2202,7 +2206,7 @@ namespace GGUI {
                         std::vector<parameterType> defaultParamValues = {},
                         configuration::cell functionality = {},
                         configuration::page* page = nullptr     // Give empty for automatic page detection
-                    ) : function(code), parameterDefaultValue(defaultParamValues) {
+                    ) : function(code), parameterDefaultValue(std::move(defaultParamValues)) {
                         if (functionality == configuration::cell())  return; // Nothing to do here.
 
                         if (page == nullptr) {  // Automatic page deduction
@@ -2229,7 +2233,7 @@ namespace GGUI {
                         std::vector<parameterType> defaultParamValues,
                         configuration::cell functionality,
                         configuration::cellPatch* customCellFunctions
-                    ) : function(code), parameterDefaultValue(defaultParamValues) {
+                    ) : function(code), parameterDefaultValue(std::move(defaultParamValues)) {
                         if (functionality == configuration::cell())  return; // Nothing to do here.
 
                         sequence::postfix<> tail = function.getPostfix();
@@ -2247,11 +2251,11 @@ namespace GGUI {
                         assert(parameterExtension == specialTypes::HAS_INFINITE_PARAMETERS || params.size() <= paramCount && "Too many parameters were given!");
 
                         auto result = std::vector<parameterType>(parameterDefaultValue.begin(), parameterDefaultValue.end());
-                        const auto converted = convertParameters(params);
+                        auto converted = convertParameters(params);
                         
                         result.resize(std::max(result.size(), converted.size()));
 
-                        for (size_t i = 0; i < std::min(converted.size(), result.size()); i++) result[i] = converted[i];
+                        for (size_t i = 0; i < std::min(converted.size(), result.size()); i++) result[i] = std::move(converted[i]);
 
                         return result;
                     }

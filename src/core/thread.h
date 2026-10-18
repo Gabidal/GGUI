@@ -97,7 +97,7 @@ namespace GGUI::thread {
             * 
             * @return T A copy of the data.
             */
-        const T& read() {
+        T read() {
             std::lock_guard<std::mutex> lock(shared);
             return *data;
         }

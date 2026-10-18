@@ -74,12 +74,16 @@ namespace GGUI{
 
             updateAbsolutePositionCache();
         }
-
-        // Check if the text has been changed.
-        if (flags.has(stain::types::DEEP)){
+        
+        // Give graphic only updates also refresh on identity pools
+        if (flags.has(stain::types::DEEP) || flags.has(stain::types::GRAPHICS)) {
             graphicalReflectionPool.clear();
             graphicalIdentityPool.clear();
             graphicalReflectionPool.reserve(2 + 2);     // Two for text and two for box
+        }
+
+        // Check if the text has been changed.
+        if (flags.has(stain::types::DEEP)){
             core::nestElement(this, &Text, Result, Text.render());
 
             // compile graphical reflection pool

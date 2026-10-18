@@ -67,7 +67,7 @@ namespace GGUI{
             multiFrame = true;
         }
 
-        buffer[Location] = sprite; // Set the sprite at the calculated buffer location.
+        buffer[Location] = std::move(sprite); // Set the sprite at the calculated buffer location.
 
         flags |= (stain::types::GRAPHICS); // Mark the canvas as dirty for color updates.
 
@@ -183,6 +183,7 @@ namespace GGUI{
             flags ^= (stain::types::GRAPHICS);
             
             graphicalIdentityPool.clear();
+            graphicalReflectionPool.clear();
 
             unsigned int startX = hasBorder();
             unsigned int startY = hasBorder();
@@ -232,7 +233,7 @@ namespace GGUI{
 
         unsigned char animationFrame = (currentFrame + offset) * speed;     // This is our current animation frame
 
-        int currentFrameIndex = animationFrame / frameDistance;            // This gives us the closest frame to the current animation frame.
+        int currentFrameIndex = animationFrame % frameDistance;            // This gives us the closest frame to the current animation frame. maybe use '/'
 
         int frameBelow = currentFrameIndex % frameCount;      // This gives us the how many animations we have passed
 

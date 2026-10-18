@@ -137,12 +137,7 @@ namespace GGUI{
         }
 
         Bar* Bar::setProgress(float New_Progress) {
-            // Check if the new progress value exceeds the maximum limit
-            if (New_Progress > 1.0f) {
-                // Report a percentage overflow warning
-                logger::log(getTypedName() + " got a percentage overflow!");
-                return this;
-            }
+            assert(New_Progress <= 1.0f && New_Progress >= 0.0f && "Progress value out of bounds!");
 
             // Update the progress value
             Progress = New_Progress;
@@ -157,7 +152,8 @@ namespace GGUI{
         }
 
         void Bar::updateProgress(float add){
-            if (Progress + add > 1.0f){
+            if (Progress + add <= 1.0f && Progress + add >= 0.0f) {
+                logger::log("Progress value out of bounds!");
                 return;
             }
 
