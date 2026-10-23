@@ -162,6 +162,11 @@ namespace GGUI{
         constexpr bool contains(V val) {
             return static_cast<uint8_t>(val) >= static_cast<uint8_t>(E::__min) && static_cast<uint8_t>(val) <= static_cast<uint8_t>(E::__max);
         }
+            
+        template<typename V, V __min, V __max>
+        constexpr bool contains(V val) requires((int)__min < (int)__max) {
+            return (int)val >= (int)__min && (int)val <= (int)__max;
+        }
 
         template<typename V, typename E>
         constexpr bool is(V val, E selected) {

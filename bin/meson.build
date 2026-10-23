@@ -236,9 +236,6 @@ native_archive_directory = include_directories('..', 'export')
 # Build the main demo executable linked with the core library
 executable(
   'ggui',
-  [
-    generate_header,
-  ],
   include_directories: native_archive_directory,
   link_with: ggui_core,
   install: true,

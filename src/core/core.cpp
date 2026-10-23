@@ -111,7 +111,7 @@ namespace GGUI{
                     //if the time difference is greater than the time limit, then delete the memory
                     if (Time_Difference > rememberable.at(i).endTime){
                         try{
-                            bool Success = rememberable.at(i).job((converter::output::event::base*)&rememberable.at(i));
+                            action::responses Success = rememberable.at(i).job((converter::output::event::base*)&rememberable.at(i));
 
                             // If job is a re-trigger it will ignore whether the job was successful or not.
                             if (rememberable.at(i).is(converter::output::event::memory::types::RETRIGGER)){
@@ -120,7 +120,7 @@ namespace GGUI{
                                 rememberable.at(i).startTime = currentTime;
 
                             }
-                            else if (Success){
+                            else if (Success == action::responses::DONE){
                                 rememberable.erase(rememberable.begin() + i);
 
                                 i--;

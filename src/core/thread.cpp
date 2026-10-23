@@ -94,7 +94,7 @@ namespace GGUI::thread {
                         if (SETTINGS::enableDRM) {
                             // DRM::sendBuffer(*terminal::currentStates->screen.buffer);
                             // DRM::sendBuffer(*terminal::currentStates->screen.dom.activeGraphicAreas);
-                            TODO("Implement DRM::sendBuffer() to accept compactString instead of std::vector<UTF> for better performance and memory efficiency.")
+                            TODO("DRM is deprecated!")
                         }
                         else {
                             terminal::currentStates->screen.computeSGRAreas();

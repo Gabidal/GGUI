@@ -175,7 +175,7 @@ namespace GGUI::DRM {
                 core::inputManager->currentKeyboardState[packetInput->key].setState(isPressed);
 
                 // Notify all loose constraints on letter event handlers.
-                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::ALL_LETTERS)].setState(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::ANY_LETTERS)].setState(isPressed);
             }
         }
     }

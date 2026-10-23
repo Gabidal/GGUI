@@ -14,10 +14,10 @@ int main(int argc, char* argv[]){
         app.setContent(
             (new listView{
                 (new listView{
-                    (new textField("File"))->setBorder(true)->onClick([](converter::output::event::base*){ return true; }),
-                    (new textField("Edit"))->setBorder(true)->onClick([](converter::output::event::base*){ return true; }),
-                    (new textField("View"))->setBorder(true)->onClick([](converter::output::event::base*){ return true; }),
-                    (new textField("Help"))->setBorder(true)->onClick([](converter::output::event::base*){ return true; }),
+                    (new textField("File"))->setBorder(true)->onClick([](converter::output::event::base*){ return action::responses::DONE; }),
+                    (new textField("Edit"))->setBorder(true)->onClick([](converter::output::event::base*){ return action::responses::DONE; }),
+                    (new textField("View"))->setBorder(true)->onClick([](converter::output::event::base*){ return action::responses::DONE; }),
+                    (new textField("Help"))->setBorder(true)->onClick([](converter::output::event::base*){ return action::responses::DONE; }),
                 })->setBorder(true)->setName("first list"),
                 
                 (new listView{

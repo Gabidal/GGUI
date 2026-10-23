@@ -310,34 +310,25 @@ namespace GGUI{
      *          calls the Then function with the character as input. If the event is a backspace, it removes the last character from the text field. In all cases, it marks the text field as
      *          dirty and updates the frame.
      */
-    void textField::input(const std::function<void(textField*, char)>& Then) {
+    void textField::input(const std::function<action::responses(textField*, const std::string&)>& Then) {
         addEventhandler(converter::output::event::action(
-            {converter::input::key::types::ALL_LETTERS},
-            [this, Then](converter::output::event::base*) { TODO("Going through all pressed keys seems very inefficient!")
-                if (core::focusedOn == this) {
-                    // go through all enabled keyboards between space and delete and check what letter was turned on
-                    char letter = '\0';
+            {converter::input::key::types::ANY_LETTERS},
+            [this, Then](converter::output::event::base* pressed_keys) {
+                std::string letters = "";
 
-                    for (char i = (char)converter::input::key::types::SPACE + 1; i < (char)converter::input::key::types::DELETE; i++) {
-                        if (core::inputManager->currentKeyboardState[(uint8_t)i].getState()) {
-                            letter = i;
-                            break;
-                        }
+                for (auto key : pressed_keys->criteria) {
+                    if (table::contains<converter::input::key::types, converter::input::key::types::__min_LETTERS, converter::input::key::types::__max_LETTERS>(key)) {
+                        letters += static_cast<char>(key);
                     }
-
-                    if (letter == '\0') {
-                        assert(false && "No letter was pressed, but the event handler was called.");
-                        return false; // No letter was pressed
-                    }
-
-                    //First call the function with the user's input
-                    Then(this, letter);
-                    updateFrame();
-
-                    return true;
                 }
-                //action failed.
-                return false;
+
+                if (letters.empty()) return action::responses::FAILED;
+
+                //First call the function with the user's input
+                auto response = Then(this, letters);
+                updateFrame();
+
+                return response;
             },
             getTypedName() + "::input::keypress"
         ));
@@ -345,15 +336,11 @@ namespace GGUI{
         addEventhandler(converter::output::event::action(
             {converter::input::key::types::ENTER},
             [this, Then](converter::output::event::base*) {
-                if (core::focusedOn == this && core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ENTER].getState()) {
-                    //First call the function with the user's input
-                    Then(this, '\n');
-                    updateFrame();
+                //First call the function with the user's input
+                action::responses response = Then(this, "\n");
+                updateFrame();
 
-                    return true;
-                }
-                //action failed.
-                return false;
+                return response;
             },
             getTypedName() + "::input::enter"
         ));
@@ -361,21 +348,17 @@ namespace GGUI{
         addEventhandler(converter::output::event::action(
             {converter::input::key::types::BACKSPACE},
             [this](converter::output::event::base*) {
-                if (core::focusedOn == this && core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::BACKSPACE].getState()) {
-                    //If the text field is empty, there is nothing to do
-                    if (text.size() > 0) {
-                        text.pop_back();
+                if (text.size() > 0) {
+                    text.pop_back();
 
-                        updateTextCache();
+                    updateTextCache();
 
-                        flags |= (stain::base(stain::types::DEEP) | stain::types::RESET);
-                        updateFrame();
-                    }
-
-                    return true;
+                    flags |= (stain::base(stain::types::DEEP) | stain::types::RESET);
+                    updateFrame();
+                    return action::responses::DONE;
+                } else {
+                    return action::responses::FAILED;
                 }
-                //action failed.
-                return false;
             },
             getTypedName() + "::input::backspace"
         ));

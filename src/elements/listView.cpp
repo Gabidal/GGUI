@@ -715,12 +715,12 @@ namespace GGUI {
         if (!scrollingEventsExists && allow) {
             this->on({converter::input::key::types::SCROLL_UP}, [this](converter::output::event::base*) {
                 this->scrollUp();
-                return true;
+                return action::responses::DONE;
             });
 
             this->on({converter::input::key::types::SCROLL_DOWN}, [this](converter::output::event::base*) {
                 this->scrollDown();
-                return true;
+                return action::responses::DONE;
             });
         } else if (scrollingEventsExists && !allow) {   // If scrolling events exist, but we dont allow, then:
             removeEventHandler(std::max(scrollUpEventHandlerIndex, scrollDownEventHandlerIndex));   // remove the later one so the prior ones index does not get shifted

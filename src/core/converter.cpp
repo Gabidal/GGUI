@@ -39,7 +39,7 @@ namespace GGUI::converter {
                 if (SETTINGS::enableDRM) {
                     DRM::pollInputs();
                 }
-                else if (!terminal::currentStates || !terminal::currentStates->transmission.isConnected()) {    // platform initialization is still in progress
+                else if (!terminal::currentStates || !out || !terminal::currentStates->transmission.isConnected()) {    // platform initialization is still in progress
                     std::this_thread::sleep_for(std::chrono::seconds(1));
                     continue;
                 }
@@ -84,14 +84,18 @@ namespace GGUI::converter {
             //      - If host present and is onHovered: Un-hover the host element and and set it to onFocused
             //      - If host present and is onFocused: Pipe input into the event handler job task
 
-            // Since some key events are piped to us at a different speed than others, we need to keep the older (un-used) inputs "alive" until their turn arrives.
-            Populate_Inputs_For_Held_Down_Keys();
-
+            // All elements that have event handlers
             for (unsigned int i = 0; i < handlers.size(); i++){
                 element* currentElement = handlers[i];
+                
+                if (!currentElement->getDisplay())
+                    continue;   // Skip eventhandlers where their host is not active
+                
+                bool overlapsWithMouse = currentMouse.collides(currentElement);
 
                 const std::vector<event::action>& currentEventhandlers = currentElement->getEventHandlers();
 
+                // Individual event handlers from the current element
                 for (unsigned int j = 0; j < currentElement->getEventHandlers().size(); j++) {
                     const event::action& currentEventHandler = currentEventhandlers[j];
 
@@ -99,18 +103,13 @@ namespace GGUI::converter {
                     // and in this same listing of inputs at the start is the mouse click or enter and the user given inputs for that specifically activated event handler.
                     bool Has_Mouse_Left_Click_Event = false;
                     bool Has_Enter_Press_Event = false;
-                
-                    if (!currentElement->getDisplay())
-                        continue;   // Skip eventhandlers where their host is not active
-
-                    bool overlapsWithMouse = currentMouse.collides(currentElement);
 
                     // First let's go through all inputs and see if any selector inputs are present.
                     for (size_t k = 0; k < data.size();){
                         event::base* currentInput = data[k];
     
                         Has_Mouse_Left_Click_Event = currentInput->has(input::key::types::LEFT_CLICK) && overlapsWithMouse;
-                        Has_Enter_Press_Event = currentInput->has(input::key::types::ENTER) && in->currentKeyboardState[table::getRelative(input::key::types::ENTER)].getState();
+                        Has_Enter_Press_Event = currentInput->has(input::key::types::ENTER);
     
                         // Check if the host is prime to be focused on
                         if ((Has_Mouse_Left_Click_Event || Has_Enter_Press_Event) && core::hoveredOn == currentElement){
@@ -123,16 +122,24 @@ namespace GGUI::converter {
                         }
 
                         // Criteria must be identical for more accurate criteria listing.
-                        if (currentEventHandler.criteria == currentInput->criteria && core::focusedOn == currentElement){
+                        if (currentInput->contains(static_cast<const event::base*>(&currentEventHandler)) && core::focusedOn == currentElement){
                             try{
-                                // Check if this job could be run successfully.
-                                if (currentEventHandler.job(currentInput)){
-                                    //dont let anyone else react to this event.
-                                    data.erase(data.begin() + (long)k);
-                                    continue;
-                                }
-                                else{
-                                    logger::log("Job '" + currentEventHandler.ID + "' failed!");
+                                event::action::responses currentResponse = currentEventHandler.job(currentInput);
+
+                                switch (currentResponse) {
+                                    case event::action::responses::DONE: {
+                                        // Remove the matched criteria and push them back into data to be checked later with another handler
+                                        event::selectedKeys difference = currentInput->getDifference(static_cast<const event::base*>(&currentEventHandler));
+                                        data.push_back(new event::base(difference));
+                                        // remove the used data
+                                        data.erase(data.begin() + (long)k);
+                                        break;
+                                    }
+                                    case event::action::responses::FAILED:
+                                        logger::log("Job '" + currentEventHandler.ID + "' failed!");
+                                        break;
+                                    case event::action::responses::PROPAGATE:
+                                        break;
                                 }
                             }
                             catch(std::exception& problem){
@@ -143,16 +150,17 @@ namespace GGUI::converter {
                         k++;
                     }
 
-                    // If the current event handler is not focused, then we can check wether to set it on/off onHovering
-                    if (currentElement != core::focusedOn) {
-                        if (currentMouse.state != mouse::states::ENABLE) {
-                            if (overlapsWithMouse){
-                                core::hoveredOn.link(currentElement);
-                            }
-                            else {
-                                if (core::hoveredOn == currentElement)
-                                    core::hoveredOn.unlink();
-                            }
+                }
+
+                // If the current event handler is not focused, then we can check wether to set it on/off onHovering
+                if (currentElement != core::focusedOn) {
+                    if (currentMouse.state != mouse::states::ENABLE) {
+                        if (overlapsWithMouse){
+                            core::hoveredOn.link(currentElement);
+                        }
+                        else {
+                            if (core::hoveredOn == currentElement)
+                                core::hoveredOn.unlink();
                         }
                     }
                 }
@@ -161,19 +169,14 @@ namespace GGUI::converter {
             // If no event handler recognized these inputs, there is no need to keep them lingering for next time.
             data.clear();
         }
-        
-        /**
-        * @brief Populate inputs for keys that are held down.
-        * @details This function iterates over the current keyboard states and creates new input objects
-        *          for keys that are held down and not already present in the inputs list. It skips mouse button keys.
-        */
-        void base::Populate_Inputs_For_Held_Down_Keys() {
+
+        void base::populateInputEventsForHeldDownKeys() {
             event::base* present = new event::base();
 
-            for (size_t i = 0; i < in->currentKeyboardState.size(); i++) {
+            for (size_t i = (size_t)input::key::types::__min; i < (size_t)input::key::types::__max; i++) {
 
-                input::key::types currentKeyType = static_cast<input::key::types>(i + (size_t)input::key::types::__min);
-                input::key currentKey = in->currentKeyboardState[i];
+                input::key::types currentKeyType = static_cast<input::key::types>(i);
+                input::key currentKey = in->currentKeyboardState[table::getRelative(currentKeyType)];
 
                 // Check if the key is activated
                 if (currentKey.getState()) {
@@ -188,15 +191,11 @@ namespace GGUI::converter {
             }
 
             // Check if the input already exists
-            bool Found = false;
             for (auto* input : data) {
-                if (input->criteria == present->criteria) {
-                    Found = true;
-                    break;
-                }
-            }
+                if (input->criteria != present->criteria) continue;
 
-            if (Found) return;
+                return; // This event already exists.
+            }
 
             data.push_back(present);
         }
@@ -218,11 +217,11 @@ namespace GGUI::converter {
 
             // Check if the left mouse button is pressed and for how long
             if (in->currentKeyboardState[table::getRelative(input::key::types::LEFT_CLICK)].getState() && mouseLeftClickPressedFor >= SETTINGS::mousePressDownCooldown) {
-                data.push_back(new event::base{input::key::types::LEFT_CLICK, input::key::types::DRAGGING});
+                data.push_back(new event::base({input::key::types::LEFT_CLICK, input::key::types::DRAGGING}));
             }
             // Check if the left mouse button was previously pressed and now released
             else if (!in->currentKeyboardState[table::getRelative(input::key::types::LEFT_CLICK)].getState() && in->previousKeyboardState[table::getRelative(input::key::types::LEFT_CLICK)].getState() != in->currentKeyboardState[table::getRelative(input::key::types::LEFT_CLICK)].getState()) {
-                data.push_back(new event::base{input::key::types::LEFT_CLICK});
+                data.push_back(new event::base({input::key::types::LEFT_CLICK}));
             }
 
             // Get the duration the right mouse button has been pressed
@@ -230,11 +229,11 @@ namespace GGUI::converter {
 
             // Check if the right mouse button is pressed and for how long
             if (in->currentKeyboardState[table::getRelative(input::key::types::RIGHT_CLICK)].getState() && mouseRightClickPressedFor >= SETTINGS::mousePressDownCooldown) {
-                data.push_back(new event::base{input::key::types::RIGHT_CLICK, input::key::types::DRAGGING});
+                data.push_back(new event::base({input::key::types::RIGHT_CLICK, input::key::types::DRAGGING}));
             }
             // Check if the right mouse button was previously pressed and now released
             else if (!in->currentKeyboardState[table::getRelative(input::key::types::RIGHT_CLICK)].getState() && in->previousKeyboardState[table::getRelative(input::key::types::RIGHT_CLICK)].getState() != in->currentKeyboardState[table::getRelative(input::key::types::RIGHT_CLICK)].getState()) {
-                data.push_back(new event::base{input::key::types::RIGHT_CLICK});
+                data.push_back(new event::base({input::key::types::RIGHT_CLICK}));
             }
 
             // Get the duration the middle mouse button has been pressed
@@ -242,11 +241,11 @@ namespace GGUI::converter {
 
             // Check if the middle mouse button is pressed and for how long
             if (in->currentKeyboardState[table::getRelative(input::key::types::MIDDLE_CLICK)].getState() && Mouse_Middle_Pressed_For >= SETTINGS::mousePressDownCooldown) {
-                data.push_back(new event::base{input::key::types::MIDDLE_CLICK, input::key::types::DRAGGING});
+                data.push_back(new event::base({input::key::types::MIDDLE_CLICK, input::key::types::DRAGGING}));
             }
             // Check if the middle mouse button was previously pressed and now released
             else if (!in->currentKeyboardState[table::getRelative(input::key::types::MIDDLE_CLICK)].getState() && in->previousKeyboardState[table::getRelative(input::key::types::MIDDLE_CLICK)].getState() != in->currentKeyboardState[table::getRelative(input::key::types::MIDDLE_CLICK)].getState()) {
-                data.push_back(new event::base{input::key::types::MIDDLE_CLICK});
+                data.push_back(new event::base({input::key::types::MIDDLE_CLICK}));
             }
         }
 
@@ -350,7 +349,17 @@ namespace GGUI::converter {
         }
 
         void base::transformInput() {
-            
+            // Translators
+            populateInputEventsForHeldDownKeys();   // Read converter::input keys and create a single large event containing everything that just was polled.
+            mouseAPI();
+            scrollAPI();
+
+            // Internal consumers
+            handleEscape();
+            handleTabulator();
+
+            // UI event handler feeder
+            eventHandler();
         }
     }
 }
