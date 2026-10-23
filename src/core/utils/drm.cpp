@@ -43,107 +43,107 @@ namespace GGUI::DRM {
         bool isPressed = (packetInput->modifiers & controlKey::PRESSED_DOWN) != controlKey::UNKNOWN;
         
         if ((packetInput->modifiers & controlKey::SHIFT) != controlKey::UNKNOWN) {
-            core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::SHIFT] = converter::input::key(isPressed);
+            core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::SHIFT)].setState(isPressed);
         }
         
         if ((packetInput->modifiers & controlKey::CTRL) != controlKey::UNKNOWN) {
-            core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::CTRL] = converter::input::key(isPressed);
+            core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::CTRL)].setState(isPressed);
         }
         
         if ((packetInput->modifiers & controlKey::ALT) != controlKey::UNKNOWN) {
-            core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ALT] = converter::input::key(isPressed);
+            core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::ALT)].setState(isPressed);
         }
         
         if ((packetInput->modifiers & controlKey::SUPER) != controlKey::UNKNOWN) {
-            core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::SUPER] = converter::input::key(isPressed);
+            core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::SUPER)].setState(isPressed);
         }
         
         if ((packetInput->modifiers & controlKey::ALTGR) != controlKey::UNKNOWN) {
-            core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ALTGR] = converter::input::key(isPressed);
+            core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::ALTGR)].setState(isPressed);
         }
 
         // Handle additional special keys
         switch (packetInput->additional) {
             case additionalKey::F1:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F1] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::F1)].setState(isPressed);
                 break;
             case additionalKey::F2:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F2] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::F2)].setState(isPressed);
                 break;
             case additionalKey::F3:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F3] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::F3)].setState(isPressed);
                 break;
             case additionalKey::F4:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F4] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::F4)].setState(isPressed);
                 break;
             case additionalKey::F5:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F5] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::F5)].setState(isPressed);
                 break;
             case additionalKey::F6:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F6] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::F6)].setState(isPressed);
                 break;
             case additionalKey::F7:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F7] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::F7)].setState(isPressed);
                 break;
             case additionalKey::F8:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F8] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::F8)].setState(isPressed);
                 break;
             case additionalKey::F9:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F9] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::F9)].setState(isPressed);
                 break;
             case additionalKey::F10:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F10] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::F10)].setState(isPressed);
                 break;
             case additionalKey::F11:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F11] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::F11)].setState(isPressed);
                 break;
             case additionalKey::F12:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::F12] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::F12)].setState(isPressed);
                 break;
             case additionalKey::ARROW_UP:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ARROW_UP] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::ARROW_UP)].setState(isPressed);
                 break;
             case additionalKey::ARROW_DOWN:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ARROW_DOWN] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::ARROW_DOWN)].setState(isPressed);
                 break;
             case additionalKey::ARROW_LEFT:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ARROW_LEFT] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::ARROW_LEFT)].setState(isPressed);
                 break;
             case additionalKey::ARROW_RIGHT:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ARROW_RIGHT] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::ARROW_RIGHT)].setState(isPressed);
                 break;
             case additionalKey::HOME:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::HOME] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::HOME)].setState(isPressed);
                 break;
             case additionalKey::END:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::END] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::END)].setState(isPressed);
                 break;
             case additionalKey::PAGE_UP:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::PAGE_UP] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::PAGE_UP)].setState(isPressed);
                 break;
             case additionalKey::PAGE_DOWN:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::PAGE_DOWN] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::PAGE_DOWN)].setState(isPressed);
                 break;
             case additionalKey::INSERT:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::INSERT] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::INSERT)].setState(isPressed);
                 break;
             case additionalKey::DEL:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::DELETE] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::DELETE)].setState(isPressed);
                 break;
             case additionalKey::LEFT_CLICK:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::LEFT_CLICK] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::LEFT_CLICK)].setState(isPressed);
                 break;
             case additionalKey::MIDDLE_CLICK:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::MIDDLE_CLICK] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::MIDDLE_CLICK)].setState(isPressed);
                 break;
             case additionalKey::RIGHT_CLICK:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::RIGHT_CLICK] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::RIGHT_CLICK)].setState(isPressed);
                 break;
             case additionalKey::SCROLL_UP:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::SCROLL_UP] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::SCROLL_UP)].setState(isPressed);
                 break;
             case additionalKey::SCROLL_DOWN:
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::SCROLL_DOWN] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::SCROLL_DOWN)].setState(isPressed);
                 break;
             case additionalKey::UNKNOWN:
             default:
@@ -155,27 +155,27 @@ namespace GGUI::DRM {
         if (packetInput->key != 0) {
             // Check for special characters
             if (packetInput->key == '\n' || packetInput->key == '\r') {
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ENTER] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::ENTER)].setState(isPressed);
             }
             else if (packetInput->key == '\t') {
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::TABULATOR] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::TABULATOR)].setState(isPressed);
                 // handleTabulator();
             }
             else if (packetInput->key == '\b' || packetInput->key == 127) { // Backspace or DEL
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::DELETE] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::DELETE)].setState(isPressed);
             }
             else if (packetInput->key == 27) { // ESC
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ESCAPE] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::ESCAPE)].setState(isPressed);
                 // handleEscape();
             }
             else if (packetInput->key == ' ') { // Space
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::SPACE] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::SPACE)].setState(isPressed);
             }
             else if (packetInput->key > (uint8_t)converter::input::key::types::SPACE && packetInput->key < (uint8_t)converter::input::key::types::DELETE) { // Printable ASCII characters
-                core::inputManager->currentKeyboardState[(uint8_t)packetInput->key] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[packetInput->key].setState(isPressed);
 
                 // Notify all loose constraints on letter event handlers.
-                core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ALL_LETTERS] = converter::input::key(isPressed);
+                core::inputManager->currentKeyboardState[table::getRelative(converter::input::key::types::ALL_LETTERS)].setState(isPressed);
             }
         }
     }

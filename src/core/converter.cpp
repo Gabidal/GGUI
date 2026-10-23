@@ -110,7 +110,7 @@ namespace GGUI::converter {
                         event::base* currentInput = data[k];
     
                         Has_Mouse_Left_Click_Event = currentInput->has(input::key::types::LEFT_CLICK) && overlapsWithMouse;
-                        Has_Enter_Press_Event = currentInput->has(input::key::types::ENTER) && in->currentKeyboardState[(uint8_t)input::key::types::ENTER].state;
+                        Has_Enter_Press_Event = currentInput->has(input::key::types::ENTER) && in->currentKeyboardState[table::getRelative(input::key::types::ENTER)].getState();
     
                         // Check if the host is prime to be focused on
                         if ((Has_Mouse_Left_Click_Event || Has_Enter_Press_Event) && core::hoveredOn == currentElement){
@@ -118,7 +118,7 @@ namespace GGUI::converter {
                             core::hoveredOn.unlink();
 
                             // Remove the input, since it's job is used here:
-                            data.erase(data.begin() + k);
+                            data.erase(data.begin() + (long)k);
                             continue;
                         }
 
@@ -128,7 +128,7 @@ namespace GGUI::converter {
                                 // Check if this job could be run successfully.
                                 if (currentEventHandler.job(currentInput)){
                                     //dont let anyone else react to this event.
-                                    data.erase(data.begin() + k);
+                                    data.erase(data.begin() + (long)k);
                                     continue;
                                 }
                                 else{
@@ -176,7 +176,7 @@ namespace GGUI::converter {
                 input::key currentKey = in->currentKeyboardState[i];
 
                 // Check if the key is activated
-                if (currentKey.state) {
+                if (currentKey.getState()) {
 
                     // Skip mouse button keys
                     if (input::key::types::LEFT_CLICK == currentKeyType || input::key::types::RIGHT_CLICK == currentKeyType || input::key::types::MIDDLE_CLICK == currentKeyType)
@@ -214,38 +214,38 @@ namespace GGUI::converter {
             auto currentTime = std::chrono::steady_clock::now();
 
             // Get the duration the left mouse button has been pressed
-            std::chrono::steady_clock::duration mouseLeftClickPressedFor = currentTime - in->currentKeyboardState[(uint8_t)input::key::types::LEFT_CLICK].captureTime;
+            std::chrono::steady_clock::duration mouseLeftClickPressedFor = currentTime - in->currentKeyboardState[table::getRelative(input::key::types::LEFT_CLICK)].getCaptureTime();
 
             // Check if the left mouse button is pressed and for how long
-            if (in->currentKeyboardState[(uint8_t)input::key::types::LEFT_CLICK].state && mouseLeftClickPressedFor >= SETTINGS::mousePressDownCooldown) {
+            if (in->currentKeyboardState[table::getRelative(input::key::types::LEFT_CLICK)].getState() && mouseLeftClickPressedFor >= SETTINGS::mousePressDownCooldown) {
                 data.push_back(new event::base{input::key::types::LEFT_CLICK, input::key::types::DRAGGING});
             }
             // Check if the left mouse button was previously pressed and now released
-            else if (!in->currentKeyboardState[(uint8_t)input::key::types::LEFT_CLICK].state && in->previousKeyboardState[(uint8_t)input::key::types::LEFT_CLICK].state != in->currentKeyboardState[(uint8_t)input::key::types::LEFT_CLICK].state) {
+            else if (!in->currentKeyboardState[table::getRelative(input::key::types::LEFT_CLICK)].getState() && in->previousKeyboardState[table::getRelative(input::key::types::LEFT_CLICK)].getState() != in->currentKeyboardState[table::getRelative(input::key::types::LEFT_CLICK)].getState()) {
                 data.push_back(new event::base{input::key::types::LEFT_CLICK});
             }
 
             // Get the duration the right mouse button has been pressed
-            std::chrono::steady_clock::duration mouseRightClickPressedFor = currentTime - in->currentKeyboardState[(uint8_t)input::key::types::RIGHT_CLICK].captureTime;
+            std::chrono::steady_clock::duration mouseRightClickPressedFor = currentTime - in->currentKeyboardState[table::getRelative(input::key::types::RIGHT_CLICK)].getCaptureTime();
 
             // Check if the right mouse button is pressed and for how long
-            if (in->currentKeyboardState[(uint8_t)input::key::types::RIGHT_CLICK].state && mouseRightClickPressedFor >= SETTINGS::mousePressDownCooldown) {
+            if (in->currentKeyboardState[table::getRelative(input::key::types::RIGHT_CLICK)].getState() && mouseRightClickPressedFor >= SETTINGS::mousePressDownCooldown) {
                 data.push_back(new event::base{input::key::types::RIGHT_CLICK, input::key::types::DRAGGING});
             }
             // Check if the right mouse button was previously pressed and now released
-            else if (!in->currentKeyboardState[(uint8_t)input::key::types::RIGHT_CLICK].state && in->previousKeyboardState[(uint8_t)input::key::types::RIGHT_CLICK].state != in->currentKeyboardState[(uint8_t)input::key::types::RIGHT_CLICK].state) {
+            else if (!in->currentKeyboardState[table::getRelative(input::key::types::RIGHT_CLICK)].getState() && in->previousKeyboardState[table::getRelative(input::key::types::RIGHT_CLICK)].getState() != in->currentKeyboardState[table::getRelative(input::key::types::RIGHT_CLICK)].getState()) {
                 data.push_back(new event::base{input::key::types::RIGHT_CLICK});
             }
 
             // Get the duration the middle mouse button has been pressed
-            std::chrono::steady_clock::duration Mouse_Middle_Pressed_For = currentTime - in->currentKeyboardState[(uint8_t)input::key::types::MIDDLE_CLICK].captureTime;
+            std::chrono::steady_clock::duration Mouse_Middle_Pressed_For = currentTime - in->currentKeyboardState[table::getRelative(input::key::types::MIDDLE_CLICK)].getCaptureTime();
 
             // Check if the middle mouse button is pressed and for how long
-            if (in->currentKeyboardState[(uint8_t)input::key::types::MIDDLE_CLICK].state && Mouse_Middle_Pressed_For >= SETTINGS::mousePressDownCooldown) {
+            if (in->currentKeyboardState[table::getRelative(input::key::types::MIDDLE_CLICK)].getState() && Mouse_Middle_Pressed_For >= SETTINGS::mousePressDownCooldown) {
                 data.push_back(new event::base{input::key::types::MIDDLE_CLICK, input::key::types::DRAGGING});
             }
             // Check if the middle mouse button was previously pressed and now released
-            else if (!in->currentKeyboardState[(uint8_t)input::key::types::MIDDLE_CLICK].state && in->previousKeyboardState[(uint8_t)input::key::types::MIDDLE_CLICK].state != in->currentKeyboardState[(uint8_t)input::key::types::MIDDLE_CLICK].state) {
+            else if (!in->currentKeyboardState[table::getRelative(input::key::types::MIDDLE_CLICK)].getState() && in->previousKeyboardState[table::getRelative(input::key::types::MIDDLE_CLICK)].getState() != in->currentKeyboardState[table::getRelative(input::key::types::MIDDLE_CLICK)].getState()) {
                 data.push_back(new event::base{input::key::types::MIDDLE_CLICK});
             }
         }
@@ -257,10 +257,10 @@ namespace GGUI::converter {
         */
         void base::scrollAPI() {
             // Check if the mouse scroll up button has been pressed
-            if (in->currentKeyboardState[(uint8_t)input::key::types::SCROLL_UP].state){
+            if (in->currentKeyboardState[table::getRelative(input::key::types::SCROLL_UP)].getState()){
                 if (core::focusedOn != nullptr && dynamic_cast<scrollView*>(core::focusedOn.operate()))    // If the focused element is not null, call the scroll up function
                     dynamic_cast<scrollView*>(core::focusedOn.operate())->scrollUp();
-            } else if (in->currentKeyboardState[(uint8_t)input::key::types::SCROLL_DOWN].state){  // Check if the mouse scroll down button has been pressed
+            } else if (in->currentKeyboardState[table::getRelative(input::key::types::SCROLL_DOWN)].getState()){  // Check if the mouse scroll down button has been pressed
                 if (core::focusedOn != nullptr && dynamic_cast<scrollView*>(core::focusedOn.operate()))    // If the focused element is not null, call the scroll down function
                     dynamic_cast<scrollView*>(core::focusedOn.operate())->scrollDown();
             }
@@ -275,7 +275,7 @@ namespace GGUI::converter {
         */
         void base::handleEscape() {
             // Check if the escape key has been pressed
-            if (!in->currentKeyboardState[(uint8_t)input::key::types::ESCAPE].state)
+            if (!in->currentKeyboardState[table::getRelative(input::key::types::ESCAPE)].getState())
                 return;
 
             // If the focused element is not null, remove the focus
@@ -296,7 +296,7 @@ namespace GGUI::converter {
         */
         void base::handleTabulator() {
             // Check if the tab key has been pressed
-            if (!in->currentKeyboardState[(uint8_t)input::key::types::TABULATOR].state)
+            if (!in->currentKeyboardState[table::getRelative(input::key::types::TABULATOR)].getState())
                 return;
 
             if (core::focusedOn != nullptr) return;   // Tabulator is disabled from switching if an element is focused on, this gives us the ability to insert tabs into textFields.
@@ -317,7 +317,7 @@ namespace GGUI::converter {
                 return;
 
             // Check if the shift key is pressed
-            bool Shift_Is_Pressed = in->currentKeyboardState[(uint8_t)input::key::types::SHIFT].state;
+            bool Shift_Is_Pressed = in->currentKeyboardState[table::getRelative(input::key::types::SHIFT)].getState();
 
             int Current_Index = 0;
 
@@ -337,7 +337,7 @@ namespace GGUI::converter {
 
                 // If the index is out of bounds, wrap it around to the other side of the list
                 if (Current_Index < 0){
-                    Current_Index = handlers.size() - 1;
+                    Current_Index = (int)handlers.size() - 1;
                 }
                 else if ((size_t)Current_Index >= handlers.size()){
                     Current_Index = 0;
@@ -350,7 +350,7 @@ namespace GGUI::converter {
         }
 
         void base::transformInput() {
-
+            
         }
     }
 }

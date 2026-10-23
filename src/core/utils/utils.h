@@ -172,6 +172,11 @@ namespace GGUI{
         constexpr size_t getSize() {
             return (static_cast<uint8_t>(enumType::__max) - static_cast<uint8_t>(enumType::__min)) + 1;
         }
+        
+        template<typename enumType, typename = std::enable_if_t<std::is_enum_v<enumType>>>
+        constexpr size_t getRelative(enumType enumValue) {
+            return static_cast<uint8_t>(enumValue) - static_cast<uint8_t>(enumType::__min);
+        }
     }
 
     namespace number {

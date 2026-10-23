@@ -319,7 +319,7 @@ namespace GGUI{
                     char letter = '\0';
 
                     for (char i = (char)converter::input::key::types::SPACE + 1; i < (char)converter::input::key::types::DELETE; i++) {
-                        if (core::inputManager->currentKeyboardState[(uint8_t)i].state) {
+                        if (core::inputManager->currentKeyboardState[(uint8_t)i].getState()) {
                             letter = i;
                             break;
                         }
@@ -345,7 +345,7 @@ namespace GGUI{
         addEventhandler(converter::output::event::action(
             {converter::input::key::types::ENTER},
             [this, Then](converter::output::event::base*) {
-                if (core::focusedOn == this && core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ENTER].state) {
+                if (core::focusedOn == this && core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::ENTER].getState()) {
                     //First call the function with the user's input
                     Then(this, '\n');
                     updateFrame();
@@ -361,7 +361,7 @@ namespace GGUI{
         addEventhandler(converter::output::event::action(
             {converter::input::key::types::BACKSPACE},
             [this](converter::output::event::base*) {
-                if (core::focusedOn == this && core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::BACKSPACE].state) {
+                if (core::focusedOn == this && core::inputManager->currentKeyboardState[(uint8_t)converter::input::key::types::BACKSPACE].getState()) {
                     //If the text field is empty, there is nothing to do
                     if (text.size() > 0) {
                         text.pop_back();

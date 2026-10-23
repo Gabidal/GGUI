@@ -18,7 +18,11 @@ namespace GGUI::converter {
     }
 
     namespace input {
-        struct alignas(16) key {
+        class alignas(16) key {
+            bool state = false;
+            std::chrono::steady_clock::time_point captureTime = std::chrono::steady_clock::now();
+            
+        public:
             enum class types : uint8_t {
                 __min                   = 32,
 
@@ -80,14 +84,18 @@ namespace GGUI::converter {
 
                 __max,
             };
+        
+            bool getState() const { return state; }
+            std::chrono::steady_clock::time_point getCaptureTime() const { return captureTime; }
 
-            bool state;
-            std::chrono::steady_clock::time_point captureTime = std::chrono::steady_clock::now();
-
-            key(bool newState = false) : state(newState) {}
+            // Force capture time
+            void setState(bool newState) {
+                state = newState;
+                captureTime = std::chrono::steady_clock::now();
+            }
         };
 
-        using allKeys = std::array<key, (size_t)table::getSize<key::types>()>;
+        using allKeys = std::array<key, table::getSize<key::types>()>;
 
         /**
             * @brief Contains the incoming key information
@@ -96,6 +104,7 @@ namespace GGUI::converter {
         struct alignas(128) base {
             output::base* out = nullptr;
 
+            // Terminal modules will write into these. Afterwards read from output converter.
             allKeys currentKeyboardState = {};
             allKeys previousKeyboardState = {};     // used to compare changed states.
 
@@ -144,11 +153,12 @@ namespace GGUI::converter {
                 std::chrono::steady_clock::duration endTime;
 
                 // When the job starts, job, prolong previous similar job by this time.
-                memory(std::chrono::steady_clock::duration end, std::function<bool(event::base*)> Job, types Flags = types::NONE, std::string id = "") : action({}, std::move(Job), std::move(id)) {
-                    startTime = std::chrono::steady_clock::now();
-                    endTime = end;
-                    flags = Flags;
-                }
+                memory(std::chrono::steady_clock::duration end, std::function<bool(event::base*)> Job, types Flags = types::NONE, std::string id = "") : 
+                    action({}, std::move(Job), std::move(id)), 
+                    flags(Flags), 
+                    startTime(std::chrono::steady_clock::now()), 
+                    endTime(end) 
+                {}
 
                 bool is(types f) const {
                     return ((uint8_t)flags & (uint8_t)f) > 0;
@@ -172,7 +182,7 @@ namespace GGUI::converter {
 
             base() = default;
 
-            // Reads the incoming data and transform it into 
+            // Reads the input key data and transform it into output events
             void transformInput();
 
         protected:

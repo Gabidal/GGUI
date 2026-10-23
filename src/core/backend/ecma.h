@@ -1957,15 +1957,16 @@ namespace GGUI {
                 constexpr std::vector<sequence::parameter::selectable<graphicalTextAttributes>> compile() const {
                     std::vector<sequence::parameter::selectable<graphicalTextAttributes>> result;   TODO("Add a backchannel parameter so that abstract callers could give expected parameter sizes for reserve(x)!")
 
+                    constexpr size_t colorTypeAndRGBValue = 1 + 3;  // (type) + (r, g, b)
+
                     const auto& allActiveTextAttributes = textAttributes.getAll();
-                    result.reserve(allActiveTextAttributes.size());
+                    result.reserve(allActiveTextAttributes.size() + colorTypeAndRGBValue + colorTypeAndRGBValue); // foreground + background
 
                     for (auto& attr : allActiveTextAttributes) {
                         result.emplace_back(attr);
 
                         if (attr == graphicalTextAttributes::FOREGROUND_COLOR || attr == graphicalTextAttributes::BACKGROUND_COLOR) {
                             if (activeDirectColorType == directColorTypes::RGB) {
-                                result.reserve(result.size() + 4);
 
                                 // add direct color type
                                 result.emplace_back(static_cast<graphicalTextAttributes>(activeDirectColorType));
