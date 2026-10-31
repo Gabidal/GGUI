@@ -211,6 +211,19 @@ namespace GGUI{
         return this;
     }
 
+    
+    textField* textField::appendText(const std::string& toAdd) {
+        text += toAdd;
+
+        flags |= (stain::base(stain::types::DEEP) | stain::types::RESET);
+
+        updateTextCache();
+
+        updateFrame();
+
+        return this;
+    }
+
     /**
      * @brief Aligns text to the left within the text field.
      * @param Result A vector of UTF objects to store the aligned text.
@@ -310,7 +323,7 @@ namespace GGUI{
      *          calls the Then function with the character as input. If the event is a backspace, it removes the last character from the text field. In all cases, it marks the text field as
      *          dirty and updates the frame.
      */
-    void textField::input(const std::function<action::responses(textField*, const std::string&)>& Then) {
+    textField* textField::input(const std::function<action::responses(textField*, const std::string&)>& Then) {
         addEventhandler(converter::output::event::action(
             {converter::input::key::types::ANY_LETTERS},
             [this, Then](converter::output::event::base* pressed_keys) {
@@ -362,5 +375,7 @@ namespace GGUI{
             },
             getTypedName() + "::input::backspace"
         ));
+
+        return this;
     }
 }

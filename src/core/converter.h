@@ -115,6 +115,12 @@ namespace GGUI::converter {
             base();
 
             void inputThread();
+
+            // Used before sequence parser
+            void flushKeyboardStates() {
+                previousKeyboardState = currentKeyboardState;
+                currentKeyboardState.fill(key());
+            }
         };
     }
 
@@ -154,11 +160,15 @@ namespace GGUI::converter {
                     // filter out any letters if we have ANY_LETTERS capture enabled
                     if (has(input::key::types::ANY_LETTERS)) {
                         difference.erase(std::remove_if(difference.begin(), difference.end(), [](input::key::types key) {
-                            return table::contains<input::key::types, input::key::types::__min_LETTERS, input::key::types::__max_LETTERS>(key);
+                            return table::contains<input::key::types, input::key::types::__min_LETTERS, input::key::types::__max_LETTERS>(key) || key == input::key::types::ANY_LETTERS;
                         }), difference.end());
                     }
 
                     return difference;
+                }
+
+                constexpr bool isEmpty() const {
+                    return criteria.empty();
                 }
             };
 

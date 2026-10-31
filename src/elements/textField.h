@@ -37,8 +37,10 @@ namespace GGUI{
         std::string_view getText() {
             return text;
         }
+
+        textField* appendText(const std::string& toAdd);
         
-        void input(const std::function<action::responses(textField*, const std::string&)>& Then);
+        textField* input(const std::function<action::responses(textField*, const std::string&)>& Then);
 
         textField* setBorder(bool b) {
             element::setBorder(b);

@@ -56,6 +56,9 @@ namespace GGUI::converter {
                         DRM::translateInputs();
                     }
                     else {
+                        // Ready-up keyboard states for the incoming key states
+                        flushKeyboardStates();
+
                         // Translate the Queried inputs.
                         terminal::currentStates->parseInput();
                     }
@@ -122,15 +125,18 @@ namespace GGUI::converter {
                         }
 
                         // Criteria must be identical for more accurate criteria listing.
-                        if (currentInput->contains(static_cast<const event::base*>(&currentEventHandler)) && core::focusedOn == currentElement){
+                        if (static_cast<const event::base*>(&currentEventHandler)->contains(currentInput) && core::focusedOn == currentElement) {
                             try{
                                 event::action::responses currentResponse = currentEventHandler.job(currentInput);
 
                                 switch (currentResponse) {
                                     case event::action::responses::DONE: {
                                         // Remove the matched criteria and push them back into data to be checked later with another handler
-                                        event::selectedKeys difference = currentInput->getDifference(static_cast<const event::base*>(&currentEventHandler));
-                                        data.push_back(new event::base(difference));
+                                        event::selectedKeys difference = static_cast<const event::base*>(&currentEventHandler)->getDifference(currentInput);
+
+                                        // Propagate leftovers if not empty
+                                        if (!difference.empty()) data.push_back(new event::base(difference));
+
                                         // remove the used data
                                         data.erase(data.begin() + (long)k);
                                         break;
@@ -197,7 +203,7 @@ namespace GGUI::converter {
                 return; // This event already exists.
             }
 
-            data.push_back(present);
+            if (!present->isEmpty()) data.push_back(present);
         }
 
         /**

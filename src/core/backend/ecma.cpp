@@ -166,6 +166,15 @@ namespace GGUI::terminal::ecma {
             return {1, new sequence::prefix<table::C0>(static_cast<table::C0>(input.front()))};
         }
 
+        void parseGraphicCharacters(std::string_view input) {
+            // check if the most significant bit is set
+            if (0x80 & (uint8_t)input.front()) {
+                // handle UTF-8 here...
+            } else {
+                currentStates->keyRegistry->currentKeyboardState[::GGUI::table::getRelative((converter::input::key::types)input.front())].setState(true);
+            }
+        }
+
         std::pair<size_t, sequence::base*> defaultSequenceParser(std::string_view input) {
             std::pair<size_t, sequence::base*> result;
             size_t i = 0;
@@ -175,9 +184,9 @@ namespace GGUI::terminal::ecma {
                 result = parsePostfixForC0(input.substr(i));
             } else if (GGUI::table::contains<table::C1>(input[i])) { 
                 result = parsePostfixForC1(input.substr(i));
-            }
-            else {  // header == nullptr => means this is a graphical character
-                result = {i, new graphicalCharacter(input[i])}; // i == 0, because parser will increment i by one after loop.
+            } else {
+                parseGraphicCharacters(input.substr(i));
+                result = {0, nullptr};
             }
 
             return result;
@@ -192,7 +201,7 @@ namespace GGUI::terminal::ecma {
 
                 currentStates->ecmaComponents.pageManager.update(); // refresh temporary pages
 
-                result.push_back(parsedSequence);
+                if (parsedLength != 0) result.push_back(parsedSequence);
 
                 currentStates->ecmaComponents.currentParsingSequenceIndex++;    // Only for META operators
 

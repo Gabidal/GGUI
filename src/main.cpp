@@ -12,20 +12,11 @@ int main(int argc, char* argv[]){
     gguiHandle app;
     GGUI::pauseGGUI([&app](){
         app.setContent(
-            (new listView{
-                (new listView{
-                    (new textField("File"))->setBorder(true)->onClick([](converter::output::event::base*){ return action::responses::DONE; }),
-                    (new textField("Edit"))->setBorder(true)->onClick([](converter::output::event::base*){ return action::responses::DONE; }),
-                    (new textField("View"))->setBorder(true)->onClick([](converter::output::event::base*){ return action::responses::DONE; }),
-                    (new textField("Help"))->setBorder(true)->onClick([](converter::output::event::base*){ return action::responses::DONE; }),
-                })->setBorder(true)->setName("first list"),
-                
-                (new listView{
-                    (new element())->setTitle("A")->setDimensions({25, 12})->setPosition({0.50f, 0.5f})->setBackgroundColor(COLOR::MAGENTA)->setTextColor(COLOR::RED)->setOpacity(0.5f)->setBorder(true),
-                    (new element())->setTitle("B")->setDimensions({25, 12})->setPosition({0.25f, 0.65f})->setBackgroundColor(COLOR::YELLOW)->setTextColor(COLOR::GREEN)->setOpacity(0.5f)->setBorder(true),
-                    (new element())->setTitle("C")->setDimensions({25, 12})->setPosition({0.75f, 0.65f})->setBackgroundColor(COLOR::CYAN)->setTextColor(COLOR::BLUE)->setOpacity(0.5f)->setBorder(true)
-                })->setName("second list")->setDimensions({1.0f, 1.0f})
-            })->setVertical()->setBorder(true)->setTitle("Your App UI")->setDimensions({1.0f, 1.0f})
+            ((new textField(""))->input([](textField* self, const std::string& e){
+                self->appendText(e);
+
+                return action::responses::DONE;
+            }))->setBackgroundColor(COLOR::GRAY)->setDimensions({1.f, 1.f})
         );
     });
 

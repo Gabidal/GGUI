@@ -115,7 +115,7 @@ namespace GGUI {
             // Some compile time constants; 510, is enough. If need raise this.
             static constexpr unsigned int capacity = UINT8_MAX * 2;
 
-            std::array<char, capacity> inputBuffer;     // This is what we receive
+            std::array<char, capacity> inputBuffer = {};     // This is what we receive
             unsigned int inputSize = 0;
 
             // Outside reads from here

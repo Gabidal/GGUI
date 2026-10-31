@@ -661,7 +661,7 @@ namespace GGUI {
                     template<typename otherContainerType, typename = std::enable_if_t<(sizeof(otherContainerType) == sizeof(containerType))>>
                     constexpr prefix(const prefix<otherContainerType>& other) : base(other.getType()), header(static_cast<containerType>(other.getValue())) {}
 
-                    constexpr virtual ~prefix() = default;
+                    constexpr ~prefix() override = default;
 
                     constexpr void toString(std::string& output) const override {
                         if constexpr (std::is_same<containerType, table::C1>::value) {
@@ -903,8 +903,7 @@ namespace GGUI {
                         }
                     }
 
-                    constexpr transmission(std::string_view simpleText) : prefix(table::C0::STX, sequence::types::TRANSMISSION) {
-                        type = types::TEXT;
+                    constexpr transmission(std::string_view simpleText) : prefix(table::C0::STX, sequence::types::TRANSMISSION), type(types::TEXT) {
                         primary.reserve(simpleText.size());
                         for (char c : simpleText) primary.push_back(c);
                     }

@@ -193,9 +193,7 @@ namespace GGUI::terminal {
         }
 
         IVector2 start = {0, 0};
-        // IVector2 end = cursor + dimensions;
-        IVector2 end = cursor + IVector2{dom->getWidth(), dom->getHeight()};
-        assert(cursor == IVector2(0, 0) && "Packet injections not supported yet!");
+        IVector2 end = IVector2{dom->getWidth(), dom->getHeight()};
 
         TODO("Since we know where SGR's are and delta of text, we could just jump between and write the small delta areas only!")
         for (int y = start.y(); y < end.y(); y++) {
