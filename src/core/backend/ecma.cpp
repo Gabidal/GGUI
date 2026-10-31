@@ -377,6 +377,9 @@ namespace GGUI::terminal::ecma {
                 IVector2 oppositeDirection = currentStates->ecmaComponents.activeCharacterMovementDirection * -1;
             
                 currentStates->ecmaComponents.activeDataPosition += oppositeDirection;
+
+                // Register tabulator as being pressed in the key registry
+                currentStates->keyRegistry->currentKeyboardState[::GGUI::table::getRelative(converter::input::key::types::BACKSPACE)].setState(true);
             }
 
             void operate_CARRIAGE_RETURN(sequence::base*) {
@@ -393,6 +396,9 @@ namespace GGUI::terminal::ecma {
                         currentStates->ecmaComponents.activeDataPosition.x() = currentStates->ecmaComponents.lineLimitPosition.x();
                     }
                 }
+
+                // Register enter as being pressed in the key registry
+                currentStates->keyRegistry->currentKeyboardState[::GGUI::table::getRelative(converter::input::key::types::ENTER)].setState(true);
             }
 
             void operate_FORM_FEED(sequence::base*) {
@@ -464,6 +470,9 @@ namespace GGUI::terminal::ecma {
                 currentStates->ecmaComponents.activeTabulationAlignment = nextTabulation.mode;
 
                 TODO("add here the code for detecting multi-line tabulation support and if so, also move the activeLinePosition.")
+
+                // Register tabulator as being pressed in the key registry
+                currentStates->keyRegistry->currentKeyboardState[::GGUI::table::getRelative(converter::input::key::types::TABULATOR)].setState(true);
             }
 
             void operate_CHARACTER_TABULATION_SET(sequence::base*) {
@@ -473,6 +482,8 @@ namespace GGUI::terminal::ecma {
                     tabulationStop::types::CHARACTER,
                     currentStates->ecmaComponents.activePresentationPosition
                 });
+
+                TODO("Generate a tabulation stop for each element with event handlers")
             }
 
             void operate_CHARACTER_AND_LINE_POSITION(sequence::base* input) {
@@ -1227,6 +1238,9 @@ namespace GGUI::terminal::ecma {
                 auto character = params.front().getValueAsInteger();
 
                 currentStates->ecmaComponents.activePresentationPosition.x() -= character;
+
+                // Register as being pressed in the key registry
+                currentStates->keyRegistry->currentKeyboardState[::GGUI::table::getRelative(converter::input::key::types::ARROW_LEFT)].setState(true);
             }
 
             void operate_CURSOR_DOWN(sequence::base* input) {
@@ -1239,6 +1253,9 @@ namespace GGUI::terminal::ecma {
                 auto line = params.front().getValueAsInteger();
 
                 currentStates->ecmaComponents.activePresentationPosition.y() += line;
+                
+                // Register as being pressed in the key registry
+                currentStates->keyRegistry->currentKeyboardState[::GGUI::table::getRelative(converter::input::key::types::ARROW_DOWN)].setState(true);
             }
 
             void operate_CURSOR_RIGHT(sequence::base* input) {
@@ -1251,6 +1268,9 @@ namespace GGUI::terminal::ecma {
                 auto character = params.front().getValueAsInteger();
 
                 currentStates->ecmaComponents.activePresentationPosition.x() += character;
+
+                // Register as being pressed in the key registry
+                currentStates->keyRegistry->currentKeyboardState[::GGUI::table::getRelative(converter::input::key::types::ARROW_RIGHT)].setState(true);
             }
 
             void operate_CURSOR_POSITION(sequence::base* input) {
@@ -1277,6 +1297,9 @@ namespace GGUI::terminal::ecma {
                 auto line = params.front().getValueAsInteger();
 
                 currentStates->ecmaComponents.activePresentationPosition.y() -= line;
+                
+                // Register as being pressed in the key registry
+                currentStates->keyRegistry->currentKeyboardState[::GGUI::table::getRelative(converter::input::key::types::ARROW_UP)].setState(true);
             }
         }
 
