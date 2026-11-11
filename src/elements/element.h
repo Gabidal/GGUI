@@ -71,6 +71,8 @@ namespace GGUI{
 
         virtual element* copy() const;
 
+        virtual void requestRecursiveDimensionUpdate() {}   // Empty by default, since an basic element is not dynamic container
+
         constexpr const std::vector<converter::output::event::action>& getEventHandlers() const {
             return handlers;
         }
@@ -157,6 +159,10 @@ namespace GGUI{
 
         bool hasRelativePosition() const {
             return position.x().isRelative() || position.y().isRelative();  // z-axis is not part of this
+        }
+
+        bool hasRelativeDimensions() const {
+            return dimensions.x().isRelative() || dimensions.y().isRelative();
         }
 
         auto getAbsolutePosition() const { return absolutePositionCache; }

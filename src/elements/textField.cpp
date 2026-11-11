@@ -8,7 +8,7 @@ namespace GGUI{
     void textField::updateTextCache(){
         textLineCache.clear();
         size_t borderOffset = hasBorder() ? 2 : 0;
-        size_t innerWidth = std::max(0, int(getWidth()) - int(borderOffset));
+        size_t innerWidth = std::max(0, (int)getWidth() - (int)borderOffset);
 
         // NOTE: This can be potentially removed.
         // This happens when text("...") is given with percentage dimensions, leaving width as zero.
@@ -47,7 +47,7 @@ namespace GGUI{
                 // For this we first need to know how long is this next word if there is any
                 size_t nextSpace = text.find_first_of(' ', i + 1);
                 size_t wordEnd = (nextSpace == std::string::npos) ? text.size() : nextSpace;
-                int newWordLength = wordEnd - i;
+                size_t newWordLength = wordEnd - i;
 
                 if (newWordLength + currentLine.getSize() >= innerWidth){
                     flushRow = true;
@@ -121,11 +121,6 @@ namespace GGUI{
             flags ^= stain::types::RESET;
 
             std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
-        }
-
-        // This does not CLEAN the DEEP stain it only checks if setText has been invoked.
-        if (flags.has(stain::types::DEEP)) {
-            updateTextCache();
         }
 
         // Handle the STRETCH stain by evaluating dynamic attributes and resizing the result buffer
@@ -204,8 +199,6 @@ namespace GGUI{
 
         flags |= (stain::base(stain::types::DEEP) | stain::types::RESET);
 
-        updateTextCache();
-
         updateFrame();
 
         return this;
@@ -216,8 +209,6 @@ namespace GGUI{
         text += toAdd;
 
         flags |= (stain::base(stain::types::DEEP) | stain::types::RESET);
-
-        updateTextCache();
 
         updateFrame();
 
@@ -316,6 +307,11 @@ namespace GGUI{
         }
     }
 
+    void textField::requestRecursiveDimensionUpdate() {
+        // This does not CLEAN the DEEP stain it only checks if setText has been invoked.
+        if (flags.has(stain::types::DEEP)) updateTextCache();
+    }
+
     /**
      * @brief Listens for input and calls a function when user presses any key.
      * @param Then A function that takes a character as input and does something with it.
@@ -363,8 +359,6 @@ namespace GGUI{
             [this](converter::output::event::base*) {
                 if (text.size() > 0) {
                     text.pop_back();
-
-                    updateTextCache();
 
                     flags |= (stain::base(stain::types::DEEP) | stain::types::RESET);
                     updateFrame();

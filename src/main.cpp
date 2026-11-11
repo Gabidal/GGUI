@@ -4,30 +4,17 @@
 
 using namespace GGUI;
 
-int main(int argc, char* argv[]){
-    
-    // This will enable whatever the user gave the args with GGUI
-    // SETTINGS::parseCommandLineArguments(argc, argv);
-
+int main() {
+    // As long as this object exists GGUI will be accessible
     gguiHandle app;
-    GGUI::pauseGGUI([&app](){
+    
+    pauseGGUI([&app](){
         app.setContent(
-            (new listView{
-                (new listView{
-                    (new textField("File"))->setBorder(true)->onClick([](converter::output::event::base*){ return action::responses::DONE; }),
-                    (new textField("Edit"))->setBorder(true)->onClick([](converter::output::event::base*){ return action::responses::DONE; }),
-                    (new textField("View"))->setBorder(true)->onClick([](converter::output::event::base*){ return action::responses::DONE; }),
-                    (new textField("Help"))->setBorder(true)->onClick([](converter::output::event::base*){ return action::responses::DONE; }),
-                })->setBorder(true)->setName("first list"),
-                
-                (new listView{
-                    (new element())->setTitle("A")->setDimensions({25, 12})->setPosition({0.50f, 0.5f})->setBackgroundColor(COLOR::MAGENTA)->setTextColor(COLOR::RED)->setOpacity(0.5f)->setBorder(true),
-                    (new element())->setTitle("B")->setDimensions({25, 12})->setPosition({0.25f, 0.65f})->setBackgroundColor(COLOR::YELLOW)->setTextColor(COLOR::GREEN)->setOpacity(0.5f)->setBorder(true),
-                    (new element())->setTitle("C")->setDimensions({25, 12})->setPosition({0.75f, 0.65f})->setBackgroundColor(COLOR::CYAN)->setTextColor(COLOR::BLUE)->setOpacity(0.5f)->setBorder(true)
-                })->setName("second list")->setDimensions({1.0f, 1.0f})
-            })->setVertical()->setBorder(true)->setTitle("Your App UI")->setDimensions({1.0f, 1.0f})
+          (new listView{
+            (new textField("Welcome to GGUI!"))->setTextAlignment(textField::alignments::CENTER),
+          })->setVertical()->setPosition({0.5f, 0.5f})
         );
     });
 
-    waitForTermination();
+    waitForTermination(); // Wait until user gives signal to close (ctrl+c)
 }

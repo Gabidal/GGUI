@@ -24,7 +24,7 @@ namespace GGUI{
 
         alignments alignment = alignments::LEFT;
 
-        void updateTextCache();
+        void updateTextCache();     // Called from render()
     public:
         textField(std::string&& Text = "") : element() {
             setText(Text);
@@ -45,9 +45,21 @@ namespace GGUI{
         textField* setBorder(bool b) {
             element::setBorder(b);
 
-            updateTextCache();  // This will add/remove additional area for borders not to be rendered over the text
+            flags |= stain::types::DEEP;  // This will add/remove additional area for borders not to be rendered over the text
 
             return this;
+        }
+
+        textField* setTextAlignment(alignments align) {
+            this->alignment = align;
+
+            flags |= stain::types::DEEP;  // This will add/remove additional area for borders not to be rendered over the text
+
+            return this;
+        }
+
+        alignments getTextAlignment() const {
+            return alignment;
         }
     protected:
         void alignTextLeft(std::vector<terminal::cell>& Result);
@@ -61,6 +73,8 @@ namespace GGUI{
         element* createInstance() const override {
             return new textField();
         }
+
+        void requestRecursiveDimensionUpdate() override;
 
         // switchBox uses textField::render() so lets give it some access.
         friend class switchBox;

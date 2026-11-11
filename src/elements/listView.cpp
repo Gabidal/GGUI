@@ -135,6 +135,11 @@ namespace GGUI {
         const element* previousElement = nullptr;
         IVector2 growthDirection = getGrowthDirection();  // Default to horizontal growth direction
 
+        IVector2 resultSize = {getWidth(), getHeight()};
+
+        // More sanity checks for user:
+        assert(!hasRelativeDimensions() || !hasRelativePosition() && "Error: Conflicting container attributes: dimensions and position cannot be both relative!");
+
         TODO("Add here reverse growth direction.");
         
         for (element* e : content) {
@@ -169,13 +174,19 @@ namespace GGUI {
             lastAddedElementInfo = e->getAsRectangle().size + e->getAsRectangle().position.surjection<2>();
 
             // Update the parents size opposite of growth direction
-            if (containerFlag.has(containerFlags::dynamic)) {
-                setDimensions({
-                    std::max<int>(getWidth(), e->getWidth() + e->getPosition().x()),
-                    std::max<int>(getHeight(), e->getHeight() + e->getPosition().y())
-                });
-            }
+            resultSize = {
+                std::max<int>(resultSize.x(), e->getWidth() + e->getPosition().x()),
+                std::max<int>(resultSize.y(), e->getHeight() + e->getPosition().y())
+            };
+
             previousElement = e;
+        }
+
+        if (containerFlag.has(containerFlags::dynamic)) {
+            // Some safety checks:
+            assert(!hasRelativeDimensions() && "Error: Conflicting container attributes: dynamic and relative dimensions!");
+
+            setDimensions(resultSize);
         }
     }
 
@@ -191,7 +202,7 @@ namespace GGUI {
     }
 
     bool listView::CheckIfContentChanged() const {
-        for (const element* e : content){
+        for (element* e : content){
             assert(e != nullptr);
             assert(reinterpret_cast<uintptr_t>(e) % alignof(element) == 0);
 
@@ -201,6 +212,9 @@ namespace GGUI {
             if (!e->getDisplay())
                 continue;
 
+            e->requestRecursiveDimensionUpdate();
+
+            // Skip further tests since we already have a stain
             if (!e->flags.isEmpty())
                 return true;
 
@@ -240,7 +254,7 @@ namespace GGUI {
         if (!flags.isEmpty() && hasTransparentContent()) flags |= stain::types::RESET;
 
         // Transform RESET into the sub modules to be re-rendered
-        if (flags.has(stain::types::RESET)){
+        if (flags.has(stain::types::RESET)) {
             flags ^= (stain::types::RESET);
             std::fill(cellBuffer.begin(), cellBuffer.end(), ' ');
             flags |= (stain::base(stain::types::GRAPHICS) | stain::types::EDGE | stain::types::DEEP);

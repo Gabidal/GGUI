@@ -6,19 +6,22 @@
 ```C++
 #include <ggui.h>
 
+// For simpler demo. Don't do this in actual projects!
 using namespace GGUI;
 
-int main() 
-{
-    GGUI::GGUI( // Initialize GGUI
-        title("Welcome to GGUI!") | 
-        node(new textField( 
-            position(STYLES::center) | 
-            text("Hello World!")
-        ))
-    );
+int main() {
+    // As long as this object exists GGUI will be accessible
+    gguiHandle app;
+    
+    pauseGGUI([&app](){
+        app.setContent(
+          (new listView{
+            (new textField("Welcome to GGUI!"))->setTextAlignment(textField::alignments::CENTER),
+          })->setVertical()->setPosition({0.5f, 0.5f})
+        );
+    });
 
-    GGUI::waitForTermination(); // Wait until user gives signal to close (ctrl+c)
+    waitForTermination(); // Wait until user gives signal to close (ctrl+c)
 }
 ```
 
