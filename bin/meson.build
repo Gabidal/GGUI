@@ -51,6 +51,7 @@ lib_sources = [
   # Terminal sources
   '../src/core/backend/ecma.cpp',
   '../src/core/backend/dec.cpp',
+  '../src/core/backend/xterm.cpp',
   '../src/core/backend/terminal.cpp',
   '../src/core/backend/linux.cpp',
   '../src/core/backend/win.cpp',

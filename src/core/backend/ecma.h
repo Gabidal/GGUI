@@ -1072,6 +1072,18 @@ namespace GGUI {
                         layout::bounds range = {0, 0};
                         types type = types::UNLOADED;
                     };
+
+                    constexpr layout::bounds getDefaultRange(repertoire id) {
+                        switch (id) {
+                            case repertoire::G0: return layout::graphical::getRelativeGraphicalPageLayout(layout::graphical::type::A);
+                            case repertoire::G1: return layout::graphical::getRelativeGraphicalPageLayout(layout::graphical::type::B);
+                            case repertoire::G2: return layout::graphical::getRelativeGraphicalPageLayout(layout::graphical::type::B);
+                            case repertoire::G3: return layout::graphical::getRelativeGraphicalPageLayout(layout::graphical::type::B);
+                            case repertoire::C0: return layout::functional::getRelativeFunctionalPageLayout(layout::functional::type::C0);
+                            case repertoire::C1: return layout::functional::getRelativeFunctionalPageLayout(layout::functional::type::C1);
+                            default:             return {0, 0};
+                        }
+                    }
                 }
 
                 // A simple data structure representing a cell in the character page, containing a handler and a parser for the incoming data stream
@@ -1198,6 +1210,16 @@ namespace GGUI {
                         } 
                     }
 
+                    // Load temporarily, used for patching
+                    constexpr void virtualLoad(repertoire whereTo) {
+                        if (status.type == lifetime::types::LOCKING) return;    // it is already loaded
+
+                        load({
+                            lifetime::getDefaultRange(whereTo),
+                            lifetime::types::TEMPORARY
+                        });
+                    }
+
                     /**
                      * @brief Gets the current lifetime configuration of this page.
                      * 
@@ -1276,6 +1298,9 @@ namespace GGUI {
                     constexpr void patch(cellPatch& source, repertoire destination) {
                         page& dest = pages[static_cast<size_t>(destination)];
                         
+                        // load the page temporarily if it is not locked
+                        dest.virtualLoad(destination);
+
                         // Let's do some sanity checks first.
                         assert(dest.getLifetime().range.in(source.instructionSeries));
 
@@ -1284,6 +1309,8 @@ namespace GGUI {
 
                             dest.add(customFunctions, source.instructionSeries, body);
                         }
+
+                        dest.maybeUnload();
                     }
 
                     /**
