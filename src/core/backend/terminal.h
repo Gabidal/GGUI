@@ -11,6 +11,7 @@
 // Modules:
 #include "ecma.h"
 #include "dec.h"
+#include "xterm.h"
 // -----
 
 #include "../converter.h"
@@ -156,6 +157,7 @@ namespace GGUI {
         public:
             ecma::components ecmaComponents;
             dec::components decComponents;
+            xterm::components xtermComponents;
 
             converter::input::base* keyRegistry = nullptr;    // This is where we will be outputting polled data into.
 

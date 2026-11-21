@@ -230,9 +230,9 @@ namespace GGUI {
                     NINE        = toInt(3, 9),
                     FRACTION    = toInt(3, 10),
                     SEPARATOR   = toInt(3, 11),
+                    LESSTHAN    = toInt(3, 12),     // SGR used by xterm
                     /* ... */
-                    /* ... */
-                    /* ... */
+                    GREATERTHAN = toInt(3, 14),     // SGR used by xterm
                     PRIVATE     = toInt(3, 15),
 
                     __max = toInt(3, 15)     // For internal automation

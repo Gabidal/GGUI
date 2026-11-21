@@ -414,6 +414,8 @@ namespace GGUI::terminal {
             bool isEnabled() const { return VT100Components.enabled || VT220Components.enabled || VT420Components.enabled; }
 
             bool verifyExtensions(ecma::sequence::base* parsed);
+
+            void registerPatches();
         };
 
     }

@@ -312,7 +312,7 @@ namespace GGUI::terminal {
 
         for (auto* sequence : sequences) {
             if (decComponents.verifyExtensions(sequence)) continue;          // skip going through with others.
-            // if (xtermComponents.verifyExtensions(sequence)) continue;     // skip going through with others.
+            if (xtermComponents.verifyExtensions(sequence)) continue;        // skip going through with others.
             // if (kittyComponents.verifyExtensions(sequence)) continue;     // skip going through with others.
         }
     }

@@ -190,6 +190,26 @@ namespace GGUI::terminal::dec {
             VT420::sequences::miscellaneousControlFunctions::operate_DEVICE_ATTRIBUTES(parsed);
         }
 
+        registerPatches();
+
         return isEnabled();
+    }
+
+    void components::registerPatches() {
+        if (!isEnabled()) return;
+
+        auto& pages = currentStates->ecmaComponents.pageManager;
+
+        if (VT100Components.enabled) {
+            pages.patch(VT100::csiPatch, ecma::configuration::repertoire::C1);
+        }
+
+        if (VT220Components.enabled) {
+            pages.patch(VT220::csiPatch, ecma::configuration::repertoire::C1);
+        }
+
+        if (VT420Components.enabled) {
+            pages.patch(VT420::csiPatch, ecma::configuration::repertoire::C1);
+        }
     }
 }
